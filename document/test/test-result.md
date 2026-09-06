@@ -3,11 +3,11 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 검증 결과 (기능 테스트 + 코드 리뷰 + 보안 점검) |
-| 버전 | v1.5 |
-| 대상 | (v1.0) `src/core/**` · (v1.1~1.2) `src/app/**` · (v1.5) op-sqlite 6.2.11→9.3.0 상향 + iOS 온디바이스 빌드/실행 검증 |
-| 근거 | `document/planner/plan.md` v1.0, `document/architect/{overview,logic,nfr}.md` v1.2, `database.md` v1.0 |
+| 버전 | v1.6 |
+| 대상 | (v1.0) `src/core/**` · (v1.1~1.2) `src/app/**` · (v1.5) op-sqlite 6.2.11→9.3.0 상향 + iOS 온디바이스 빌드/실행 검증 · (v1.6) ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1) |
+| 근거 | `document/planner/plan.md` v1.1, `document/architect/{overview,logic,nfr}.md` v1.5, `database.md` v1.0 |
 | 작성 주체 | Tester |
-| 일자 | 2026-09-04 |
+| 일자 | 2026-09-06 |
 
 ## 변경 이력
 
@@ -19,6 +19,97 @@
 | v1.3 | Bug Fix: op-sqlite 버전 핀 6.3.0→6.2.11(ETARGET) 재검증 — PASS (113 tests) |
 | v1.4 | Feature: android/ios 네이티브 프로젝트 생성 — PASS (113 tests) |
 | v1.5 | Bug Fix: op-sqlite iOS 네이티브 빌드 실패(cpp/types.h) — op-sqlite 6.2.11→9.3.0. **부분 성공**: iOS 빌드/설치/실행/DB open/스키마 마이그레이션(FTS5)까지 온디바이스 검증 PASS, 그러나 대시보드 렌더는 선재 셸 결함(RENDER-003, 저장소 named-object 파라미터 ↔ op-sqlite `execute` 배열 전용)으로 **미도달 → 별도 후속 필요**. npm test 115/115 |
+| v1.6 | Feature: ScheduleEditor 진입점 추가(F-01/F-03, AC-15, E-10-1) — PASS. 코드 리뷰 Critical/High 0. 보안 미해결 취약점 0. npm test 129/129(회귀 없음). Low 지적 1건(NAV-001: ScheduleDetailScreen 이중 navigation 참조, 비차단). |
+
+---
+
+# v1.6 — Feature: ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1)
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-06 |
+| 대상 | `src/app/screens/DashboardScreen.tsx`, `src/app/screens/CalendarScreen.tsx`, `src/app/screens/ScheduleDetailScreen.tsx` |
+| 근거 | `plan.md` v1.1 (F-01, F-03, AC-15, E-10-1, 7.2), `logic.md` v1.5 §16.2/§16.3 |
+
+```text
+status: PASS
+summary: >
+  DashboardScreen 헤더「+」·빈 상태「일정 추가」, CalendarScreen 헤더「+」→ ScheduleEditor(신규),
+  ScheduleDetailScreen 헤더「편집」→ ScheduleEditor(scheduleId 전달, 수정) 진입점 구현을
+  기능 테스트(정적 분석) · 코드 리뷰 · 보안 점검으로 검증했다.
+  핵심 요구사항(AC-15, E-10-1, F-03) 모두 설계(logic §16.2)와 일치하여 기능 충족.
+  파라미터 타입 안전성(RootStackParamList) 확인. 코드 리뷰 Critical/High 0.
+  보안 점검 미해결 취약점 0. npm test 129/129 — 회귀 없음.
+  Low 지적 1건(NAV-001, 비차단).
+tests:
+  total: 129
+  passed: 129
+  failed: 0
+  note: "코어 81 + 셸 48. 화면 단위 RN 테스트는 환경 제약으로 정적 분석으로 대체."
+```
+
+## 1. 검증 범위
+
+| 범위 | 항목 |
+| --- | --- |
+| Direct Scope | DashboardScreen 헤더「+」/ 빈 상태「일정 추가」, CalendarScreen 헤더「+」, ScheduleDetailScreen 헤더「편집」|
+| Related Scope | ScheduleEditorScreen 파라미터 수신(신규/수정 모드 분기), RootNavigator 라우트 등록 |
+| Out of Scope | ScheduleEditorScreen 폼 기능(기존 구현), 코어 서비스, DB 스키마 |
+
+## 2. 요구사항 ↔ 구현 매핑
+
+| 요구사항 | 구현 위치 | 판정 |
+| --- | --- | --- |
+| AC-15: 금일 일정 0건 시 「오늘 일정이 없습니다」+ 일정 추가 진입점 | `DashboardScreen` `!snap \|\| snap.empty` 분기 내 Pressable | PASS |
+| E-10-1: 빈 상태 UI 정상 표시 | `snap === null` 초기 상태도 빈 상태로 처리 | PASS |
+| F-03: 일정 수정 진입(scheduleId 전달) | `navigate(STACK_ROUTES.ScheduleEditor, { scheduleId })` — `scheduleId: number` 타입 보장 | PASS |
+| logic §16.2: Dashboard `headerRight`「+」→ `navigate('ScheduleEditor', {})` | `useLayoutEffect` + `navigation.setOptions({ headerRight })` | PASS |
+| logic §16.2: Calendar `headerRight`「+」→ `navigate('ScheduleEditor', {})` | 동일 패턴 | PASS |
+| logic §16.2: ScheduleDetail `headerRight`「편집」→ `navigate('ScheduleEditor', { scheduleId })` | `useLayoutEffect` deps `[nav, scheduleId]` ✓ | PASS |
+| logic §16.2: 진입점은 서비스를 호출하지 않는다 | 3개 진입점 모두 순수 navigate 호출만 | PASS |
+| 회귀: 기존 DashboardScreen 로고·태그라인·집계 표시 | 변경 없음, npm test 129/129 | PASS |
+
+## 3. 코드 리뷰
+
+| 항목 | 결과 |
+| --- | --- |
+| 계층 분리 | 진입점 화면은 서비스 호출 없이 네비게이션만 수행. UI 계층에 비즈니스 로직 없음 ✓ |
+| 설계 준수 | `STACK_ROUTES` 상수 사용(하드코딩 문자열 없음). `RootStackParamList` 타입 파라미터 적용 ✓ |
+| `useLayoutEffect` deps | DashboardScreen/CalendarScreen: `[navigation]`, ScheduleDetailScreen: `[nav, scheduleId]` — 올바름 ✓ |
+| 범위 | 설계에서 요구한 진입점만 추가. 요구사항 외 기능 없음 ✓ |
+
+### 지적 사항
+
+| id | severity | category | cause | location | scenario | expected | actual |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| NAV-001 | Low | CODE_REVIEW | IMPLEMENTATION_ERROR | `src/app/screens/ScheduleDetailScreen.tsx` L23, L41 | ScheduleDetailScreen이 props로 받은 `navigation`(goBack 전용)과 `useNavigation()` 훅의 `nav`를 동시에 사용. 동일 navigation 객체의 이중 참조 | `useNavigation()` 훅만 사용하거나 props로만 받아 일관성 유지 | props `navigation`은 삭제(goBack), 훅 `nav`는 편집 헤더(navigate) 분리 사용 |
+
+NAV-001은 기능적으로는 정상 동작하며(같은 객체를 다른 참조로 접근) 다음 단계 진행을 차단하지 않는다.
+
+## 4. 보안 점검 (STRIDE/OWASP)
+
+| 위협 | 점검 결과 |
+| --- | --- |
+| Tampering — 위조 scheduleId | ScheduleDetailScreen은 RootNavigator에서 `findById` 재조회 후 이동 경로를 통해 도달(기존 v1.2 검증). 편집 진입 시 `scheduleId`는 이미 검증된 정수 ✓ |
+| Injection | 진입점은 사용자 입력을 직접 처리하지 않음. `scheduleId: number` 타입 전달 ✓ |
+| 에셋/XSS | 이번 변경에 에셋·WebView 없음. 변경 없음 ✓ |
+
+미해결 보안 취약점: 없음.
+
+## 5. 회귀 검증
+
+| 항목 | 결과 |
+| --- | --- |
+| `npm test` | 129 pass / 0 fail (기존 129 베이스라인 유지) |
+| DashboardScreen 로고·태그라인·집계 표시 | 변경 없음 — 빈 상태 분기만 Pressable 추가 |
+| CalendarScreen 목록·무한 스크롤·완료 토글 | 헤더 버튼 추가만, 기존 로직 무변경 |
+| ScheduleDetailScreen 완료 토글·삭제 | 헤더 버튼 추가만, 기존 로직 무변경 |
+| RootNavigator 라우트 등록 | ScheduleEditor 이미 등록되어 있음, 변경 없음 |
+
+## 6. 판정
+
+**PASS** — AC-15, E-10-1, F-03 핵심 요구사항 충족. logic §16.2 설계와 구현 일치. 코드 리뷰 Critical/High 0. 보안 미해결 취약점 0. npm test 129/129.
+NAV-001(Low)은 후속 개선 권장(비차단).
 
 ---
 

@@ -140,3 +140,14 @@ issues="
 2026-09-06 00:00:01 [orchestrator] STEP:BUG_ANALYZER status=DONE cause=IMPLEMENTATION_ERROR location="android/MainActivity.kt, ios/AppDelegate.mm, app.json"
 2026-09-06 00:00:02 [orchestrator] STEP:DEVELOPER dispatch reason="IMPLEMENTATION_ERROR: app.json name vs native moduleName mismatch"
 2026-09-06 00:00:00 [orchestrator] STEP:GIT_COMMIT Analysis/Inspection → Orchestrator 직접 수행: 기능별 git 커밋 (git init 이미 완료, 파일 분류 후 순차 커밋)
+2026-09-06 00:00:01 [orchestrator] STEP:GIT_COMMIT COMPLETE: 9개 커밋 완료 (프로젝트설정/에이전트파이프라인/기획설계문서/핵심도메인/앱레이어/테스트/네이티브/문서로그/.codex+gitignore)
+2026-09-06 23:15:26 [orchestrator] STEP=ROUTING | type=Feature | reason=에셋(이미지/아이콘) 통합 UI 개선 작업 | next=Planner
+2026-09-06 23:15:29 [orchestrator] STEP=DISPATCH | agent=Planner | input=plan.md + asset_list(tagline.png, goal.png, logo.png, settings.png, statistics.png, todo.png)
+2026-09-06 23:18:08 [orchestrator] STEP:architect INPUT:document/planner/plan.md,document/architect/*.md REASON:F-16 앱 아이덴티티 UI 기능 추가 - 설계 업데이트 (UI 계층, 코어/DB 변경 없음)
+2026-09-06 23:23:00 [orchestrator] STEP=DISPATCH agent=developer iteration=1 input="document/architect/logic.md v1.5 (§16.2 탭아이콘, §16.3.2 대시보드헤더, §16.7 에셋보안), src/app/navigation/RootNavigator.tsx, src/app/screens/DashboardScreen.tsx, src/assets/icons/{todo,goal,statistics,settings,logo}.png, src/assets/images/tagline.png" expect="(1) RootNavigator.tsx: Tabs() tabBarIcon 콜백에 Image+onError 폴백 적용(탭별 todo/goal/statistics/settings.png, opacity 활성1/비활성0.4, 24×24, 폴백 Text). (2) DashboardScreen.tsx: ScrollView 상단 로고(logo.png, 화면폭60%)+태그라인(tagline.png, 화면폭60%) 수직 배치, resizeMode=contain, onError 폴백(텍스트 대체). (3) 신규 네이티브 의존성 금지. (4) 기존 기능 회귀 없음."
+2026-09-06 23:28:04 [orchestrator] STEP=Tester target=RootNavigator.tsx,DashboardScreen.tsx ac=AC-25~28 result=PASS
+2026-09-06 00:00:01 [orchestrator] ROUTING: "할일 추가" 요청 → Bug Fix (ScheduleEditorScreen 구현됨, 진입점 FAB 버튼 누락). 분류: 기존 명세(F-01/AC-01)와 다른 동작.
+2026-09-06 00:00:02 [orchestrator] STEP Bug Analysis (general-purpose): 재현 절차, 원인, 영향 범위, 수정 방향 분석
+2026-09-06 00:00:03 [orchestrator] Bug Analysis DONE. 원인: DashboardScreen/CalendarScreen에 ScheduleEditor 진입 버튼 없음. 설계 변경 불필요. → Developer 위임
+2026-09-06 00:00:04 [orchestrator] STEP Developer: FAB/추가 버튼 구현 (DashboardScreen, CalendarScreen 또는 RootNavigator)
+2026-09-06 23:38:19 [orchestrator] STEP Tester — ScheduleEditor 진입점 검증(F-01/F-03, AC-15, E-10-1): 기능 테스트 + 코드 리뷰 + 보안 점검 → status: PASS (npm test 129/129, Critical/High 0, 미해결 취약점 0, Low 지적 1건: NAV-001 비차단)
