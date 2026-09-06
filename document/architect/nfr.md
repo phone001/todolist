@@ -3,9 +3,9 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 비기능 요구사항 설계 (NFR) |
-| 버전 | v1.3 |
+| 버전 | v1.4 |
 | 상태 | 작성 완료 |
-| 근거 | `document/planner/plan.md` v1.0 6절/NFR-01~10, `document/architect/overview.md` v1.4, `document/architect/database.md` v1.0, `document/architect/logic.md` v1.4 |
+| 근거 | `document/planner/plan.md` v1.1 6절/NFR-01~10, `document/architect/overview.md` v1.6, `document/architect/database.md` v1.0, `document/architect/logic.md` v1.6 |
 
 ## 변경 이력
 
@@ -14,6 +14,7 @@
 | v1.0 | 2026-09-04 | 최초 작성. 기획 NFR 초안을 기술 목표·설계·검증 관점으로 구체화 |
 | v1.1 | 2026-09-04 | §11 "클라이언트 셸 검증 관점(빌드 불가 환경 대응)" 추가. §9 검증표에 셸 항목 V-19~V-24 추가. §10 미결정에 N-8/N-9 추가. 성능·용량·보안 목표(1~8장)는 무변경 |
 | v1.2 | 2026-09-04 | Bug Fix 동반 개정(overview/logic v1.2). 검증 환경에 Xcode 26.2 + CocoaPods 도입 → §11.2에서 **iOS `pod install`+`xcodebuild` 빌드·시뮬레이터 설치·실행·op-sqlite DB 왕복**을 §11.1 정식 검증으로 이동. Android Gradle·워치·온디바이스 알림 정확도만 §11.2 유지. N-8을 "iOS 검증됨 / Android·워치 후속"으로 축소. 성능·용량·보안 목표 무변경 |
+| v1.4 | 2026-09-07 | 설계 델타(overview v1.6 / logic v1.6, N-10 해소 — DateTimePicker 도입). §7 국제화의 일정 편집 날짜/시각 입력 설명 교체(텍스트 → `DateTimePickerModal` OS 네이티브 UI, 로캘 자동 반영). §9 V-26 비고 업데이트(`localWallToEpoch` 저장 경로 불사용 명시, 표시 초기값·단위 테스트 존속). §12 N-10 (1) 해소 기록. 성능·용량·가용성·보안 목표 무변경 |
 | v1.3 | 2026-09-04 | 설계 델타(overview v1.4 / logic v1.4, "일정 추가/수정 화면 연결"). §7 국제화에 일정 편집 날짜/시각 **입력** 형식 주석(이번 사이클 고정 `YYYY-MM-DD`/`HH:mm` 텍스트, 표시는 로캘 유지). §9 검증 관점에 V-25(편집 폼 검증 매핑·무효화)·V-26(로컬 벽시계→epoch 변환) 추가. §12 미결정에 N-10(네이티브 date 픽커 후속) 추가. 성능·용량·가용성·보안 목표 무변경 |
 
 > 기획서에 정량 SLA/SLO가 없다. 아래 수치 중 **[제안]** 표시는 Architect 제안값이며 확정은 미결정(overview N-1). Tester는 [제안]값을 임시 기준으로 사용하되 미달을 Critical/High로 올리지 않는다(품질 관찰 항목).
@@ -132,7 +133,7 @@
 | 글자 크기 | OS 동적 폰트 + 앱 `theme.fontScale` 반영 | 레이아웃은 상대 단위, 최소 터치 타깃 44dp |
 | 대비 | WCAG AA [제안] 대비 준수(테마 색상 팔레트 사전 검증) | 강조색 선택 시 대비 경고 |
 | 스크린리더 | 주요 액션에 접근성 레이블 | 컴포넌트 규약 |
-| 국제화 | 최소 한국어. 날짜/시간/요일은 로캘 포맷 | `Intl` + tz 변환(P-16), 저장은 epoch ms. **일정 편집 날짜/시각 입력**은 이번 사이클 고정 형식(`YYYY-MM-DD`/`HH:mm`) 텍스트 입력(네이티브 로캘 픽커 미도입 — overview N-10), **표시**는 로캘 포맷 유지. 로캘 인지 입력 픽커는 후속 |
+| 국제화 | 최소 한국어. 날짜/시간/요일은 로캘 포맷 | `Intl` + tz 변환(P-16), 저장은 epoch ms. **일정 편집 날짜/시각 입력**: v1.6(N-10 해소)부터 `@react-native-community/datetimepicker` 8.6.0 OS 네이티브 UI 사용 — iOS/Android 모두 단말 로캘을 자동 반영(한국어 기기에서 한국어 달력/시각 포맷 표시). **표시**(목록·대시보드)는 기존 로캘 포맷 유지. 저장은 epoch ms(UTC) 불변 |
 
 ---
 
@@ -173,7 +174,7 @@
 | V-23 | 어댑터 오류 → `ErrorCodes` 매핑 | 권한 거부/취소/게이트웨이 실패 주입 시 규정 코드 반환 | logic §16.5 표 |
 | V-24 | 토큰 미저장·client_secret 부재 정적 점검 | `KeychainTokenStore`만 토큰 보관, DB 스키마/코드 grep | logic §16.7, V-14 확장 |
 | V-25 | 일정 편집 폼: 필드별 검증 오류 인라인 매핑(제목 빈값·종료<시작·메모 초과·반복 충돌), 폼 상태 유지, 저장 성공 시 `list`·`dashboard`·`search`·`categories` 무효화 + `goBack` | 화면 로직 단위 테스트(서비스 목) | AC-01~03, logic §16.3.1 |
-| V-26 | 로컬 벽시계(`YYYY-MM-DD`/`HH:mm`) → epoch ms 변환이 tz·DST 경계에서 정확 | 순수 함수 단위 테스트(tz 고정) | P-16, logic §16.3.1 |
+| V-26 | `localWallToEpoch` 함수가 tz·DST 경계에서 정확 | 순수 함수 단위 테스트(tz 고정) — 함수 존속(표시 초기값 역방향 변환·단위 테스트 유지용). v1.6부터 저장 경로는 DateTimePicker `Date.getTime()` 직접 사용(불사용 명시) | P-16, logic §16.3.1 |
 
 - 측정값(V-1~V-24) 중 기능 정확성 항목은 PASS 필수. 성능 [제안] 수치(1장)와 온디바이스 항목(§11)은 관찰/후속.
 
@@ -219,4 +220,4 @@ overview.md "빌드 환경 제약과 파이프라인 검증 전략" 참조. RN �
 | N-8 | RN 앱 셸 온디바이스 검증 — iOS 빌드·시뮬레이터 실행은 v1.2에서 정식 검증됨. Android Gradle 빌드·워치 연동·실기기 알림 정확도는 환경 외 후속 |
 | N-9 | RN New Architecture(Fabric/TurboModules) 활성 여부 |
 | D-03 | DB 암호화(SQLCipher) 기본 활성 여부 — 성능/백업 영향 |
-| N-10 | 일정 편집 날짜/시각 네이티브 픽커(`@react-native-community/datetimepicker` 8.x) 도입 — 빌드 호스트 디스크 여유 확보 후. 이번 사이클은 고정 형식 텍스트 입력으로 AC-01~03 충족 |
+| N-10 | **(1) 해소(v1.6)** — `@react-native-community/datetimepicker` 8.6.0 도입, logic §16.3.1/overview 기술 스택 표 갱신. (2) 반복 회차 편집(P-02)은 별도 후속 사이클 |

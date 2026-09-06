@@ -3,7 +3,7 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 설계 총괄 (Overview) |
-| 버전 | v1.5 |
+| 버전 | v1.6 |
 | 상태 | 작성 완료 (Developer 착수 가능) |
 | 근거 기획서 | `document/planner/plan.md` v1.1 |
 | 작성 주체 | Architect |
@@ -13,6 +13,7 @@
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
 | v1.0 | 2026-09-04 | 신규 규약(overview/logic/database/nfr 4종)에 따른 최초 설계. 2026-09-02 구버전(7종 + 별도 보안 문서)은 폐기하고 재작성 |
+| v1.6 | 2026-09-06 | **설계 델타 — N-10 해소: 날짜/시각 네이티브 DateTimePicker 도입** (plan.md v1.1 F-01). 기술 스택 표에 `@react-native-community/datetimepicker` 8.6.0 추가. 「주요 기술 결정」 #6 개정(텍스트 입력 → DateTimePicker). 영향 범위 신규 §v1.6 추가. 미결정 N-10 (1) 해소. `logic.md` v1.6(§16.3.1 날짜/시각 입력 방식·필드 매핑·보안 노트) 동반 개정. `nfr.md` v1.4(§7 국제화·§9 V-26·§12 N-10) 동반 개정. DB 스키마·포트 계약·코어 서비스 무변경. 기획 검증 PASS |
 | v1.5 | 2026-09-06 | **설계 델타 — F-16 앱 아이덴티티 UI** (plan.md v1.1). 탭 바 아이콘(todo/goal/statistics/settings.png) 및 대시보드 헤더 로고(logo.png)·태그라인(tagline.png) 적용. `logic.md` §16.2 탭 아이콘 설계·§16.3 DashboardScreen 헤더 설계·§16.3.2 로고/태그라인 렌더링 규약 추가. 코어·DB·포트 계약 무변경. 기획 검증 PASS |
 | v1.4 | 2026-09-04 | **설계 델타 — "일정 추가/수정 화면 연결"(Feature)**. 기존 `ScheduleEditorScreen` 이 `RootStack` 에 등록만 되고 호출부가 없어 도달 불가 + 폼이 스켈레톤(제목 + raw epoch). 델타: (1) `logic.md` §16.2 진입 엣지(Dashboard/Calendar `headerRight`「+」→ `ScheduleEditor {}`, `ScheduleDetail`「편집」→ `ScheduleEditor { scheduleId }`), (2) `logic.md` §16.3 표 확장 + 신규 §16.3.1(F-01 필드 매트릭스: 제목/시작·종료 일시/유형/우선순위/메모/반복 — 서비스 매핑·코어 검증 코드·인라인 `field`·저장 후 4-슬라이스 무효화+`goBack`), (3) **날짜/시간 입력**: RN 코어에 date 컴포넌트 없음 + 빌드 호스트 디스크 고갈로 네이티브 픽커(`@react-native-community/datetimepicker`) **미도입** — `YYYY-MM-DD`/`HH:mm` 텍스트 입력 + `Clock.timeZone()` 기반 epoch ms 변환(순수 함수)으로 AC-01~03 충족, 픽커 교체는 후속 N-10. **포트 계약(`ScheduleService.create/update/getById`, `CategoryService.list/create`) 무변경**, `database.md` v1.0 유지(스키마 무변경), `routes.ts`/`bindings.ts` 는 이미 계약 반영. `logic.md` v1.4·`nfr.md` v1.3 동반 개정. 기획 재검증 PASS(F-01/F-03/AC-01~03 내 UI 연결, 신규 제품 요구사항 없음; D-05 반복 게이트는 단순 반복 가정값으로 진행 — 비차단) |
 | v1.1 | 2026-09-04 | 코어 계층(`src/core/**`) 구현·검증 완료 반영. **React Native 앱 셸 + 코어 포트용 네이티브 어댑터 설계 델타** 추가(신규 §"클라이언트 셸 아키텍처", "빌드 환경 제약과 파이프라인 검증 전략"). `database.md`는 스키마 무변경으로 v1.0 유지. 기획 재검증 결과 PASS(신규 제품 요구사항 없음) |
@@ -30,6 +31,19 @@
 ---
 
 ## 기획 검증 결과
+
+### v1.6 재검증 (N-10 — 날짜/시각 DateTimePicker 도입 요청)
+
+**결과: PASS (설계 가능, Planner 재작업 불필요)**
+
+| 검증 항목 | 판정 | 비고 |
+| --- | --- | --- |
+| 신규 제품 요구사항 유무 | 없음 | F-01(일정 등록 시 일시 입력) 이미 확정. UI 구현 방식(텍스트→피커) 교체이며 기능 자체는 기확정 |
+| 라이브러리 RN 호환성 | OK | `@react-native-community/datetimepicker` 8.6.0: `react-native: '*'` peer. RN 0.74.5 완전 호환 |
+| E-01-2(시작 일시 미선택) 처리 | OK | DateTimePicker는 항상 유효한 Date 반환 + 기본값 자동 적용. 미선택 시나리오 실질 제거 |
+| AC-01~03 충족 가능성 | OK | epoch ms 직접 추출 → 동일 검증(assertValidScheduleInput) 경유, AC-02/03 유지 |
+| 미결정 게이트 영향 | 비차단 | D-01~D-05 모두 DateTimePicker 도입과 무관 |
+| 빌드 환경 적합성 | OK | 디스크 여유 765 Gi (이전 이연 사유 해소). `pod install` 비용 감당 가능 |
 
 ### v1.5 재검증 (F-16 앱 아이덴티티 UI 요청)
 
@@ -296,6 +310,16 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 
 ## 영향 범위
 
+### v1.6 (N-10 해소 — 날짜/시각 DateTimePicker 도입)
+
+- **구현 예정(Developer)**:
+  - `package.json`: `@react-native-community/datetimepicker` 8.6.0 추가.
+  - `ios/`: `pod install` 재실행(신규 Pod 연결).
+  - `src/app/screens/ScheduleEditorScreen.tsx`: 날짜/시각 TextInput + 증감 버튼 제거 → `DateTimePicker`(mode='date') + `DateTimePicker`(mode='time') 2단계 피커로 교체. `startAt`/`endAt` 상태를 epoch ms(`number`)로 직접 관리. `localWallToEpoch` 저장 경로 호출 제거(함수 자체는 유지).
+- **무변경**: 코어 서비스 계약(`ScheduleService.create/update`, `startAt: number` 계약), 포트 인터페이스, DB 스키마, 기존 테스트(V-26 `localWallToEpoch` 단위 테스트 유지 — 함수 존속), `routes.ts`, `bindings.ts`.
+- **신규 의존성**: `@react-native-community/datetimepicker` 8.6.0 (native module, `pod install` 필요).
+- **회귀 위험**: 낮음. 서비스 계약(`startAt: number`) 무변경. UI 교체만이므로 코어 테스트 회귀 없음.
+
 ### v1.5 (F-16 앱 아이덴티티 UI)
 
 - **구현 예정(Developer)**:
@@ -341,6 +365,7 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 | 상태 관리 | Zustand | 4.x | 경량, 코어 서비스와 분리 용이, 보일러플레이트 최소 | Redux Toolkit 2.x — 이번 범위엔 과함 / Context — 성능 |
 | 로컬 DB | SQLite (`@op-engineering/op-sqlite`) | 9.x major 고정 (9.3.x pin) | `알림앱.md` 확정(SQLite). op-sqlite는 동기/비동기 API·prepared statement·**SQLCipher 옵션**(D-03 대응) 제공, New Arch 호환. **v1.2**: 6.x는 `cpp/types.h`가 `<vector>`를 include하지 않아 Xcode 26.2 clang(전이 include 불허)에서 컴파일 불가 → 9.x로 상향. 9.3.x는 헤더 정합 수정 + RN 0.74 peer 호환(`react-native: >0.73.0`) + 구아키텍처(`newArchEnabled=false`) 지원. 10.x는 동급 대체안, 11.x+는 RN 0.75+ 타깃이라 회피 | `react-native-quick-sqlite`(유지보수 둔화), `react-native-sqlite-storage`(구형 API), WatermelonDB(추상화 과다) |
 | 마이그레이션 | 자체 러너 (`PRAGMA user_version`) | — | 스키마 소수·단일 클라이언트, ORM 불필요. 순번 SQL 파일 적용 | Drizzle/TypeORM 마이그레이션 — 의존성·번들 비용 |
+| 날짜/시각 입력 | `@react-native-community/datetimepicker` | 8.6.0 (8.x major 고정) | N-10 해소. RN 0.74.x 호환(`react-native: '*'` peer). iOS/Android 공통 지원. Old Architecture(`newArchEnabled=false`) 지원. iOS: inline/spinner/compact 표시, Android: OS 다이얼로그. epoch ms 직접 추출로 텍스트 파싱 표면 제거(보안 개선). **버전 핀 근거**: N-10 계획 당시 "8.x" 명시, 8.6.0이 8.x 최신 안정 패치, 9.x와 동일 peer이나 계획 연속성 및 안정성 선호로 8.x 유지 | 순수 JS 캘린더 라이브러리(`react-native-calendars` — 번들 비용), 커스텀 휠 컴포넌트(구현 비용 과다), 텍스트 입력 + 파싱(이전 방식 — UX 열위 및 파싱 오류 위험) |
 | 로컬 알림 | `@notifee/react-native` | 9.x | 정밀 트리거(TimestampTrigger), 채널/카테고리, iOS/Android 통합 API, 부팅 후 재예약 훅 | RN PushNotificationIOS + 별도 안드로이드 구현 — 파편화 |
 | 기본 캘린더 | `react-native-calendar-events` | 2.x | EventKit(iOS)/CalendarProvider(Android) 읽기·쓰기·권한 통합 | 플랫폼별 자체 브리지 — 유지비 |
 | OAuth | `react-native-app-auth` | 7.x | Authorization Code + PKCE 표준 구현, IdP 중립(D-01=(c)에 부합) | WebView 직접 구현 — 보안 위험, 스토어 정책 |
@@ -357,7 +382,7 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 3. **알림 예약은 "논리 예약(REMINDER 행)"과 "OS 예약"을 분리**. OS는 향후 일정 범위만 실제 예약, 나머지는 앱 기동/부팅/일정 변경 시 `ReminderScheduler.sync()`로 재조정(P-03, P-09).
 4. **검색은 SQLite FTS5(external content) + `unicode61` + 서브스트링 대응을 위한 `LIKE` 폴백**. 2자 미만 검색은 결과 상한(P-11). (구버전 설계의 trigram 2자 이슈를 회피: FTS는 토큰 검색, 짧은 질의는 LIKE 폴백으로 처리.)
 5. **DB 암호화는 빌드 플래그로 토글(SQLCipher)**. 기본 릴리스는 암호화 ON 제안, 키는 최초 실행 시 생성해 Keychain 저장(D-03 최종 확정 전까지 설계상 지원, 정책 결정 대기).
-6. **일정 편집 날짜/시간 입력은 이번 사이클에 신규 네이티브 의존성 없이 구현**(v1.4). RN 코어에 date/time 컴포넌트가 없고, 표준 선택지 `@react-native-community/datetimepicker` 는 신규 CocoaPods 의존 + 네이티브 재빌드를 요구하는데 빌드 호스트 디스크 여유(약 1.8 GiB)가 `ios/build`(약 2.8 GB) 재생성에 부족하다. 대안: `YYYY-MM-DD`/`HH:mm` 구조화 텍스트 입력 + 증감 버튼, UI 계층에서 `Clock.timeZone()` 기준 epoch ms(P-16) 변환(순수 함수 `localWallToEpoch`, 권장 위치 `src/core/domain/time.ts`, 포트·시그니처 무변경). AC-01~03 은 네이티브 스피너를 요구하지 않으므로 충족. 디스크 여유 확보 후 동일 UI 계약(`startAt: number`) 뒤에서 `@react-native-community/datetimepicker`(pin `8.x`)로 교체 — 코어/로직/DB 변경 없음(미결정 N-10). 검토한 대안: 네이티브 픽커 즉시 도입(디스크 리스크로 보류), 순수 JS 캘린더 라이브러리(`react-native-calendars` 등 — 신규 의존성·번들 비용 대비 이득 낮음), 커스텀 휠 컴포넌트(구현 비용 과다).
+6. **일정 편집 날짜/시간 입력은 `@react-native-community/datetimepicker` 8.6.0으로 구현**(v1.6, N-10 해소). v1.4에서 디스크 여유 부족(~1.8 GiB)으로 이연했던 네이티브 DateTimePicker 도입을 v1.6에서 완료한다. 빌드 호스트 765 Gi 여유 확보로 이연 사유가 해소됨. iOS는 inline/spinner/compact 표시, Android는 OS 다이얼로그. 피커 `onChange` 콜백의 `Date.getTime()` → epoch ms 직접 추출로 텍스트 파싱 표면이 제거된다. 기존 `localWallToEpoch` 함수(`src/core/domain/time.ts`)는 역방향 표시 초기값 및 V-26 테스트용으로 존속하되 저장 경로에서는 사용하지 않는다. 코어/로직(포트 계약)/DB 무변경.
 
 ---
 
@@ -387,5 +412,5 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 | N-3 | 삭제 Undo 보관 시간(OI-4) | `logic.md`에 "세션 내 + 5분" 제안, 확정 대기 |
 | N-8 | RN 앱 셸의 온디바이스(Android/iOS 빌드·실행) 검증 | 현 파이프라인 환경에 RN 툴체인·SDK 없음 → 플랫폼 비의존 셸 로직·어댑터 계약만 검증, 네이티브 빌드·워치 연동은 별도 모바일 CI/개발기에서 후속. 산출물에 미검증 범위 명시 |
 | N-9 | RN New Architecture(Fabric/TurboModules) 활성 여부 | RN 0.74 기준. 셸 구조는 New Arch 호환 라이브러리로 선정했으나 활성 플래그는 온디바이스 검증 시 확정 |
-| N-10 | (1) 일정 편집 날짜/시각 **네이티브 픽커** 도입(`@react-native-community/datetimepicker` 8.x) — 빌드 호스트 디스크 여유 확보 후, 동일 UI 계약 뒤 교체 (2) **반복 일정 개별 회차 편집**("이 일정만/이후 모두", P-02) — 코어 `ScheduleService.update` 확장 필요, 이번 사이클 범위 밖 | 이번 사이클은 텍스트 입력 + 단순 반복(생성 경로)으로 진행 |
+| N-10 | (1) **해소(v1.6)** — `@react-native-community/datetimepicker` 8.6.0 도입 완료. (2) **반복 일정 개별 회차 편집**("이 일정만/이후 모두", P-02) — 코어 `ScheduleService.update` 확장 필요, 이번 사이클 범위 밖 | (1) 해소. (2) 후속 사이클 |
 | D-03 | SQLCipher 기본 활성 → op-sqlite 어댑터의 `PRAGMA key` 경로 | 셸은 빌드 플래그로 토글 가능하게 설계, 최종 정책은 D-03 확정 대기 |

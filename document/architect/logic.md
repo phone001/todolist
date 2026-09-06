@@ -3,9 +3,9 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 비즈니스 로직 설계 (Logic) |
-| 버전 | v1.5 |
+| 버전 | v1.6 |
 | 상태 | 작성 완료 |
-| 근거 | `document/planner/plan.md` v1.1, `document/architect/overview.md` v1.5, `document/architect/database.md` v1.0 |
+| 근거 | `document/planner/plan.md` v1.1, `document/architect/overview.md` v1.6, `document/architect/database.md` v1.0 |
 
 ## 변경 이력
 
@@ -15,6 +15,7 @@
 | v1.1 | 2026-09-04 | §16 "클라이언트 셸 처리 흐름(RN App Shell)" 추가 — 조립 지점 리팩터, 네비게이션 그래프·딥링크, 화면↔서비스 바인딩, 앱 라이프사이클 부트스트랩, 네이티브 어댑터 계약, 셸 보안 노트. §14 일관성 점검·§15 미결정 갱신. 서비스 로직(1~13장)은 무변경 |
 | v1.2 | 2026-09-04 | Bug Fix 동반 개정(overview v1.2). §16.5 `MigrationDb`·`ScheduleRepository` 행 주의에 op-sqlite 9.x `QueryResult.rows` 평면 배열(6.x `_array` 제거)·`execute()` Promise 반환 명시. §16.8 iOS 네이티브 빌드·시뮬레이터 실행을 "정식 검증"으로 이동(환경에 Xcode 26.2/CocoaPods 도입). §13.6 서드파티 버전 정책에 op-sqlite 9.x 핀 근거 주석. 처리 흐름·SQL·보안 설계 무변경 |
 | v1.3 | 2026-09-04 | Bug Fix 동반 개정(overview v1.3, RENDER-003). op-sqlite 9.x 가 named 파라미터(`:name`/`$name`/`@name`)를 어떤 API 로도 지원하지 않음(positional `?` 배열 전용, 객체 전달 시 `TypeError: params?.map is not a function`)을 반영. §16.5 `ScheduleRepository` 등 6종 행에 "named 바인딩 유지 + `SqliteDb` 어댑터의 named→positional 변환 shim" 구현 노트 추가, `MigrationDb` 행에 바인딩 정책(`?` 또는 shim 경유 named) 명확화. §13.3 SQL Injection 항목에 shim 규칙 반영. §16.1 에 `SafeModeScreen` 사유 구분(`failedAt < 0` 부트스트랩 예외 vs 실제 마이그레이션 실패) 구현 권고 추가. §14 일관성 표 갱신. 포트 계약(`UnitOfWork`/`MigrationDb`/`Repository` 시그니처) 무변경 — shim 은 어댑터 내부 구현. 처리 흐름·DB 스키마·보안 위협 모델 무변경 |
+| v1.6 | 2026-09-06 | 설계 델타(overview v1.6, N-10 해소 — 날짜/시각 네이티브 DateTimePicker 도입). §16.3.1 필드 매핑 표 `시작 일시`·`종료 일시` 행 교체: 텍스트 입력 → `DateTimePickerModal` (mode='date'+'time' 2단계, iOS inline/Android dialog). 「날짜/시간 입력 방식 결정」 섹션 전면 개정: `@react-native-community/datetimepicker` 8.6.0 pin, iOS/Android UX 차이, `localWallToEpoch` 폐지 방향, epoch 직접 추출 방식, E-01-2 기본값 정책. §16.7 보안 노트 갱신(DateTimePicker OS 위임 신뢰 경계). §14 일관성 표 갱신. N-10 (1) 해소. 포트 계약(ScheduleService.create/update, startAt:number 계약) 무변경. 처리 흐름(1~13장)·DB 스키마·보안 위협 모델 무변경 |
 | v1.5 | 2026-09-06 | 설계 델타(overview v1.5, F-16 앱 아이덴티티 UI). §16.2 탭 아이콘 설계 추가(tabBarIcon 렌더 방식, 활성/비활성 구분, E-16-1 폴백). §16.3 DashboardScreen 행에 헤더 로고·태그라인 렌더 규약 주석 추가. 신규 §16.3.2 "대시보드 헤더 로고·태그라인(F-16, AC-25)". §16.7 셸 보안 노트에 에셋 경로 고정 정책 추가. §14 일관성 표 갱신. 처리 흐름(1~13장)·DB·포트 계약 무변경 |
 | v1.4 | 2026-09-04 | 설계 델타(overview v1.4, "일정 추가/수정 화면 연결"). `ScheduleEditorScreen` 이 `RootStack` 에 등록만 되고 호출부가 없어 도달 불가 + 폼이 스켈레톤. §16.2 에 진입 엣지(Dashboard/Calendar `headerRight`「+」→ `ScheduleEditor {}`, `ScheduleDetail`「편집」→ `ScheduleEditor { scheduleId }`) 추가. §16.3 화면↔서비스 바인딩 표에 진입 트리거 행 추가·`ScheduleEditorScreen` 행 확장(무효화 집합 3→4: `list`·`dashboard`·`search`·`categories`). 신규 §16.3.1 "일정 편집 화면 폼(F-01/F-03, AC-01~03)" — 필드 매트릭스(제목/시작·종료 일시/유형/우선순위/메모/반복)의 서비스 입력 키·코어 검증 오류 코드·인라인 `field`·기본값, 검증 오류 표시 규약, 날짜/시간 입력 방식 결정(네이티브 픽커 미도입 — 텍스트 입력 + `Clock` 기반 epoch 변환). §16.7 에 편집 입력 파싱 방어 1행. §14 일관성 표·§15 미결정(N-10) 갱신. **포트 계약(`ScheduleService.create/update/getById`, `CategoryService.list/create`) 무변경**. 처리 흐름(1~13장)·DB 스키마·보안 위협 모델 무변경 |
 
@@ -401,6 +402,10 @@ sync():
 | (v1.5) §16.3.2 로고·태그라인 렌더가 P-20·E-16-1~3·AC-25/28과 일관 | OK — 화면 폭 60% 이하 제한(P-20), onError 폴백(E-16-1/AC-28), 원본 PNG 사용(E-16-2), RN 자동 스케일링 위임(E-16-3) |
 | (v1.5) 에셋 관련 변경이 DB·포트·코어 서비스에 영향 없음 | OK — 순수 UI 렌더 변경. 상태 슬라이스·서비스 호출·DB 스키마 무변경 |
 | (v1.5) §16.7 에셋 보안 노트가 §13.1 신뢰 경계와 일관 | OK — 빌드 타임 번들 포함, 런타임 주입 표면 없음. 추가 위협 없음 |
+| (v1.6) §16.3.1 DateTimePicker가 포트 계약(`startAt: number` epoch ms)과 일관 | OK — OS `Date.getTime()` → epoch ms 직접 추출. ScheduleService.create/update 시그니처 무변경 |
+| (v1.6) DateTimePicker 기본값 정책이 E-01-2(시작 일시 미선택)와 일관 | OK — 마운트 시 자동 초기화(`+1시간 정각`), 미선택 시나리오가 실질적으로 존재하지 않음. 코어 `VALIDATION_START_REQUIRED` 방어는 유지 |
+| (v1.6) `localWallToEpoch` 존속이 V-26 테스트·`epochToWall` 초기값 표시와 일관 | OK — 저장 경로에서 DateTimePicker로 대체되지만 역방향 표시 초기값(`epochToWall` → DateTimePicker initialValue) 및 V-26 단위 테스트 유지용으로 함수 존속. 저장 경로 불사용 명시 |
+| (v1.6) §16.7 보안 노트 갱신이 §13.3 신뢰 경계와 일관 | OK — 텍스트 파싱 표면 제거, OS 위임 입력, Number.isInteger 방어 유지. 추가 위협 없음 |
 
 발견된 불일치: 없음. (구버전 설계의 FTS trigram 2자 이슈는 본 설계에서 "FTS + LIKE 폴백"으로 해소.)
 
@@ -415,7 +420,7 @@ sync():
 | N-5 | IdP 도메인 인증서 핀닝 채택 여부 |
 | N-6 | 민감 화면 스크린샷 방지 채택 여부 |
 | N-8 | RN 앱 셸 온디바이스 빌드·실행 검증(환경 외 후속) — overview N-8 |
-| N-10 | (1) 일정 편집 날짜/시각 네이티브 픽커(`@react-native-community/datetimepicker` 8.x) 도입 — 빌드 호스트 디스크 여유 확보 후, 동일 UI 계약 뒤 교체. (2) 반복 일정 개별 회차 편집("이 일정만/이후 모두", P-02) — 코어 `ScheduleService.update` 확장 필요, 이번 사이클 범위 밖 |
+| N-10 | (1) **해소(v1.6)** — `@react-native-community/datetimepicker` 8.6.0 도입 완료(§16.3.1 개정, overview v1.6 기술 스택 표 갱신). (2) 반복 일정 개별 회차 편집("이 일정만/이후 모두", P-02) — 코어 `ScheduleService.update` 확장 필요, 이번 사이클 범위 밖 |
 | D-01~D-03 | overview.md의 게이트와 동일 |
 
 ---
@@ -527,8 +532,8 @@ RootStack
 | 필드 | 입력 UI | 서비스 입력 키 | 코어 검증(오류 코드) | 인라인 `field` | 기본값 / 비고 |
 | --- | --- | --- | --- | --- | --- |
 | 제목 | 단일 행 `TextInput` | `title` | `VALIDATION_TITLE_REQUIRED`(빈값·공백만, AC-02), `VALIDATION_TITLE_TOO_LONG`(>200) | `title` | 필수 |
-| 시작 일시 | 날짜 `YYYY-MM-DD` + 시각 `HH:mm` 텍스트 + 증감 버튼 → UI가 `Clock.timeZone()` 로 epoch ms 변환 | `startAt` | `VALIDATION_START_REQUIRED`(미입력·파싱 실패, AC-02) | `startAt` | 필수. 기본 표시값은 임의 시드(예: 다음 정시) 허용 |
-| 종료 일시 | 시작과 동일 형식, 비우면 `null` | `endAt` | `VALIDATION_END_BEFORE_START`(endAt<startAt, AC-03), `VALIDATION_END_INVALID` | `endAt` | 선택 |
+| 시작 일시 | `DateTimePickerModal` (mode='date' 선택 후 mode='time' 2단계, 또는 단일 'datetime') — 선택된 `Date` 객체의 `.getTime()` 으로 epoch ms 직접 추출(P-16). 날짜·시각 버튼을 각각 표시하고 탭 시 피커 열림 | `startAt` | `VALIDATION_START_REQUIRED`(미선택 시 기본값 "현재 시각 + 1시간 정각" 자동 적용하므로 실질적 미선택 없음. `Number.isInteger(startAt)` 방어 검증 유지 — AC-02) | `startAt` | 필수. 기본값 = 다음 정시(`Date.now() + 3600000`, 분/초/ms 0으로 정규화). E-01-2: 피커는 항상 유효한 Date를 반환하므로 파싱 실패 없음; 기본값이 있으므로 미선택도 없음 |
+| 종료 일시 | 시작과 동일 DateTimePicker. 비우려면 "종료 없음" 토글(Switch) — OFF 시 `null` 전송 | `endAt` | `VALIDATION_END_BEFORE_START`(endAt<startAt, AC-03), `VALIDATION_END_INVALID` | `endAt` | 선택. 기본 OFF(null) |
 | 유형(카테고리) | 피커 — 옵션 = `CategoryService.list()` (마운트 1회, `categories` 캐시) | `categoryId` | 없음 — 미지정/미존재 시 코어가 시스템 기본("기타")으로 대체(E-06-1) | — | 선택. "유형 추가" = `CategoryService.create(name)` |
 | 우선순위 | 3-세그먼트 `HIGH / NORMAL / LOW` (D-04) | `priority` | 없음 — 미지정 시 코어 기본 `NORMAL`(E-07-1) | — | 기본 선택 표시 `NORMAL` |
 | 메모 | 멀티라인 `TextInput` | `memo` | `VALIDATION_MEMO_TOO_LONG`(>5000) | `memo` | 선택. 비우면 `null` |
@@ -539,12 +544,20 @@ RootStack
 - **저장 성공 후**: `invalidate('list', 'dashboard', 'search', 'categories')` → `navigation.goBack()`. (기존 스켈레톤·`src/app/state/bindings.ts` 와 동일한 4-슬라이스 집합.)
 - **수정 모드의 반복**: `recurrence` 는 읽기 전용 표시. `update` 호출 시 `recurrence` 를 **미전송**하면 코어가 기존 규칙을 보존한다(`scheduleService.update` 의 `input.recurrence === undefined` 분기). 개별 회차의 "이 일정만 / 이후 모두"(P-02)는 이번 사이클 범위 밖 — 가상 회차는 자체 id가 없어 편집 진입이 성립하지 않고, 코어 `update` 는 베이스 행만 수정한다(§5). 후속 N-10.
 
-#### 날짜/시간 입력 방식 결정 (이번 사이클)
+#### 날짜/시간 입력 방식 결정 (v1.6 — N-10 해소)
 
-- RN 코어에는 date/time 입력 컴포넌트가 없다. 표준 선택지 `@react-native-community/datetimepicker` 는 신규 CocoaPods 의존 + 네이티브 재빌드를 유발하며, 현재 빌드 호스트 여유 공간(약 1.8 GiB)이 `ios/build`(약 2.8 GB) 재생성에 부족하다(직전 파이프라인 종료가 디스크 고갈로 BLOCKED). → **이번 사이클에는 신규 네이티브 의존성을 도입하지 않는다.**
-- 대신 `YYYY-MM-DD` / `HH:mm` 구조화 텍스트 입력 + 증감 버튼으로 받고, UI 계층에서 `Clock.timeZone()` 기준으로 epoch ms(P-16)로 변환한다. 변환은 순수 함수로 분리 — 권장 위치 `src/core/domain/time.ts` 의 신규 export `localWallToEpoch(year, month, day, hour, minute, tz): number` (기존 `timeZoneOffsetMs` DST 보정 재사용). 포트 인터페이스·기존 시그니처 무변경. UI 유틸에 두어도 무방하나 tz/DST 로직 중복을 피한다.
-- AC-01~03 은 네이티브 스피너/캘린더 오버레이를 요구하지 않는다 — 시작 일시를 사람이 읽는 형식으로 입력하고, 검증(AC-02/03)되고, 저장·재조회 왕복(AC-01)되면 충족된다.
-- **후속(N-10)**: 디스크 여유 확보 후 동일 UI 계약(내부 상태 `startAt: number`) 뒤에서 `@react-native-community/datetimepicker`(pin `8.x`)로 교체 가능 — 코어/로직/DB 변경 없음.
+- **도입 라이브러리**: `@react-native-community/datetimepicker` **8.6.0** (pin). RN 0.74.x 완전 호환(`react-native: '*'` peer), iOS / Android 모두 지원. Old Architecture(`newArchEnabled=false`) 지원 확인.
+  - **버전 핀 근거**: N-10 계획 당시 "8.x"로 명시했으며, 8.6.0이 8.x의 최신 안정 패치. 9.x는 최신이지만 8.x와 동일 peer 조건이며 N-10 계획의 연속성·안정성 선호로 8.x 유지. 10.x 이상 전환 시 별도 사이클.
+- **UI 패턴 (플랫폼 차이)**:
+  - **iOS**: `display='inline'`(달력 인라인) 또는 `display='spinner'`. 피커가 화면 내 항상 노출되어 별도 열기/닫기 불필요. 날짜 + 시각을 2단계 독립 피커로 구성하거나, `display='compact'`(iOS 14+) 사용 가능.
+  - **Android**: `display='default'`(OS 다이얼로그). 버튼 탭 → 다이얼로그 팝업 → 확인/취소. 날짜 확인 후 시각 다이얼로그를 별도로 연다(2단계).
+  - **구현 전략**: 날짜 선택 버튼 + 시각 선택 버튼을 각각 표시. 탭 시 해당 mode(`'date'`/`'time'`)의 피커 노출. iOS에서는 피커를 Modal 또는 인라인으로, Android에서는 OS 다이얼로그로 처리한다. 단일 `DateTimePicker` 컴포넌트를 `mode` 교체로 재사용 가능.
+- **epoch ms 추출**: 피커가 `onChange(event, selectedDate: Date | undefined)` 콜백으로 `Date` 객체를 전달한다. `selectedDate.getTime()` → epoch ms(UTC) 직접 추출. **`localWallToEpoch` 변환이 불필요**해진다.
+  - `localWallToEpoch` 함수(`src/core/domain/time.ts`)는 기존 테스트(V-26) 및 `epochToWall` 역방향 표시 초기값에 계속 사용되므로 삭제하지 않고 유지한다. 단, 저장 경로에서는 사용하지 않는다.
+- **기본값 정책**: 컴포넌트 마운트 시 내부 상태 `startAt`의 초기값을 `Date.now() + 3600000`(현재 시각 + 1시간)으로 설정하고 분/초/ms를 0으로 정규화. 피커는 이 값을 초기 선택으로 표시 — 사용자가 확인 없이 저장해도 유효한 epoch이 전달된다(E-01-2 미선택 시나리오 제거).
+- **E-01-3 검증 유지**: `endAt`이 활성화된 경우 `endAt < startAt` → `VALIDATION_END_BEFORE_START`. 코어 `assertValidScheduleInput`이 수행.
+- **보안 노트**: DateTimePicker는 OS 네이티브 UI에 완전 위임 — 외부 입력 표면 없음. 피커 반환 `Date.getTime()`은 `Number.isInteger` 검증 유지(심층 방어).
+- **pod 재설치**: 신규 네이티브 의존성 추가로 `cd ios && pod install` 필요. 빌드 호스트 디스크 765 Gi 여유 충분 — 이전 이연 사유 해소됨.
 
 #### 화면 진입점 구현 노트
 
@@ -636,7 +649,7 @@ Android BOOT_COMPLETED broadcast:
 - **로그**: 모든 화면·어댑터 로깅은 `MaskingLogger` 경유. 크래시 리포팅 미도입(N-2).
 - **스크린샷 방지**(민감 화면): 미결정 N-6, 이번 셸에서는 미적용.
 - **전송**: `usesCleartextTraffic=false`(Android), ATS 예외 없음(iOS) — 스캐폴드 설정에 반영.
-- **일정 편집 입력(v1.4)**: 날짜/시각 텍스트 → 숫자 파싱 시 `Number.isInteger` 확인, `NaN`/`Infinity`/음수 거부 후 서비스 호출(심층 방어 — 코어 `assertValidScheduleInput` 도 `Number.isInteger(startAt)` 재검증, §13.3). 제목/메모는 코어 길이·제어문자 규칙(§13.3)에 위임하고 `<Text>` 렌더라 XSS 표면 없음. 신규 신뢰 경계·위협 없음.
+- **일정 편집 입력(v1.6 — DateTimePicker)**: DateTimePicker는 OS 네이티브 UI에 완전 위임하므로 사용자가 임의 문자열을 입력하는 표면이 없다. `onChange` 콜백으로 전달된 `Date` 객체에서 `.getTime()`을 추출하고, `Number.isInteger` 방어 검증 후 서비스 호출(심층 방어 — 코어 `assertValidScheduleInput` 도 `Number.isInteger(startAt)` 재검증, §13.3). 이전 버전의 텍스트 파싱 경로(`localWallToEpoch` 저장 경로 사용)가 제거되어 파싱 실패·NaN 공격 표면이 축소된다. 제목/메모는 코어 길이·제어문자 규칙(§13.3)에 위임하고 `<Text>` 렌더라 XSS 표면 없음. 신규 신뢰 경계·위협 없음.
 - **에셋 경로 고정 (v1.5, P-21)**: 탭 아이콘·로고·태그라인 에셋 경로는 `src/assets/icons/`·`src/assets/images/`에 고정되며, 빌드 타임에 JS 번들에 포함된다. 런타임에 외부에서 경로를 변경하거나 주입하는 표면이 없으므로 에셋 경유 코드 실행 위협은 없다. 에셋 로드 실패는 UI 폴백으로 처리하며 예외가 크래시로 전파되지 않는다(E-16-1, AC-28).
 
 ### 16.8 셸 관점 미검증(환경 외 후속) 범위
