@@ -3,9 +3,9 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 설계 총괄 (Overview) |
-| 버전 | v1.4 |
+| 버전 | v1.5 |
 | 상태 | 작성 완료 (Developer 착수 가능) |
-| 근거 기획서 | `document/planner/plan.md` v1.0 |
+| 근거 기획서 | `document/planner/plan.md` v1.1 |
 | 작성 주체 | Architect |
 
 ## 변경 이력
@@ -13,6 +13,7 @@
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
 | v1.0 | 2026-09-04 | 신규 규약(overview/logic/database/nfr 4종)에 따른 최초 설계. 2026-09-02 구버전(7종 + 별도 보안 문서)은 폐기하고 재작성 |
+| v1.5 | 2026-09-06 | **설계 델타 — F-16 앱 아이덴티티 UI** (plan.md v1.1). 탭 바 아이콘(todo/goal/statistics/settings.png) 및 대시보드 헤더 로고(logo.png)·태그라인(tagline.png) 적용. `logic.md` §16.2 탭 아이콘 설계·§16.3 DashboardScreen 헤더 설계·§16.3.2 로고/태그라인 렌더링 규약 추가. 코어·DB·포트 계약 무변경. 기획 검증 PASS |
 | v1.4 | 2026-09-04 | **설계 델타 — "일정 추가/수정 화면 연결"(Feature)**. 기존 `ScheduleEditorScreen` 이 `RootStack` 에 등록만 되고 호출부가 없어 도달 불가 + 폼이 스켈레톤(제목 + raw epoch). 델타: (1) `logic.md` §16.2 진입 엣지(Dashboard/Calendar `headerRight`「+」→ `ScheduleEditor {}`, `ScheduleDetail`「편집」→ `ScheduleEditor { scheduleId }`), (2) `logic.md` §16.3 표 확장 + 신규 §16.3.1(F-01 필드 매트릭스: 제목/시작·종료 일시/유형/우선순위/메모/반복 — 서비스 매핑·코어 검증 코드·인라인 `field`·저장 후 4-슬라이스 무효화+`goBack`), (3) **날짜/시간 입력**: RN 코어에 date 컴포넌트 없음 + 빌드 호스트 디스크 고갈로 네이티브 픽커(`@react-native-community/datetimepicker`) **미도입** — `YYYY-MM-DD`/`HH:mm` 텍스트 입력 + `Clock.timeZone()` 기반 epoch ms 변환(순수 함수)으로 AC-01~03 충족, 픽커 교체는 후속 N-10. **포트 계약(`ScheduleService.create/update/getById`, `CategoryService.list/create`) 무변경**, `database.md` v1.0 유지(스키마 무변경), `routes.ts`/`bindings.ts` 는 이미 계약 반영. `logic.md` v1.4·`nfr.md` v1.3 동반 개정. 기획 재검증 PASS(F-01/F-03/AC-01~03 내 UI 연결, 신규 제품 요구사항 없음; D-05 반복 게이트는 단순 반복 가정값으로 진행 — 비차단) |
 | v1.1 | 2026-09-04 | 코어 계층(`src/core/**`) 구현·검증 완료 반영. **React Native 앱 셸 + 코어 포트용 네이티브 어댑터 설계 델타** 추가(신규 §"클라이언트 셸 아키텍처", "빌드 환경 제약과 파이프라인 검증 전략"). `database.md`는 스키마 무변경으로 v1.0 유지. 기획 재검증 결과 PASS(신규 제품 요구사항 없음) |
 | v1.3 | 2026-09-04 | **Bug Fix 설계 델타 (RENDER-003)** — iOS 앱이 대시보드에 도달하지 못하고 Safe Mode 에 안착하는 버그. 확정 원인: op-sqlite 9.x `execute(sql, params)` 가 **positional `?` 배열 전용**이며 named 파라미터(`:name`/`$name`/`@name`)를 어떤 API 로도 지원하지 않음 → 리포지토리 헬퍼가 named 파라미터 객체를 넘기면 내부 `params.map` 호출에서 `TypeError: params?.map is not a function`, 첫 실패 지점은 부트스트랩 `load-settings`(`SqliteSettingRepository.get()`). 구현 방식(Orchestrator 확정): `OpSqliteDb.native.ts` 어댑터에 named→positional 변환 shim 추가 — 리포지토리 SQL 은 named 바인딩 유지, 어댑터가 실행 직전 `:name` → `?` 치환 + 값 객체를 위치 배열로 정렬(이름당 슬롯 1개 dedup·최초 등장 순서, 문자열/주석 내 `:` 스킵). "코어 포트 → 네이티브 어댑터 매핑" 각주에 1줄 추가. **포트 계약(`UnitOfWork`/`MigrationDb`/`Repository` 시그니처) 무변경** — shim 은 어댑터 내부 구현. `database.md` v1.0 유지(바인딩 표기 무언급 → 개정 불요). `logic.md` v1.3(§13.3/§16.5/§16.1/§14) 동반 개정. 부수: `SafeModeScreen` 이 `failedAt < 0`(부트스트랩 예외)와 실제 마이그레이션 실패를 구분해 문구를 분기하도록 `logic.md` §16.1 에 구현 권고 기록. 기획 재검증 PASS(기확정 요구사항 F-01~F-15 내 버그 수정, 신규 제품 요구사항 없음) |
@@ -29,6 +30,19 @@
 ---
 
 ## 기획 검증 결과
+
+### v1.5 재검증 (F-16 앱 아이덴티티 UI 요청)
+
+**결과: PASS (설계 가능, Planner 재작업 불필요)**
+
+| 검증 항목 | 판정 | 비고 |
+| --- | --- | --- |
+| 신규 제품 요구사항 유무 | OK | F-16(앱 아이덴티티 UI)·P-18~P-21·AC-25~28 기획서에 명시됨. 코어/DB/포트 변경 없음 — UI 계층 단독 변경 |
+| 에셋 존재 여부 | OK | `src/assets/icons/`(logo.png, todo.png, goal.png, statistics.png, settings.png), `src/assets/images/`(tagline.png) 확인 완료 |
+| 탭 매핑 명확성 | OK | F-16: 오늘탭→todo.png, 캘린더탭→goal.png, 검색탭→statistics.png, 설정탭→settings.png |
+| 에셋 로드 실패 정책 | OK | E-16-1: 빈 공간 또는 텍스트 라벨 대체, 앱 크래시 없음 (AC-28) |
+| 다크 테마 / 고해상도 정책 | OK | E-16-2: 원본 PNG 그대로 사용. E-16-3: RN `Image` 자동 스케일링 위임. 이번 범위 외 명시 |
+| 미결정 게이트 영향 | 비차단 | D-01~D-05 모두 F-16과 무관 |
 
 ### v1.4 재검증 ("일정 추가/수정 화면 연결" 요청)
 
@@ -281,6 +295,15 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 ---
 
 ## 영향 범위
+
+### v1.5 (F-16 앱 아이덴티티 UI)
+
+- **구현 예정(Developer)**:
+  - `src/app/navigation/RootNavigator.tsx`: `Tab.Navigator`의 각 `Tab.Screen`에 `tabBarIcon` 옵션 추가 — PNG 에셋을 `Image`로 렌더하고 활성 여부에 따라 `opacity` 또는 `tintColor` 적용 (P-19, AC-27).
+  - `src/app/screens/DashboardScreen.tsx`: 헤더 로고(logo.png) + 태그라인(tagline.png) 렌더 영역 추가 — 화면 폭 60% 이하 제한(P-20), ScrollView 최상단 배치 (AC-25).
+- **무변경**: 코어 서비스·포트 계약·DB 스키마·라우트·상태 슬라이스·기존 12개 코어 테스트.
+- **신규 의존성**: 없음 — `Image`는 react-native 내장 컴포넌트.
+- **회귀 위험**: 없음 — 기존 기능 변경 없이 UI 요소만 추가.
 
 ### v1.4 (일정 추가/수정 화면 연결)
 

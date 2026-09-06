@@ -3,9 +3,9 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 비즈니스 로직 설계 (Logic) |
-| 버전 | v1.4 |
+| 버전 | v1.5 |
 | 상태 | 작성 완료 |
-| 근거 | `document/planner/plan.md` v1.0, `document/architect/overview.md` v1.4, `document/architect/database.md` v1.0 |
+| 근거 | `document/planner/plan.md` v1.1, `document/architect/overview.md` v1.5, `document/architect/database.md` v1.0 |
 
 ## 변경 이력
 
@@ -15,6 +15,7 @@
 | v1.1 | 2026-09-04 | §16 "클라이언트 셸 처리 흐름(RN App Shell)" 추가 — 조립 지점 리팩터, 네비게이션 그래프·딥링크, 화면↔서비스 바인딩, 앱 라이프사이클 부트스트랩, 네이티브 어댑터 계약, 셸 보안 노트. §14 일관성 점검·§15 미결정 갱신. 서비스 로직(1~13장)은 무변경 |
 | v1.2 | 2026-09-04 | Bug Fix 동반 개정(overview v1.2). §16.5 `MigrationDb`·`ScheduleRepository` 행 주의에 op-sqlite 9.x `QueryResult.rows` 평면 배열(6.x `_array` 제거)·`execute()` Promise 반환 명시. §16.8 iOS 네이티브 빌드·시뮬레이터 실행을 "정식 검증"으로 이동(환경에 Xcode 26.2/CocoaPods 도입). §13.6 서드파티 버전 정책에 op-sqlite 9.x 핀 근거 주석. 처리 흐름·SQL·보안 설계 무변경 |
 | v1.3 | 2026-09-04 | Bug Fix 동반 개정(overview v1.3, RENDER-003). op-sqlite 9.x 가 named 파라미터(`:name`/`$name`/`@name`)를 어떤 API 로도 지원하지 않음(positional `?` 배열 전용, 객체 전달 시 `TypeError: params?.map is not a function`)을 반영. §16.5 `ScheduleRepository` 등 6종 행에 "named 바인딩 유지 + `SqliteDb` 어댑터의 named→positional 변환 shim" 구현 노트 추가, `MigrationDb` 행에 바인딩 정책(`?` 또는 shim 경유 named) 명확화. §13.3 SQL Injection 항목에 shim 규칙 반영. §16.1 에 `SafeModeScreen` 사유 구분(`failedAt < 0` 부트스트랩 예외 vs 실제 마이그레이션 실패) 구현 권고 추가. §14 일관성 표 갱신. 포트 계약(`UnitOfWork`/`MigrationDb`/`Repository` 시그니처) 무변경 — shim 은 어댑터 내부 구현. 처리 흐름·DB 스키마·보안 위협 모델 무변경 |
+| v1.5 | 2026-09-06 | 설계 델타(overview v1.5, F-16 앱 아이덴티티 UI). §16.2 탭 아이콘 설계 추가(tabBarIcon 렌더 방식, 활성/비활성 구분, E-16-1 폴백). §16.3 DashboardScreen 행에 헤더 로고·태그라인 렌더 규약 주석 추가. 신규 §16.3.2 "대시보드 헤더 로고·태그라인(F-16, AC-25)". §16.7 셸 보안 노트에 에셋 경로 고정 정책 추가. §14 일관성 표 갱신. 처리 흐름(1~13장)·DB·포트 계약 무변경 |
 | v1.4 | 2026-09-04 | 설계 델타(overview v1.4, "일정 추가/수정 화면 연결"). `ScheduleEditorScreen` 이 `RootStack` 에 등록만 되고 호출부가 없어 도달 불가 + 폼이 스켈레톤. §16.2 에 진입 엣지(Dashboard/Calendar `headerRight`「+」→ `ScheduleEditor {}`, `ScheduleDetail`「편집」→ `ScheduleEditor { scheduleId }`) 추가. §16.3 화면↔서비스 바인딩 표에 진입 트리거 행 추가·`ScheduleEditorScreen` 행 확장(무효화 집합 3→4: `list`·`dashboard`·`search`·`categories`). 신규 §16.3.1 "일정 편집 화면 폼(F-01/F-03, AC-01~03)" — 필드 매트릭스(제목/시작·종료 일시/유형/우선순위/메모/반복)의 서비스 입력 키·코어 검증 오류 코드·인라인 `field`·기본값, 검증 오류 표시 규약, 날짜/시간 입력 방식 결정(네이티브 픽커 미도입 — 텍스트 입력 + `Clock` 기반 epoch 변환). §16.7 에 편집 입력 파싱 방어 1행. §14 일관성 표·§15 미결정(N-10) 갱신. **포트 계약(`ScheduleService.create/update/getById`, `CategoryService.list/create`) 무변경**. 처리 흐름(1~13장)·DB 스키마·보안 위협 모델 무변경 |
 
 ---
@@ -395,6 +396,11 @@ sync():
 | (v1.4) 반복(F-01 반복) 범위가 D-05 가정·코어 구현과 일치 | OK — 단순 반복(P-01: NONE/DAILY/WEEKLY/MONTHLY/YEARLY + 종료일\|횟수)만, 코어 `Recurrence` 타입·`expandOccurrences`·`validation.ts` 에 이미 구현. P-02 개별 회차 편집은 범위 밖(N-10)으로 명시 |
 | (v1.4) 날짜/시간 입력이 P-16·DB 스키마와 일관 | OK — UI 에서 epoch ms(UTC)로 변환해 전달, `SCHEDULE.start_at/end_at` 저장 형식 무변경. 신규 네이티브 의존성 없음 |
 | (v1.4) 저장 후 무효화 집합이 `bindings.ts`·스켈레톤과 일치 | OK — `list`·`dashboard`·`search`·`categories` 4개(기존 코드·`SCREEN_BINDINGS` 와 동일). §16.3 표기를 3→4개로 정정 |
+| (v1.5) §16.2 탭 아이콘 에셋 경로가 P-21·실제 파일 위치와 일치 | OK — `src/assets/icons/`에 todo/goal/statistics/settings/logo.png 존재, `src/assets/images/`에 tagline.png 존재. §16.3.2 경로 규약과 일치 |
+| (v1.5) 탭 아이콘 매핑이 F-16 기획과 일치 | OK — DashboardTab→todo.png, CalendarTab→goal.png, SearchTab→statistics.png, SettingsTab→settings.png. 기획 F-16 Action 목록과 동일 |
+| (v1.5) §16.3.2 로고·태그라인 렌더가 P-20·E-16-1~3·AC-25/28과 일관 | OK — 화면 폭 60% 이하 제한(P-20), onError 폴백(E-16-1/AC-28), 원본 PNG 사용(E-16-2), RN 자동 스케일링 위임(E-16-3) |
+| (v1.5) 에셋 관련 변경이 DB·포트·코어 서비스에 영향 없음 | OK — 순수 UI 렌더 변경. 상태 슬라이스·서비스 호출·DB 스키마 무변경 |
+| (v1.5) §16.7 에셋 보안 노트가 §13.1 신뢰 경계와 일관 | OK — 빌드 타임 번들 포함, 런타임 주입 표면 없음. 추가 위협 없음 |
 
 발견된 불일치: 없음. (구버전 설계의 FTS trigram 2자 이슈는 본 설계에서 "FTS + LIKE 폴백"으로 해소.)
 
@@ -469,6 +475,25 @@ RootStack
 - **알림 탭 처리(logic 6장 재사용)**: notifee 이벤트 → `data.scheduleId`(정수) 추출 → **`ScheduleService`를 통해 `findById` 재조회**(위조 방지, 13.3) → 존재하면 `ScheduleDetail`로 네비게이트, 없으면 무시 + `metric('deeplink.stale')`.
 - **콜드 스타트 시 알림 탭**: `getInitialNotification()`을 `bootstrapSequence` 완료 후 처리(레이스 방지).
 
+#### 탭 아이콘 설계 (F-16, AC-26, AC-27, AC-28) — v1.5
+
+- **에셋 경로 (P-21)**:
+
+| 탭 | 에셋 파일 | require 경로 |
+| --- | --- | --- |
+| 오늘 (DashboardTab) | `todo.png` | `../../assets/icons/todo.png` |
+| 캘린더 (CalendarTab) | `goal.png` | `../../assets/icons/goal.png` |
+| 검색 (SearchTab) | `statistics.png` | `../../assets/icons/statistics.png` |
+| 설정 (SettingsTab) | `settings.png` | `../../assets/icons/settings.png` |
+
+- **렌더 방식**: `Tab.Navigator`의 `screenOptions` 또는 각 `Tab.Screen`의 `options.tabBarIcon` 콜백에서 `<Image source={icon} style={{ width: 24, height: 24, opacity: focused ? 1 : 0.4 }} />` 렌더 (P-19: 단일 파일, 투명도 기반 활성/비활성 구분).
+  - 활성 탭: `opacity: 1`, 비활성 탭: `opacity: 0.4` (P-19, AC-27).
+  - 탭 라벨(텍스트)과 아이콘을 함께 표시한다 — 아이콘 전용 모드 없음(P-18, AC-26).
+- **에셋 로드 실패 처리 (E-16-1, AC-28)**: `<Image>` 의 `onError` 콜백으로 fallback 상태 플래그를 세팅하고, 아이콘 영역을 `<Text>` 라벨로 대체 렌더한다. 앱 크래시가 발생하지 않도록 `onError` 필수 처리.
+- **다크 테마 (E-16-2)**: 원본 PNG를 그대로 사용. 별도 다크 변형 에셋 없음(이번 범위 외).
+- **고해상도 기기 (E-16-3)**: RN `<Image>` 자동 스케일링에 위임. `@2x`/`@3x` 에셋 없음(이번 범위 외).
+- **신뢰 경계 / 보안**: 에셋은 빌드 타임에 JS 번들에 포함(P-21). 런타임에 외부에서 에셋 경로를 변경하거나 주입하는 표면 없음.
+
 ### 16.3 화면 ↔ 서비스 바인딩 (상세)
 
 | 화면 | 트리거 | 호출 | 상태 반영 / 무효화 | 예외 표시 |
@@ -525,6 +550,25 @@ RootStack
 
 - `DashboardScreen` / `CalendarScreen` / `ScheduleDetailScreen` 은 `@react-navigation/native` 의 `useNavigation()`(이미 의존성 포함)으로 navigate 함수를 얻고 `navigation.setOptions({ headerRight })`(또는 `Tab.Screen`/`Stack.Screen` `options`)로 「+」/「편집」 버튼을 노출한다. Tab 화면의 헤더는 `Tab.Navigator`(이미 `headerShown: true`)에 렌더되며 `navigate('ScheduleEditor')` 는 부모 `RootStack` 으로 버블링된다.
 - `DashboardScreen` 빈 상태 브랜치에 「일정 추가」버튼을 추가한다(AC-15 · E-10-1 — 동일한 navigate 호출).
+
+#### 16.3.2 대시보드 헤더 로고·태그라인 (F-16, AC-25) — v1.5
+
+- **목적**: 대시보드 진입 시 앱 아이덴티티를 표시한다(F-16, 7.1, AC-25).
+- **에셋 경로 (P-21)**:
+  - 로고: `src/assets/icons/logo.png` → `require('../../assets/icons/logo.png')`
+  - 태그라인: `src/assets/images/tagline.png` → `require('../../assets/images/tagline.png')`
+- **배치**: `DashboardScreen`의 `ScrollView` 최상단에 로고 → 태그라인 순서로 수직 배치. 대시보드 집계 영역보다 위.
+- **크기 제한 (P-20)**: 이미지 너비는 화면 폭의 60% 이하. `useWindowDimensions().width * 0.6`으로 계산하고 `resizeMode='contain'`으로 비율 유지.
+- **렌더링**:
+  ```text
+  <View style={{ alignItems: 'center', paddingTop: 16 }}>
+    <Image source={require('logo')} style={{ width: screenWidth*0.6, height: auto, resizeMode:'contain' }} onError={onLogoError} />
+    <Image source={require('tagline')} style={{ width: screenWidth*0.6, height: auto, resizeMode:'contain', marginTop: 8 }} onError={onTaglineError} />
+  </View>
+  ```
+- **에셋 로드 실패 처리 (E-16-1, AC-28)**: 각 `<Image>`에 `onError` 콜백 설정. 실패 시 해당 이미지를 숨기거나(opacity: 0) 텍스트 대체("오늘뭐해" / "tagline text")를 렌더한다. 실패가 앱 크래시로 이어지지 않아야 한다.
+- **서비스 호출 없음**: 로고·태그라인 렌더는 순수 UI — 서비스·상태 슬라이스에 영향 없음.
+- **다크 테마 (E-16-2)**: 원본 PNG 그대로. tintColor 미적용. 이번 범위 외 별도 다크 에셋 없음.
 
 ### 16.4 앱 라이프사이클 → 부트스트랩 (logic §12의 RN 실체화)
 
@@ -593,6 +637,7 @@ Android BOOT_COMPLETED broadcast:
 - **스크린샷 방지**(민감 화면): 미결정 N-6, 이번 셸에서는 미적용.
 - **전송**: `usesCleartextTraffic=false`(Android), ATS 예외 없음(iOS) — 스캐폴드 설정에 반영.
 - **일정 편집 입력(v1.4)**: 날짜/시각 텍스트 → 숫자 파싱 시 `Number.isInteger` 확인, `NaN`/`Infinity`/음수 거부 후 서비스 호출(심층 방어 — 코어 `assertValidScheduleInput` 도 `Number.isInteger(startAt)` 재검증, §13.3). 제목/메모는 코어 길이·제어문자 규칙(§13.3)에 위임하고 `<Text>` 렌더라 XSS 표면 없음. 신규 신뢰 경계·위협 없음.
+- **에셋 경로 고정 (v1.5, P-21)**: 탭 아이콘·로고·태그라인 에셋 경로는 `src/assets/icons/`·`src/assets/images/`에 고정되며, 빌드 타임에 JS 번들에 포함된다. 런타임에 외부에서 경로를 변경하거나 주입하는 표면이 없으므로 에셋 경유 코드 실행 위협은 없다. 에셋 로드 실패는 UI 폴백으로 처리하며 예외가 크래시로 전파되지 않는다(E-16-1, AC-28).
 
 ### 16.8 셸 관점 미검증(환경 외 후속) 범위
 
