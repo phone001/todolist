@@ -2,20 +2,29 @@
  * 일정 작성/수정 (F-01/F-03, AC-01~03).
  * 바인딩: ScheduleService.create/update/getById, CategoryService.list. 검증 오류는 필드 인라인.
  * 환경 제약: react / react-native 의존 → 파이프라인 미실행(정적 리뷰).
+ *
+ * v1.6 변경: 날짜/시각 TextInput → @react-native-community/datetimepicker 8.6.0
+ *   - startAt: number (epoch ms) 단일 상태
+ *   - endAt: number | null (epoch ms), Switch 토글로 활성화
+ *   - localWallToEpoch 저장 경로 사용 제거 (함수·V-26 테스트 유지)
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Platform } from 'react';
 import {
   Button,
+  Modal,
+  Pressable,
   ScrollView,
   Switch,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import DateTimePicker, {
+  type DateTimePickerEvent,
+} from '@react-native-community/datetimepicker';
 import { useServices } from '../bootstrap/AppContext.tsx';
 import { useShellStore } from '../state/stores.native.ts';
 import { ValidationError, AppError } from '../../core/domain/errors.ts';
-import { localWallToEpoch } from '../../core/domain/time.ts';
 import type { RootStackParamList } from '../navigation/routes.ts';
 
 type Props = {
@@ -23,52 +32,64 @@ type Props = {
   navigation: { goBack: () => void };
 };
 
-/** epoch ms → 로컬 wall-clock 문자열 파싱용 헬퍼 (표시 초기값) */
-function epochToWall(ts: number): { date: string; time: string } {
+// ── 헬퍼 ──────────────────────────────────────────────────────────────────────
+
+/** epoch ms → 로컬 wall-clock 표시 문자열 (시작/종료 버튼 레이블용) */
+function formatEpochLabel(ts: number): string {
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, '0');
-  const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  return { date, time };
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    ` ${pad(d.getHours())}:${pad(d.getMinutes())}`
+  );
 }
 
-/** 'YYYY-MM-DD' + 'HH:mm' → epoch ms. 파싱 실패 시 NaN. */
-function wallToEpoch(date: string, time: string, timeZone: string): number {
-  // date: YYYY-MM-DD, time: HH:mm
-  const dp = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  const tp = time.match(/^(\d{2}):(\d{2})$/);
-  if (!dp || !tp) return NaN;
-  const [, y, mo, d] = dp.map(Number);
-  const [, h, mi] = tp.map(Number);
-  if (mo < 1 || mo > 12 || d < 1 || d > 31 || h > 23 || mi > 59) return NaN;
-  return localWallToEpoch(y, mo, d, h, mi, timeZone);
+/** 다음 정시(현재 + 1시간, 분/초/ms = 0) epoch ms */
+function defaultStartEpoch(): number {
+  const d = new Date(Date.now() + 3_600_000);
+  d.setMinutes(0, 0, 0);
+  return d.getTime();
 }
+
+// ── 피커 표시 단계 ─────────────────────────────────────────────────────────────
+
+type PickerTarget = 'start' | 'end';
+type PickerMode = 'date' | 'time';
+
+// ── 컴포넌트 ───────────────────────────────────────────────────────────────────
 
 export function ScheduleEditorScreen({ route, navigation }: Props) {
   const { schedules } = useServices();
   const invalidate = useShellStore((s) => s.invalidate);
   const editingId = route.params?.scheduleId;
 
-  // 단말 로컬 타임존 (P-16)
-  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-  // 시작 일시 초기값: 다음 정시 (1시간 후 정각)
-  const defaultStart = (() => {
-    const d = new Date(Date.now() + 3_600_000);
-    d.setMinutes(0, 0, 0);
-    return epochToWall(d.getTime());
-  })();
-
+  // ── 폼 상태 ────────────────────────────────────────────────────────────────
   const [title, setTitle] = useState('');
-  const [startDate, setStartDate] = useState(defaultStart.date);
-  const [startTime, setStartTime] = useState(defaultStart.time);
+  /** 시작 일시: epoch ms 단일 상태 (기본값 = 다음 정시) */
+  const [startAt, setStartAt] = useState<number>(defaultStartEpoch);
+  /** 종료 일시 활성화 여부 */
+  const [endAtEnabled, setEndAtEnabled] = useState(false);
+  /** 종료 일시: epoch ms (endAtEnabled=false 시 null 전송) */
+  const [endAt, setEndAt] = useState<number>(defaultStartEpoch);
   const [memo, setMemo] = useState('');
   const [notifyAtStart, setNotifyAtStart] = useState(true);
-  // field → error message
+
+  // ── 피커 표시 상태 ─────────────────────────────────────────────────────────
+  /**
+   * Android: OS 다이얼로그 방식. 피커 표시 여부 + 2단계(date→time) 관리.
+   * iOS: Modal 안에 인라인 피커 표시.
+   */
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerTarget, setPickerTarget] = useState<PickerTarget>('start');
+  const [pickerMode, setPickerMode] = useState<PickerMode>('date');
+  /** iOS Modal 내부 임시 Date (확인 전 취소 지원) */
+  const [tempDate, setTempDate] = useState<Date>(new Date(startAt));
+
+  // ── 오류 상태 ─────────────────────────────────────────────────────────────
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
 
-  // 수정 모드: 기존 일정 데이터로 프리필
+  // ── 수정 모드 프리필 ───────────────────────────────────────────────────────
   useEffect(() => {
     if (editingId === undefined) return;
     schedules.getById(editingId).then((s) => {
@@ -78,14 +99,17 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
         return;
       }
       setTitle(s.title);
-      const w = epochToWall(s.startAt);
-      setStartDate(w.date);
-      setStartTime(w.time);
+      setStartAt(s.startAt);
+      if (s.endAt != null) {
+        setEndAtEnabled(true);
+        setEndAt(s.endAt);
+      }
       setMemo(s.memo ?? '');
       setNotifyAtStart(s.notifyAtStart);
     });
   }, [editingId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── 오류 헬퍼 ─────────────────────────────────────────────────────────────
   function clearErrors() {
     setFieldErrors({});
     setGlobalError(null);
@@ -105,7 +129,6 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
       }
       setFieldErrors(map);
     } else {
-      // AppError or single-error ValidationError
       if (err.field) {
         setFieldErrors({ [err.field]: err.message });
       } else {
@@ -114,22 +137,143 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
     }
   }
 
+  // ── 피커 열기 ─────────────────────────────────────────────────────────────
+  const openPicker = useCallback(
+    (target: PickerTarget, mode: PickerMode) => {
+      const current = target === 'start' ? startAt : endAt;
+      setPickerTarget(target);
+      setPickerMode(mode);
+      setTempDate(new Date(current));
+      setPickerVisible(true);
+    },
+    [startAt, endAt],
+  );
+
+  // ── DateTimePicker onChange ────────────────────────────────────────────────
+  /**
+   * Android: dismissed 이벤트이면 닫기. set 이면:
+   *   - mode='date' → 날짜 반영 후 time 다이얼로그 자동 연속 열기
+   *   - mode='time' → 최종 반영 후 닫기
+   * iOS (Modal 내): tempDate 업데이트만. 확인 버튼 클릭 시 커밋.
+   */
+  const onPickerChange = useCallback(
+    (event: DateTimePickerEvent, selected: Date | undefined) => {
+      if (Platform.OS === 'android') {
+        if (event.type === 'dismissed') {
+          setPickerVisible(false);
+          return;
+        }
+        // event.type === 'set'
+        const picked = selected ?? new Date(pickerTarget === 'start' ? startAt : endAt);
+        const ms = picked.getTime();
+        if (!Number.isInteger(ms)) {
+          setPickerVisible(false);
+          return;
+        }
+
+        if (pickerMode === 'date') {
+          // 날짜를 반영하되 기존 시/분은 유지
+          const base = new Date(pickerTarget === 'start' ? startAt : endAt);
+          const merged = new Date(ms);
+          merged.setHours(base.getHours(), base.getMinutes(), 0, 0);
+          const mergedMs = merged.getTime();
+          if (pickerTarget === 'start') {
+            setStartAt(mergedMs);
+          } else {
+            setEndAt(mergedMs);
+          }
+          // Android 2단계: 날짜 → 시각 연속 열기
+          setPickerMode('time');
+          setTempDate(merged);
+          // 피커를 일단 닫았다가 time 모드로 재열기 (Android 다이얼로그 특성)
+          setPickerVisible(false);
+          // 다음 틱에 time 다이얼로그 오픈
+          setTimeout(() => setPickerVisible(true), 0);
+        } else {
+          // mode='time' — 최종 반영
+          const base = new Date(pickerTarget === 'start' ? startAt : endAt);
+          base.setHours(picked.getHours(), picked.getMinutes(), 0, 0);
+          const finalMs = base.getTime();
+          if (pickerTarget === 'start') {
+            setStartAt(finalMs);
+          } else {
+            setEndAt(finalMs);
+          }
+          setPickerVisible(false);
+        }
+      } else {
+        // iOS: Modal 내부 임시 Date 업데이트
+        if (selected) {
+          setTempDate(selected);
+        }
+      }
+    },
+    [pickerMode, pickerTarget, startAt, endAt],
+  );
+
+  /** iOS Modal 확인 버튼 */
+  const onIOSConfirm = useCallback(() => {
+    const ms = tempDate.getTime();
+    if (Number.isInteger(ms)) {
+      if (pickerMode === 'date') {
+        // 날짜만 반영, 기존 시/분 유지 → time 피커로 이동
+        const base = new Date(pickerTarget === 'start' ? startAt : endAt);
+        base.setFullYear(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
+        const merged = base.getTime();
+        if (pickerTarget === 'start') {
+          setStartAt(merged);
+        } else {
+          setEndAt(merged);
+        }
+        // time 단계로 전환
+        setPickerMode('time');
+        setTempDate(base);
+      } else {
+        // time 최종 반영
+        const base = new Date(pickerTarget === 'start' ? startAt : endAt);
+        base.setHours(tempDate.getHours(), tempDate.getMinutes(), 0, 0);
+        const finalMs = base.getTime();
+        if (pickerTarget === 'start') {
+          setStartAt(finalMs);
+        } else {
+          setEndAt(finalMs);
+        }
+        setPickerVisible(false);
+      }
+    } else {
+      setPickerVisible(false);
+    }
+  }, [tempDate, pickerMode, pickerTarget, startAt, endAt]);
+
+  /** iOS Modal 취소 버튼 */
+  const onIOSCancel = useCallback(() => {
+    setPickerVisible(false);
+  }, []);
+
+  // ── 저장 ──────────────────────────────────────────────────────────────────
   async function save() {
     clearErrors();
 
-    const startAt = wallToEpoch(startDate, startTime, timeZone);
-    if (Number.isNaN(startAt)) {
-      setFieldErrors({ startAt: '올바른 날짜(YYYY-MM-DD)와 시각(HH:mm)을 입력하세요.' });
+    // 심층 방어: DateTimePicker는 항상 유효한 Date를 반환하지만 정수 검증 유지
+    if (!Number.isInteger(startAt)) {
+      setFieldErrors({ startAt: '유효한 시작 일시를 선택하세요.' });
       return;
     }
 
     const memoVal = memo.trim() === '' ? undefined : memo.trim();
+    const endAtVal = endAtEnabled ? endAt : undefined;
+
+    if (endAtEnabled && !Number.isInteger(endAt)) {
+      setFieldErrors({ endAt: '유효한 종료 일시를 선택하세요.' });
+      return;
+    }
 
     try {
       if (editingId === undefined) {
         await schedules.create({
           title,
           startAt,
+          endAt: endAtVal,
           memo: memoVal,
           notifyAtStart,
           reminderOffsets: [10],
@@ -138,6 +282,7 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
         await schedules.update(editingId, {
           title,
           startAt,
+          endAt: endAtEnabled ? endAt : null,
           memo: memoVal ?? null,
           notifyAtStart,
         });
@@ -153,6 +298,7 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
     }
   }
 
+  // ── 렌더 ──────────────────────────────────────────────────────────────────
   return (
     <ScrollView contentContainerStyle={{ padding: 24, gap: 12 }}>
       {/* 전역 오류 */}
@@ -172,27 +318,82 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
         <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.title}</Text>
       ) : null}
 
-      {/* 시작 날짜 */}
-      <Text style={{ fontWeight: 'bold', marginTop: 8 }}>시작 날짜 * (YYYY-MM-DD)</Text>
-      <TextInput
-        placeholder="2026-09-06"
-        value={startDate}
-        onChangeText={setStartDate}
-        keyboardType="numbers-and-punctuation"
-        style={{ borderBottomWidth: 1, paddingVertical: 4 }}
-      />
-
-      {/* 시작 시각 */}
-      <Text style={{ fontWeight: 'bold', marginTop: 8 }}>시작 시각 * (HH:mm)</Text>
-      <TextInput
-        placeholder="09:00"
-        value={startTime}
-        onChangeText={setStartTime}
-        keyboardType="numbers-and-punctuation"
-        style={{ borderBottomWidth: 1, paddingVertical: 4 }}
-      />
+      {/* 시작 일시 */}
+      <Text style={{ fontWeight: 'bold', marginTop: 8 }}>시작 일시 *</Text>
+      <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+        <Pressable
+          onPress={() => openPicker('start', 'date')}
+          style={{
+            flex: 1,
+            borderWidth: 1,
+            borderColor: '#888',
+            borderRadius: 4,
+            padding: 8,
+          }}
+        >
+          <Text>{formatEpochLabel(startAt).split(' ')[0]}</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => openPicker('start', 'time')}
+          style={{
+            flex: 1,
+            borderWidth: 1,
+            borderColor: '#888',
+            borderRadius: 4,
+            padding: 8,
+          }}
+        >
+          <Text>{formatEpochLabel(startAt).split(' ')[1]}</Text>
+        </Pressable>
+      </View>
       {fieldErrors.startAt ? (
         <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.startAt}</Text>
+      ) : null}
+
+      {/* 종료 일시 */}
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: 8,
+        }}
+      >
+        <Text style={{ fontWeight: 'bold' }}>종료 일시</Text>
+        <Switch value={endAtEnabled} onValueChange={setEndAtEnabled} />
+      </View>
+      {endAtEnabled ? (
+        <>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+            <Pressable
+              onPress={() => openPicker('end', 'date')}
+              style={{
+                flex: 1,
+                borderWidth: 1,
+                borderColor: '#888',
+                borderRadius: 4,
+                padding: 8,
+              }}
+            >
+              <Text>{formatEpochLabel(endAt).split(' ')[0]}</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => openPicker('end', 'time')}
+              style={{
+                flex: 1,
+                borderWidth: 1,
+                borderColor: '#888',
+                borderRadius: 4,
+                padding: 8,
+              }}
+            >
+              <Text>{formatEpochLabel(endAt).split(' ')[1]}</Text>
+            </Pressable>
+          </View>
+          {fieldErrors.endAt ? (
+            <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.endAt}</Text>
+          ) : null}
+        </>
       ) : null}
 
       {/* 내용/메모 */}
@@ -233,6 +434,62 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
       <View style={{ marginTop: 16 }}>
         <Button title="저장" onPress={save} />
       </View>
+
+      {/* ── DateTimePicker ──────────────────────────────────────────────────── */}
+      {pickerVisible && Platform.OS === 'android' ? (
+        <DateTimePicker
+          value={tempDate}
+          mode={pickerMode}
+          display="default"
+          onChange={onPickerChange}
+        />
+      ) : null}
+
+      {/* iOS: Modal 안에 인라인 피커 */}
+      {Platform.OS === 'ios' ? (
+        <Modal
+          visible={pickerVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={onIOSCancel}
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'flex-end',
+              backgroundColor: 'rgba(0,0,0,0.3)',
+            }}
+          >
+            <View style={{ backgroundColor: '#fff', borderRadius: 12, padding: 16 }}>
+              {/* 툴바 */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginBottom: 8,
+                }}
+              >
+                <Pressable onPress={onIOSCancel}>
+                  <Text style={{ color: '#888', fontSize: 16 }}>취소</Text>
+                </Pressable>
+                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>
+                  {pickerMode === 'date' ? '날짜 선택' : '시각 선택'}
+                </Text>
+                <Pressable onPress={onIOSConfirm}>
+                  <Text style={{ color: '#007AFF', fontSize: 16 }}>확인</Text>
+                </Pressable>
+              </View>
+              <DateTimePicker
+                value={tempDate}
+                mode={pickerMode}
+                display="spinner"
+                onChange={onPickerChange}
+                style={{ height: 200 }}
+              />
+            </View>
+          </View>
+        </Modal>
+      ) : null}
     </ScrollView>
   );
 }
