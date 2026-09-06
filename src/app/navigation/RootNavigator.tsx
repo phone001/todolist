@@ -1,9 +1,11 @@
 /**
  * 루트 네비게이터 — Tab(대시보드/캘린더/검색/설정) + Stack(상세/편집/권한).
  * 알림 탭 → payload 재조회 검증 후 상세 이동(logic v1.1 §16.2, §6, 13.3).
+ * 탭 아이콘: todo/goal/statistics/settings.png, opacity 활성1/비활성0.4, onError 폴백(logic v1.5 §16.2).
  * 환경 제약: react-navigation / react 의존 → 파이프라인 미실행(정적 리뷰).
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Image, Text } from 'react-native';
 import { NavigationContainer, type NavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -19,12 +21,68 @@ import { ScheduleDetailScreen } from '../screens/ScheduleDetailScreen.tsx';
 import { ScheduleEditorScreen } from '../screens/ScheduleEditorScreen.tsx';
 import { PermissionsScreen } from '../screens/PermissionsScreen.tsx';
 
+// 탭 아이콘 에셋 (logic v1.5 §16.2, P-21: 빌드 타임 번들 포함, 런타임 경로 주입 없음)
+const TAB_ICONS = {
+  [TAB_ROUTES.Dashboard]: require('../../assets/icons/todo.png') as number,
+  [TAB_ROUTES.Calendar]: require('../../assets/icons/goal.png') as number,
+  [TAB_ROUTES.Search]: require('../../assets/icons/statistics.png') as number,
+  [TAB_ROUTES.Settings]: require('../../assets/icons/settings.png') as number,
+} as const;
+
+// 탭 아이콘 폴백 라벨 (E-16-1, AC-28: 에셋 로드 실패 시 Text 대체)
+const TAB_FALLBACK_LABELS: Record<string, string> = {
+  [TAB_ROUTES.Dashboard]: '오늘',
+  [TAB_ROUTES.Calendar]: '캘린더',
+  [TAB_ROUTES.Search]: '검색',
+  [TAB_ROUTES.Settings]: '설정',
+};
+
+/**
+ * 탭 아이콘 컴포넌트.
+ * 에셋 로드 실패 시 onError 콜백으로 Text 라벨로 대체 — 앱 크래시 방지 (E-16-1).
+ * 활성: opacity 1, 비활성: opacity 0.4 (P-19, AC-27).
+ */
+function TabIcon({
+  route,
+  focused,
+}: {
+  route: string;
+  focused: boolean;
+}) {
+  const [hasError, setHasError] = useState(false);
+  const icon = TAB_ICONS[route as keyof typeof TAB_ICONS];
+  const opacity = focused ? 1 : 0.4;
+
+  if (hasError || !icon) {
+    return (
+      <Text style={{ opacity, fontSize: 10 }}>
+        {TAB_FALLBACK_LABELS[route] ?? route}
+      </Text>
+    );
+  }
+
+  return (
+    <Image
+      source={icon}
+      style={{ width: 24, height: 24, opacity }}
+      onError={() => setHasError(true)}
+    />
+  );
+}
+
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator();
 
 function Tabs() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: true }}>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: true,
+        tabBarIcon: ({ focused }) => (
+          <TabIcon route={route.name} focused={focused} />
+        ),
+      })}
+    >
       <Tab.Screen name={TAB_ROUTES.Dashboard} component={DashboardScreen} options={{ title: '오늘' }} />
       <Tab.Screen name={TAB_ROUTES.Calendar} component={CalendarScreen} options={{ title: '캘린더' }} />
       <Tab.Screen name={TAB_ROUTES.Search} component={SearchScreen} options={{ title: '검색' }} />
