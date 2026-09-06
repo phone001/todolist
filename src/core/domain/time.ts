@@ -64,6 +64,31 @@ export function endOfLocalDayExclusive(ts: number, timeZone: string): number {
   return startOfLocalDay(ts, timeZone) + DAY_MS;
 }
 
+/**
+ * 로컬 wall-clock 입력(연/월/일/시/분)을 epoch ms(UTC)로 변환.
+ * 설계 근거: document/architect/logic.md §16.3.1 「날짜/시간 입력 방식 결정」, P-16.
+ * - timeZoneOffsetMs DST 보정을 재사용한다.
+ * - 유효하지 않은 입력(범위 이탈 수치)은 Date.UTC의 자동 정규화에 맡긴다.
+ */
+export function localWallToEpoch(
+  year: number,
+  month: number, // 1-12
+  day: number,
+  hour: number,
+  minute: number,
+  timeZone: string,
+): number {
+  // 1차 추정: 해당 wall-clock 을 UTC로 취급해 epoch을 구한 뒤 offset 제거
+  const asIfUtc = Date.UTC(year, month - 1, day, hour, minute, 0);
+  const offset = timeZoneOffsetMs(asIfUtc, timeZone);
+  let candidate = asIfUtc - offset;
+  // DST 경계 보정: candidate 의 실제 오프셋으로 재계산
+  const off2 = timeZoneOffsetMs(candidate, timeZone);
+  const recomputed = asIfUtc - off2;
+  if (recomputed !== candidate) candidate = recomputed;
+  return candidate;
+}
+
 /** 단순 반복(D-05)에서 다음 발생 시각. */
 export function advanceByRule(
   ts: number,
