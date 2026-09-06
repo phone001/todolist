@@ -1,0 +1,46 @@
+/tmp
+/out-tsc
+
+/node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/.pnp
+.pnp.js
+
+.vscode/*
+
+알림앱.md
+
+.DS_Store
+
+# --- React Native 네이티브 빌드 산출물 (NATIVE-SETUP.md §2) ---
+
+# Android / Gradle
+android/.gradle/
+android/.cxx/
+android/build/
+android/app/build/
+android/local.properties
+*.iml
+*.hprof
+*.keystore
+!android/app/debug.keystore
+
+# Xcode / CocoaPods
+ios/build/
+ios/Pods/
+ios/*.xcworkspace
+ios/.xcode.env.local
+**/xcuserdata/
+*.xcuserstate
+DerivedData/
+*.hmap
+*.ipa
+
+# Ruby / Bundler (프로젝트 .bundle/config 는 커밋, 설치 산출물만 제외)
+vendor/bundle/
+
+# Metro / JS bundle
+*.jsbundle
+.metro-health-check*

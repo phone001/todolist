@@ -1,0 +1,15 @@
+{
+  "//": "RN 앱 셸(.tsx / .native.ts) 전용 타입체크. 코어(tsconfig.json)와 분리해 코어 typecheck 결과에 영향을 주지 않는다. RN 툴체인·타입 패키지가 설치된 환경(모바일 CI/개발기)에서 실행한다 — overview.md v1.1 '빌드 환경 제약', nfr.md §11.2.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["es2023", "dom"],
+    "types": ["react", "react-native", "node"],
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": ["src", "tests", "App.tsx", "index.js"],
+  "exclude": ["node_modules", "android", "ios"]
+}

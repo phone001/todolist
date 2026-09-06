@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["es2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "skipLibCheck": true,
+    "types": []
+  },
+  "include": ["src", "tests"],
+  "exclude": [
+    "node_modules",
+    "android",
+    "ios",
+    "App.tsx",
+    "index.js",
+    "src/app/**/*.tsx",
+    "src/app/**/*.native.ts"
+  ]
+}
