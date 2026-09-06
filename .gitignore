@@ -44,3 +44,9 @@ vendor/bundle/
 # Metro / JS bundle
 *.jsbundle
 .metro-health-check*
+
+# IDE
+.idea/
+
+# 아카이브
+*.zip
