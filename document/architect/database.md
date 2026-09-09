@@ -3,15 +3,17 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 데이터베이스 설계 (Database) |
-| 버전 | v1.0 |
-| 상태 | 작성 완료 |
-| 근거 | `document/planner/plan.md` v1.0, `document/architect/overview.md` v1.0 |
+| 버전 | v1.2 |
+| 상태 | 작성 완료 (스키마 무변경) |
+| 근거 | `document/planner/plan.md` v1.4, `document/architect/overview.md` v1.9 |
 | DB 엔진 | SQLite 3 (op-sqlite, 선택적 SQLCipher) |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
+| v1.2 | 2026-09-08 | plan v1.4 F-19(애플워치 워치 타깃 착수) 스키마 영향 검토 — **DDL·인덱스·트리거·시드 무변경**. §10 "F-19 워치 타깃 스키마 영향 검토" 추가. 사유: (1) LWW(E-19-3/P-38)는 기존 `SCHEDULE.UPDATED_AT` + 워치 스냅샷 `baseUpdatedAt` 비교로 충족, (2) 워치 완료 토글 op 중복 적용 방지 원장은 `APP_SETTING` k/v(`watch.appliedOps`)로 충족, (3) 워치 로컬 스냅샷·보류 큐는 **공유 SQLite 가 아니라 워치 앱 컨테이너 파일**, (4) 폰 측 outbound 상태 영속화 불필요(스냅샷은 온디맨드 파생) |
+| v1.1 | 2026-09-07 | plan v1.3 재설계분(F-06 유형 관리 정식화 / F-18 전역 알림 토글·새 일정 기본값 / F-10 상호작용형 대시보드) 스키마 영향 검토 — **DDL·인덱스·트리거·시드 무변경**. §9 "v1.3 재설계분 스키마 영향 검토" 추가. 사유: 필요 기능이 기존 스키마로 충족(아래 §9) |
 | v1.0 | 2026-09-04 | 신규 스키마 최초 설계 |
 
 > 모델명·속성명은 UPPER_SNAKE_CASE. 실제 컬럼 식별자는 DDL에서 소문자 스네이크로 매핑(아래 DDL 참조). 본 문서는 논리 모델 표기에 UPPER_SNAKE_CASE를 사용한다.
@@ -338,3 +340,43 @@ VALUES ('notif.showTitle', 'true', 1756944000000);
 | --- | --- |
 | CATEGORY / SCHEDULE / REMINDER / APP_SETTING / CALENDAR_LINK / ACCOUNT_LINK / SCHEDULE_FTS / SCHEMA_MIGRATION | category / schedule / reminder / app_setting / calendar_link / account_link / schedule_fts / schema_migration |
 | SCHEDULE.CATEGORY_ID, START_AT, IS_DONE, DONE_AT … | schedule.category_id, start_at, is_done, done_at … |
+
+---
+
+## 9. v1.3 재설계분 스키마 영향 검토 (스키마 무변경) — v1.1
+
+`plan.md` v1.3 이 정식화한 F-06(유형 관리)·F-18(앱 설정)·F-10(상호작용형 대시보드)에 대해 스키마 변경 필요성을 검토한 결과 **DDL·인덱스·트리거·초기 데이터 모두 변경 없음**. 근거:
+
+| 요구 (plan v1.3) | 필요 저장 요소 | 기존 스키마 충족 방식 | 변경 |
+| --- | --- | --- | --- |
+| F-06 일정→유형 **ID 참조**, 이름변경 시 참조 유지·표시 라벨만 갱신(P-34, AC-39) | 일정이 유형을 식별자로 참조 | `SCHEDULE.CATEGORY_ID INTEGER NOT NULL REFERENCES category(id)` (3.2) — 이미 ID FK. `CATEGORY.NAME` 만 UPDATE 하면 그 유형을 쓰는 모든 일정의 조인 결과가 새 이름. `schedule_au` 트리거가 FTS `category_name` 도 재색인 | 없음 |
+| F-06 기본 유형("기타") 보호 — 삭제·이름변경 불가(P-34, E-06-5) | 시스템 유형 플래그 | `CATEGORY.IS_SYSTEM INTEGER NOT NULL DEFAULT 0` (3.1) + 시드 `IS_SYSTEM=1, NAME='기타'` (7장). 보호는 `CategoryService` 가 `is_system` 확인 후 `POLICY_SYSTEM_CATEGORY_*` (logic §5.1) | 없음 |
+| F-06 유형 이름 유일성 — 트림 + 대소문자 무시(P-34, E-06-4) | 이름 중복 방지 | `CATEGORY.NAME TEXT NOT NULL UNIQUE` (3.1) = 바이너리 유일성 백스톱. **정규화 비교(트림 + `toLowerCase`)는 앱 계층**(`CategoryService.create/rename`, logic §5.1)에서 `list()` 대조로 강제. 한국어는 대소문자 개념이 없어 실질 트림 + ASCII 케이스 폴딩 — DB 콜레이션 변경(테이블 재빌드)의 이득이 낮고 NFR-06(마이그레이션 리스크) 대비 불리하므로 앱 계층 강제 채택 | 없음 |
+| F-06 사용 중 유형 삭제 → 소속 일정 "기타" 재지정(E-06-2) | 재지정 + 삭제 원자성 | `ScheduleRepository.reassignCategory` UPDATE + `category` DELETE 를 단일 TX (logic §5, 이미 구현·V-17) | 없음 |
+| F-18 전역 알림 사용 토글(`notif.enabled`), 새 일정 기본값(`schedule.defaultPriority`, `schedule.defaultCategoryId`) | 키/값 설정 3개 | `APP_SETTING(KEY TEXT PK, VALUE TEXT, UPDATED_AT)` (3.4) — 임의 키 저장. 미저장 키는 앱 fallback(`notif.enabled`→true, 나머지→null). 시드 불요(§7 DML "3건 이내" 유지) | 없음 |
+| F-18 전역 알림 off 전환 시 기존 예약 일괄 취소(D-07 (a)) | 취소 상태 표현 | `REMINDER.STATE` CHECK 에 `'CANCELLED'` **이미 포함** (3.3). `applyGlobalNotificationsToggle` 가 OS 취소 후 `state='CANCELLED'` (logic §6). `IDX_REMINDER_TRIGGER_STATE(STATE, TRIGGER_AT)` 로 활성 알림 스캔 | 없음 |
+| F-10 상호작용형 대시보드 — 인라인 완료 토글·스와이프 삭제, 요약(완료율·유형별 분포·다음 예정) | 완료 상태·유형별 집계·soft delete | `SCHEDULE.IS_DONE/DONE_AT/DELETED_AT` (3.2) + `IDX_SCHEDULE_DONE_START`·`IDX_SCHEDULE_CATEGORY` (4장). 요약은 `DashboardService.getSummary` 집계 쿼리, 목록은 `findInRange` — 둘 다 기존 인덱스 사용 | 없음 |
+| F-10/F-02 페이지네이션 설계값 승격(`DASHBOARD_PAGE_SIZE` 등) | keyset cursor 조회 | `IDX_SCHEDULE_START ON schedule(start_at) WHERE deleted_at IS NULL` (4장) 이 `(start_at, id)` keyset 지원 | 없음 |
+
+**결론**: 마이그레이션 번호 부여 없음. `migrations/001_init.sql` 이 현행 요구를 그대로 지원한다.
+
+---
+
+## 10. F-19 애플워치 워치 타깃 스키마 영향 검토 (공유 스키마 무변경) — v1.2
+
+`plan.md` v1.4 F-19(오늘 목록 조회 + 완료/미완료 토글 중심의 애플워치 축소 클라이언트)에 대해 **공유 SQLite 스키마 변경 필요성**을 검토한 결과 **DDL·인덱스·트리거·초기 데이터 모두 변경 없음**. 근거:
+
+| 요구 (plan v1.4) | 필요 저장 요소 | 기존 스키마 충족 방식 | 변경 |
+| --- | --- | --- | --- |
+| P-36 폰(SQLite) = 유일 원본, 워치는 독립 저장소 없음(A-2) | — | 워치로 내려보내는 것은 **파생 스냅샷**(logic §17.3). 폰에 워치 전용 테이블 불필요 | 없음 |
+| P-40 워치 페이로드 = "오늘 일정 + 다음 예정 1건" | 오늘 범위 조회 + 다음 예정 1건 | `ScheduleRepository.findForDashboard(dayStart, dayEnd)` + `findInRange(now, MAX, {isDone:false}, 'startAt', 1)` — `DashboardService.getSummary` 와 동일 소스. `IDX_SCHEDULE_START`·`IDX_SCHEDULE_DONE_START` 사용 | 없음 |
+| P-39 시각 = epoch ms + IANA tz | 시작 시각·생성 시 tz | `SCHEDULE.START_AT`(epoch ms) + `SCHEDULE.TIME_ZONE`(IANA) — 이미 존재. 워치는 표시 시점에만 로컬 변환 | 없음 |
+| E-19-3 / P-38 완료 토글 LWW(Last-Write-Wins) | 완료 상태의 마지막 변경 시각 비교 | `SCHEDULE.UPDATED_AT`(epoch ms, 낙관적 갱신 기준 — `toggleDone`/`update` 가 매 변경 시 `clock.now()` 로 갱신) + 워치 op 의 `baseUpdatedAt`(워치가 받은 스냅샷 항목의 `updatedAt`) 비교(logic §17.6). **전용 타임스탬프 컬럼 미추가** — 근사 LWW. 잔여 부정확(완료 무관 편집이 워치 토글보다 나중이면 워치 토글 드롭)은 residual risk(overview N-12, logic §17.6). 필드 수준 정밀 LWW(전용 `DONE_CHANGED_AT`)는 스키마 변경 수반이라 후속 | 없음 |
+| E-19-1 / P-38 워치 오프라인 완료 토글 보류 큐 | 대기 중 완료 토글 op | **워치 앱 컨테이너의 로컬 파일**(JSON: `WatchToggleOp[]`) — watchOS 앱 소관, 공유 SQLite 아님. 폰은 `transferUserInfo`(OS 보장 FIFO 큐)로 수신 | 없음 (공유 DB 무관) |
+| E-19-1 워치 마지막 스냅샷 오프라인 조회 | 마지막 수신 스냅샷 | **워치 앱 컨테이너의 로컬 파일**(JSON: `WatchSnapshot`) — watchOS 앱 소관. 데이터 보호 클래스 적용(logic §13.9) | 없음 (공유 DB 무관) |
+| 워치 완료 토글 op 중복 적용 방지(재전송·앱 재시작) | 최근 처리한 opId 원장 | `APP_SETTING(KEY TEXT PK, VALUE TEXT, UPDATED_AT)` — `watch.appliedOps` = 최근 50 `{opId, ts}` 링버퍼 JSON. 임의 키 저장 가능, 시드 불요(§7 DML "3건 이내" 유지) | 없음 |
+| 폰 측 outbound(워치로 보낼) 상태 영속화 | — | 불필요. 스냅샷은 전송 시점에 온디맨드 파생(`buildWatchSnapshot`). `updateApplicationContext` 가 "최신 1건"만 유지하므로 폰이 미전송 큐를 들 필요 없음 | 없음 |
+| P-41 워치 알림 독립 예약 금지 | — | 워치 스냅샷에 REMINDER 데이터 미포함(logic §17.7). `REMINDER` 테이블 무관 | 없음 |
+| P-44 Android Wear OS 비범위 | — | Wear Data Layer·별도 저장 이번 릴리스 미구현(OI-11) | 없음 |
+
+**결론**: 마이그레이션 번호 부여 없음. F-19 는 `migrations/001_init.sql` + `APP_SETTING` k/v 로 충족한다. 워치 로컬 영속화(스냅샷·보류 큐)는 watchOS 앱의 파일 저장이며 본 문서(공유 SQLite 스키마)의 대상이 아니다 — 형태·보호 규약은 `logic.md` §17.5 / §13.9.

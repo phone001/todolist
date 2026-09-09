@@ -3,11 +3,11 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 검증 결과 (기능 테스트 + 코드 리뷰 + 보안 점검) |
-| 버전 | v1.6 |
-| 대상 | (v1.0) `src/core/**` · (v1.1~1.2) `src/app/**` · (v1.5) op-sqlite 6.2.11→9.3.0 상향 + iOS 온디바이스 빌드/실행 검증 · (v1.6) ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1) |
-| 근거 | `document/planner/plan.md` v1.1, `document/architect/{overview,logic,nfr}.md` v1.5, `database.md` v1.0 |
+| 버전 | v1.9 |
+| 대상 | (v1.0) `src/core/**` · (v1.1~1.2) `src/app/**` · (v1.5) op-sqlite 6.2.11→9.3.0 상향 + iOS 온디바이스 빌드/실행 검증 · (v1.6) ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1) · (v1.7) 애플워치 워치 타깃 추가 (F-19, AC-23·AC-47~AC-56) |
+| 근거 | `document/planner/plan.md` v1.4, `document/architect/{overview,logic,nfr}.md` (overview/logic v1.9, nfr v1.7), `database.md` v1.2 |
 | 작성 주체 | Tester |
-| 일자 | 2026-09-06 |
+| 일자 | 2026-09-08 |
 
 ## 변경 이력
 
@@ -20,8 +20,129 @@
 | v1.4 | Feature: android/ios 네이티브 프로젝트 생성 — PASS (113 tests) |
 | v1.5 | Bug Fix: op-sqlite iOS 네이티브 빌드 실패(cpp/types.h) — op-sqlite 6.2.11→9.3.0. **부분 성공**: iOS 빌드/설치/실행/DB open/스키마 마이그레이션(FTS5)까지 온디바이스 검증 PASS, 그러나 대시보드 렌더는 선재 셸 결함(RENDER-003, 저장소 named-object 파라미터 ↔ op-sqlite `execute` 배열 전용)으로 **미도달 → 별도 후속 필요**. npm test 115/115 |
 | v1.6 | Feature: ScheduleEditor 진입점 추가(F-01/F-03, AC-15, E-10-1) — PASS. 코드 리뷰 Critical/High 0. 보안 미해결 취약점 0. npm test 129/129(회귀 없음). Low 지적 1건(NAV-001: ScheduleDetailScreen 이중 navigation 참조, 비차단). |
+| v1.7 | Feature: 애플워치 워치 타깃 추가(F-19, AC-23·AC-47~AC-56) — **PASS**. `node --test` 195/195(회귀 0, 신규 watchSync 30건). 코드 리뷰 Critical/High 0. 보안 미해결 취약점 0(§13.9 STRIDE 통과 — 수신 op 비신뢰 입력 검증·`findById` 재조회·dedup 원장·`toggleDone` 한정·페이로드 비밀정보 미전송·워치 로컬 파일 `.completeFileProtection`). 지적 3건(WATCH-01 Medium: `package-lock.json`에 `react-native-watch-connectivity` 미반영 — `npm ci` 파손, 비차단·머지 전 수정 / WATCH-02 Low: `applyIncomingToggle`의 `toggleDone`/repo 예외 미격리 / WATCH-03 Low: 어댑터 `activate()` 비-iOS에서 throw). 어댑터·watchOS 스캐폴드 온디바이스 검증은 N-11 후속(범위 밖). |
+| v1.9 | N-11: WATCH-08/09/10 수정 재검증(Dev iteration 3) — **PASS**. `node --test` 207/207(회귀 0, 신규 `watchMessage.test.ts` 12건). `tsc` src 신규 오류 0(사전 5건 허용). `src/core/**` 이번 사이클 무수정(`watchSyncService.ts` 미수정 확인). **WATCH-08 종결**: `WatchToggleOp.watchChangedAt`/`baseUpdatedAt` 이 Swift `Int` 로 전송(`WatchClock.nowEpochMillis()` 반올림), 비정수는 워치 `JSONDecoder`(Int) 및 폰 `parseToggleOp`(`Number.isInteger`) 양쪽에서 거부 — 큐 진입조차 불가. **WATCH-09 종결**: 신규 순수 모듈 `src/app/adapters/watch/watchMessage.ts`(RN/node 미import)의 `parseToggleOp` 가 서비스 `isValidToggleOp` 와 동일 정수 규칙 적용 — 어댑터 경계에서 차단, 서비스 조용한 폐기 제거. **WATCH-10 종결**: `classifyInboundMessage` 4분기(toggle/requestSnapshot/malformedToggle/ignore), `watch.toggle.malformed` 은 `type:'toggle'` 실패 시에만 계측, `requestSnapshot` → 캐시 `lastSnapshot` 즉시 reply + `composeNative` 가 `setSnapshotRequestHandler(()=>pushSnapshot())` 배선, 워치 `manualRefresh()` 는 도달 가능화 시점에도 실행. AC-23/AC-48/AC-49/AC-50/R-19-2 충족(실경로 통합 테스트 + Dev 라이브 증거 정합). 보안 미해결 취약점 0(§13.9 재확인 — 인바운드 파서가 비-토글 쓰기 시도를 `sendMessage`/`transferUserInfo` 양경로에서 전부 차단, `requestSnapshot` reply 는 직전 push 페이로드와 동일 — 신규 노출 없음, V-40 유지). 신규 지적 WATCH-11(Low, 비차단: `loadLocal()` `?? []` 가 손상된 보류 큐 파일을 재기록 없이 흡수). 이관 유지: WATCH-04(Architect — 컴플리케이션 App Group, AC-56 partial), WATCH-05·ENV-01·N-11-COV. |
+| v1.8 | N-11: F-19 네이티브 통합 + 라이브 왕복 검증(Dev iteration 1+2) — **FAIL**. `node --test` 195/195(회귀 0), `tsc` src 신규 오류 0(사전 5건 허용). 코드 리뷰: **WATCH-08 High** — watchOS `WatchToggleOp.make` 가 `watchChangedAt = Date().timeIntervalSince1970 * 1000`(비정수 Double)을 전송하나 `WatchSyncService.isValidToggleOp` 는 `Number.isInteger` 를 요구(설계 §17.4/§13.9) → 실제 워치 발신 토글 op 이 전부 `malformed` 로 거부(`ack REJECTED`) → R-19-2/AC-23/AC-48/AC-50 실기기 파손. node 195건은 `emitIncoming` 에 정수값을 직접 주입해 이 경로를 못 짚음. Dev iteration-2 "라이브 토글 APPLY 관찰" 증거는 커밋된 코드와 모순(재현 불가). 부수: WATCH-09 Medium(어댑터 `parseToggleOp` `Number.isFinite` ↔ 서비스 `Number.isInteger` 이중검증 불일치), WATCH-10 Medium(폰 어댑터에 워치 `requestSnapshot`(수동 새로고침, §17.2 sendMessage 경로/§17.1(d)) 핸들러 없음 → 무동작 + 허위 `watch.toggle.malformed`). 보안 미해결 취약점 0(§13.9 재확인 — 수신 op 단일 경로 검증→`findById`→dedup→`toggleDone` 한정, `sendMessage`/`transferUserInfo` 양경로 동일, 페이로드 V-40 유지, 워치 파일 `.completeFileProtection`). 이월: WATCH-04 Medium(컴플리케이션 App Group 미설정 → 상시 "—", 설계 §17.8 미명세 — Architect 확인), WATCH-05 Low(워치 AppIcon 에셋 없음 — 빌드 경고), ENV-01 Low(비ASCII 경로에서 Metro `/status` 500 — CLI 버그, 오프라인 번들 우회), N-11-COV Low(LWW tie/REJECT/200절단은 node 테스트로 커버, 라이브 미실행 — 설계상 허용). |
 
 ---
+
+# v1.7 — Feature: 애플워치 워치 타깃 추가 (F-19, AC-23·AC-47~AC-56, P-36~P-44, NFR-10·NFR-12)
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-08 |
+| 대상 | 신규 순수: `src/core/watchSync/{types,snapshot,reconcile}.ts` · 신규 서비스: `src/core/services/watchSyncService.ts` · additive: `src/core/{domain/errors.ts,ports/gateways.ts,infra/fakes/fakes.ts,app.ts}` · iOS 어댑터(정적): `src/app/adapters/watch/WatchConnectivityGateway.native.ts` · watchOS 스캐폴드(정적): `ios/TodayWhatWatch/**` · 테스트: `tests/watchSync/**` · `package.json` |
+| 근거 | `plan.md` v1.4 (F-19, §5.14 P-36~P-44, E-19-1~E-19-7, AC-23·AC-47~AC-56), `logic.md` v1.9 (§0.1/§0.2/§13.9/§17.1~§17.10), `database.md` v1.2 (§10), `nfr.md` v1.7 (§14, V-36~V-40) |
+
+```text
+status: PASS
+summary: >
+  F-19 폰 측 워치 동기화(순수 페이로드 빌더 + LWW + WatchSyncService 조정자 + 포트/어댑터 계약 +
+  watchOS 스캐폴드)를 기능 테스트 · 코드 리뷰 · 보안 점검으로 검증했다.
+  - 기능: node --experimental-strip-types --test "tests/**/*.test.ts" → 195 pass / 0 fail.
+    신규 watchSync 30건(snapshot 11 · reconcile 5 · watchSyncService 10 · appWiring 4) 전부 유효
+    단언 포함(공허 단언 없음). 회귀 0.
+  - 설계 준수: logic §17.3 페이로드(오늘+다음 1건 · 10필드 최소화 · 200건 절단+truncated ·
+    epoch ms+IANA tz 원본 · 삭제 유형→시스템"기타" · summary는 절단 전 전체 기준 = DashboardSummary 일치),
+    §17.4 applyIncomingToggle(입력검증→dedup 원장 ring-50→findById 재조회→resolveToggleLWW→
+    ScheduleService.toggleDone "만" 호출→원장 기록→ack→pushSnapshot), §17.6 LWW(UPDATED_AT vs
+    baseUpdatedAt, tie=폰 우선, soft-deleted→REJECT), §17.7(ReminderScheduler/알림 경로 무접촉 —
+    정적 grep 0), NFR-12(게이트웨이 전송/활성화/ack 실패 격리·무예외) 모두 구현·테스트로 확인.
+  - 계층: src/core/watchSync/** 및 watchSyncService.ts 는 react-native / node:* 미의존 순수 TS.
+    src/core 가 src/app 미import. 어댑터만 react-native-watch-connectivity 의존.
+  - 후방 호환: watchSync 미주입 시 NoopWatchSyncGateway — buildApp 기존 호출부·demo 무영향(V-19 확인).
+  - 보안(§13.9 / STRIDE): 워치 수신 op 를 신뢰 경계 밖 입력으로 취급 — UUID/정수/boolean/유한수 검증 +
+    scheduleId findById 재조회(워치가 보낸 상태 불신) + opId dedup 원장 + toggleDone 한정으로
+    Broken Access Control 표면 제거(테스트 V-37/P-43: isDone/doneAt 외 무변경 확인).
+    페이로드에 토큰/계정/메모/알림/이력 미포함(V-40). 워치 로컬 스냅샷·보류 큐 파일
+    .completeFileProtection. 비밀정보 하드코딩 0. 잠금 해제 분실 워치 제목 열람은 §13.9 잔여 위험으로 문서화됨.
+  - 무변경 회귀: DB DDL/인덱스/트리거/시드, ScheduleService/DashboardService/ReminderScheduler/
+    CategoryService 로직, 기존 셸 화면, bindings.ts SCREEN_BINDINGS 무변경. F-19 구현은
+    작업 트리 선행 재설계분(screens/*, bindings.ts, react-native-svg)에 미접촉.
+  판정: 핵심 요구사항·정상/실패 흐름 통과, Critical/High 결함 0, 미해결 보안 취약점 0 → PASS.
+  WATCH-01(Medium)은 머지 전 lock 파일 동기화 필요. 온디바이스 왕복은 N-11 후속.
+tests:
+  total: 195
+  passed: 195
+  failed: 0
+issues:
+  - id: WATCH-01
+    severity: Medium
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: package.json / package-lock.json
+    scenario: >
+      package.json dependencies 에 react-native-watch-connectivity@1.1.0 을 추가했으나
+      package-lock.json 에 해당 패키지가 없다(root deps·packages 양쪽 모두 누락).
+      package.json ↔ lock 불일치로 `npm ci` 가 실패한다.
+    expected: package-lock.json 이 새 의존성을 포함해 두 파일이 동기화됨(`npm ci` 성공)
+    actual: lock 미갱신 — `npm ci` 파손, 재현 가능한 설치 불가
+    note: >
+      이 파이프라인 검증(node:test 순수 로직 + core tsc)은 이 의존성을 사용하지 않고,
+      어댑터는 N-11 정적 리뷰 대상이라 현재 파이프라인은 비차단. 단, RN 빌드/CI 전에 반드시 수정.
+  - id: WATCH-02
+    severity: Low
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: src/core/services/watchSyncService.ts applyIncomingToggle
+    scenario: >
+      메서드 주석·설계 §17.4 는 "어떤 경로에서도 throw 하지 않는다(NFR-12)" 를 명시하나,
+      scheduleService.toggleDone / schedules.findById / settings.get·set 예외는 개별 격리되지 않아
+      reject 시 applyIncomingToggle 가 reject 한다. 부트스트랩 배선(activate)의 .catch 로 크래시는
+      막히지만 계약(무예외)과 어긋난다. DB 실패는 폰 토글에서도 동일 발생하므로 실질 위험은 낮음.
+    expected: 모든 경로에서 예외를 삼키고 로깅(스냅샷/ack 격리와 동일)
+    actual: 저장소/서비스 계층 예외가 전파 가능
+  - id: WATCH-03
+    severity: Low
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: src/app/adapters/watch/WatchConnectivityGateway.native.ts activate()
+    scenario: >
+      logic §17.2 는 "Android 는 isSupported()=false, 모든 메서드 no-op(GATEWAY_WATCH_UNAVAILABLE
+      없이 조용히 skip)" 를 명시하나 activate() 는 비-iOS 에서 AppError(GATEWAY_WATCH_UNAVAILABLE) 를
+      throw 한다. WatchSyncService.activate() 가 isSupported() 가드 + try/catch 로 감싸 실질 영향은
+      없으나(다른 메서드 sendSnapshot/ack 는 조용히 return), 설계 문구와 불일치.
+    expected: 비지원 플랫폼에서 activate() 도 조용히 no-op
+    actual: throw 후 상위에서 catch·로깅
+  - id: WATCH-NOTE-1
+    severity: Low
+    category: CODE_REVIEW
+    cause: TEST_ERROR
+    location: ios/TodayWhatWatch/WatchModels.swift WatchLww.resolve
+    scenario: >
+      Swift 낙관 LWW 헬퍼가 "폰 측 reconcile.ts 와 1:1 대응" 이라 주석하나 폰의 첫 가드
+      (deletedAt != null → REJECT_NOT_FOUND)에 대응하는 분기가 없다. WatchScheduleItem 에
+      삭제 표현 필드가 없어 실무상 무해하며, 스캐폴드는 온디바이스 검증(N-11) 대상.
+    expected: 주석을 정확히 하거나 대응 분기 명시
+    actual: 가드 1개 누락 — 현재 데이터 모델에서는 도달 불가
+relatedRequirement: F-19, AC-23, AC-47~AC-56, E-19-1~E-19-7, P-36~P-44, NFR-10, NFR-12
+relatedDesign: logic.md v1.9 §0.1/§0.2/§13.9/§17.1~§17.10, nfr.md v1.7 §14 V-36~V-40, database.md v1.2 §10
+environment: >
+  Node v22.11, `node --experimental-strip-types --test`. 워치 시뮬레이터/기기 없음 —
+  WCSession 실왕복·오프라인 flush·컴플리케이션 타임라인은 N-11 후속(범위 밖, 정적 매핑만 수행).
+```
+
+## AC / 예외 정적 매핑 (F-19)
+
+| 항목 | 구현/검증 지점 | 결과 |
+| --- | --- | --- |
+| AC-23 / AC-48 워치 토글 → 폰 집계 반영 | `applyIncomingToggle` → `ScheduleService.toggleDone` → `pushSnapshot`; 테스트 V-37(isDone/doneAt 반영 + 스냅샷 재전송) | PASS |
+| AC-47 오늘 목록(시각순·최소 상세·헤더 카운트) | `buildWatchSnapshot.today` 정렬·10필드·`summary`; 테스트 V-36 | PASS |
+| AC-49 오프라인 조회 + 보류 큐 | `WatchSyncStore`(pendingOps·isStale·flushPendingQueue) — 정적 리뷰 | 정적 OK / 온디바이스 N-11 |
+| AC-50 오프라인 충돌 LWW | `resolveToggleLWW`; 테스트 V-38(APPLY/SKIP_PHONE_WINS/tie/soft-deleted) | PASS |
+| AC-51 워치 비범위 동작 차단 | `ContentView`/`DetailView` 조회 전용 — 생성/편집/삭제 진입점 부재 — 정적 리뷰 | 정적 OK |
+| AC-52 알림 예약 주체 = 폰 | watchSync 코드에 reminder/notification/syncOnce 참조 0(grep), 스냅샷 스키마 REMINDER 필드 0; V-40 | PASS |
+| AC-53 페이로드 범위(오늘 + 다음 1건) | `buildWatchSnapshot` 시그니처·매핑; 테스트 V-36 | PASS |
+| AC-54 빈 상태(추가 버튼 없음) | `ContentView` "오늘 일정이 없습니다" — 정적 리뷰 | 정적 OK |
+| AC-55 Wear OS 제외 | `NoopWatchSyncGateway`(isSupported=false), Wear 모듈 미생성 | PASS |
+| AC-56 컴플리케이션(D-10 조건부) | `TodayWhatWatchComplication.swift` — 1종("남은 일정 수"), 로컬 `summary.notDone` 소스 — 정적 리뷰 | 정적 OK |
+| E-19-1 폰 연결 불가 | `WatchSyncStore.isStale` + `ContentView` opacity/"최신 아님" | 정적 OK |
+| E-19-2 폰 앱 미설정 | `WatchSyncStore.needsPhoneSetup` + 설정 안내 뷰 | 정적 OK |
+| E-19-3 충돌 | `resolveToggleLWW`; V-38 | PASS |
+| E-19-4 참조 유형 삭제됨 | `buildWatchSnapshot` categoryLabel/Color 폴백; V-36 | PASS |
+| E-19-5 오늘 0건 | `buildWatchSnapshot` today=[] + 워치 빈 상태 | PASS(빌더) / 정적(뷰) |
+| E-19-6 대상 과다 | 200건 절단 + truncated + `metric('watch.snapshot.truncated')`; V-36 | PASS |
+| E-19-7 워치 알림 | §17.7 — 워치 무예약, iOS 미러링, 전역 off 시 없음(추가 코드 0) | PASS(정적) |
 
 # v1.6 — Feature: ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1)
 
@@ -582,3 +703,306 @@ tests:
 ## 판정
 
 **PASS** — NATIVE-SETUP §3/§4 전 항목이 올바른 파일에 반영됨(독립 확인). 구조 검증(react-native config / xcodebuild / plutil / xmllint) 전부 통과. notifee 부팅 리시버 제거는 정당(회귀 아님). 회귀 없음(npm test 113/113, demo exit 0, 보호 파일 무변경). 코드 리뷰 Critical/High 0, 보안 미해결 취약점 0. Gradle full build 는 환경 제약으로 미수행 — 환경 외 후속(FAIL/BLOCKED 아님). 지적 4건은 전부 Low/정보성.
+
+---
+
+# v1.8 — N-11: F-19 애플워치 네이티브 통합 + 라이브 왕복 검증 (Developer iteration 1+2)
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-08 |
+| 대상 | iteration 1: `ios/TodayWhat.xcodeproj/project.pbxproj`(신규 타깃 `TodayWhatWatch`·`TodayWhatWatchComplication`), `ios/TodayWhatWatch/**`, `ios/Podfile.lock`(RNWatch 1.1.0), `package.json`/`package-lock.json`, `src/app/bootstrap/composeNative.native.ts`, `App.tsx`, `src/app/adapters/watch/WatchConnectivityGateway.native.ts` / iteration 2: `WatchConnectivityGateway.native.ts`(WATCH-06 `toPlistSafe`), `ios/TodayWhatWatch/Complication/Info.plist`(WATCH-07) |
+| 근거 | `plan.md` v1.4 (F-19, AC-23·AC-47~AC-56, E-19-1~7, R-19-1~4), `logic.md` v1.9 (§0.1/§0.2/§13.9/§17.1~17.10), `nfr.md` v1.7 (§14, V-36~V-40, NFR-12), `database.md` v1.2 |
+
+```text
+status: FAIL
+summary: >
+  F-19 pure-logic 층은 이전 사이클에서 195/195 PASS. 이번 사이클은 네이티브 통합(iOS 프로젝트
+  타깃/Pod/부트스트랩 배선/워치 Swift 스캐폴드) + 라이브 왕복 검증이다.
+  - 회귀: node --experimental-strip-types --test "tests/**/*.test.ts" → 195 pass / 0 fail.
+    tsc -p tsconfig.json --noEmit → src/ 신규 오류 0 (사전 존재 5건: repositories.ts x2 Buffer,
+    index.ts x3 console/process — @types/node 미설치, 허용). src/core/** 이번 사이클 무수정 확인
+    (watchSync 파일 mtime 11:09~11:15 = 이전 사이클, 통합 파일 13:28~15:38). DB DDL/서비스 로직/
+    기존 셸/SCREEN_BINDINGS/알림 경로 무변경 확인.
+  - 코드 리뷰: WATCH-08 (High, FUNCTIONAL) 발견 — 아래.
+  - 보안 점검(§13.9 STRIDE/OWASP): 미해결 취약점 없음.
+  - Developer iteration-2 "라이브 토글 APPLY 관찰" 증거는 커밋 코드와 모순 → 재현 불가로 판단.
+
+tests:
+  total: 195
+  passed: 195
+  failed: 0
+  note: >
+    회귀 스위트는 PASS. 그러나 워치→폰 토글의 실제 네이티브 값 경로(비정수 epoch ms)를
+    스위트가 커버하지 않는다(모든 테스트가 정수 watchChangedAt 을 emitIncoming 으로 직접 주입).
+
+issues:
+  - id: WATCH-08
+    severity: High
+    category: FUNCTIONAL
+    cause: IMPLEMENTATION_ERROR
+    location: >
+      ios/TodayWhatWatch/WatchSyncStore.swift:74 (WatchToggleOp.make(now:) 인자) +
+      ios/TodayWhatWatch/WatchModels.swift:60-68 (make) ↔
+      src/core/services/watchSyncService.ts:49-54 (isValidToggleOp)
+    scenario: >
+      Tampering/Integrity 아님 — 정상 페어드 워치의 정상 토글이 폰에서 거부됨.
+      워치 ContentView.row 의 완료 버튼 → WatchSyncStore.toggle(itemId:) →
+      WatchToggleOp.make(now: Date().timeIntervalSince1970 * 1000). timeIntervalSince1970 은
+      ms 미만 정밀도의 Double 이므로 *1000 은 거의 항상 비정수(예: 1725800000123.456).
+      op 은 sendMessage/transferUserInfo 로 폰 도달 → 어댑터 parseToggleOp 는 Number.isFinite
+      만 확인해 통과 → WatchSyncService.applyIncomingToggle → isValidToggleOp 가
+      Number.isInteger(watchChangedAt) 에서 false → metric('watch.toggle.malformed') +
+      ack(opId,'REJECTED') + return. DB 미반영, 워치 보류 큐에 op 잔존.
+    expected: >
+      설계 §17.4 step1 / §13.9: watchChangedAt·baseUpdatedAt 은 정수 epoch ms(P-39).
+      정상 op → resolveToggleLWW → APPLY → ScheduleService.toggleDone → 폰 대시보드 집계 반영
+      (AC-23/AC-48), 워치 스냅샷 재수렴(R-19-2).
+    actual: >
+      워치 발신 토글 op 이 전부 malformed 로 거부. AC-23/AC-48/AC-50 및 R-19-2 가 실기기에서 미충족.
+      node 195/195 는 정수값 직접 주입이라 이 경로를 검출하지 못함.
+    fix: >
+      watchOS 측에서 정수로 방출 — WatchToggleOp.make 호출부/내부에서
+      (Date().timeIntervalSince1970 * 1000).rounded() → Int, 그리고 필요 시
+      applyOptimistic 의 doneAt 도 동일 정규화. 어댑터/서비스 검증 규칙도 설계에 맞춰 일치화(WATCH-09).
+    verification_note: >
+      라이브 시뮬레이터 왕복으로 직접 재확인은 미수행. 정적 근거는 결정적이며,
+      "라이브 관찰" 입증 책임은 Developer 측이었고 커밋 코드와 모순된다.
+
+  - id: WATCH-09
+    severity: Medium
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: >
+      src/app/adapters/watch/WatchConnectivityGateway.native.ts:78-81 (parseToggleOp) ↔
+      src/core/services/watchSyncService.ts:49-54 (isValidToggleOp)
+    scenario: 동일 계약(watchChangedAt/baseUpdatedAt)에 대해 어댑터는 Number.isFinite, 서비스는 Number.isInteger 로 이중검증 규칙이 상이. 방어계층 간 불일치 — 외곽이 통과시킨 값을 내곽이 조용히 폐기(WATCH-08 을 가림).
+    expected: 두 계층이 설계(§17.4 정수) 기준으로 일치.
+    actual: 규칙 불일치. 정수화(WATCH-08 수정) 후 양쪽을 동일 규칙으로 정렬 필요.
+
+  - id: WATCH-10
+    severity: Medium
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: src/app/adapters/watch/WatchConnectivityGateway.native.ts:118-128 (watchEvents 'message' 핸들러)
+    scenario: >
+      워치 ContentView.onAppear / .refreshable / manualRefresh() 가
+      sendMessage({type:'requestSnapshot'}, replyHandler) 를 보낸다(§17.2 sendMessage 경로 (1),
+      §17.1 (d) 수동 새로고침). 폰 어댑터 'message' 핸들러는 parseToggleOp 만 시도 → null →
+      metric('watch.toggle.malformed') + reply({ok:false}). 워치 replyHandler 는 ingestContext({ok:false})
+      → 디코드 실패 no-op.
+    expected: 폰이 requestSnapshot 수신 시 최신 스냅샷을 reply(또는 pushSnapshot) 로 반환(D-09 (b) 즉시 경로).
+    actual: >
+      수동 새로고침이 무동작 + 매 요청마다 허위 watch.toggle.malformed 메트릭. 워치는 폰 데이터
+      변경 시의 updateApplicationContext 및 activation 시 receivedApplicationContext 재독으로만
+      갱신되므로 완전 파손은 아니나 명시적 pull 경로가 미구현.
+
+  - id: WATCH-04
+    severity: Medium
+    category: CODE_REVIEW
+    cause: DESIGN_CONFLICT
+    location: ios/TodayWhatWatch/Complication/TodayWhatWatchComplication.swift:20-26 (loadNotDone) / project.pbxproj (entitlements 부재)
+    scenario: 컴플리케이션 확장은 별도 프로세스/컨테이너. App Group entitlement 없이 워치 앱의 applicationSupportDirectory/watch_snapshot.json 을 읽을 수 없음 → loadNotDone()=nil → 상시 "—". 설계 §17.8 이 App Group id·entitlements 를 미명세.
+    expected: AC-56 — 컴플리케이션이 "오늘 남은 일정 수" 표시.
+    actual: 상시 "—". 스코프(1종)·탭 동작·타임라인 reload 배선은 정상 → AC-56 partial. 조정자 합의대로 별도 Architect 확인으로 이관(이번 사이클 재작업 트리거 아님, D-10 "포함" 확정 시 선결).
+
+  - id: WATCH-05
+    severity: Low
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: project.pbxproj (TodayWhatWatch 빌드설정 ASSETCATALOG_COMPILER_APPICON_NAME=AppIcon, Resources 페이즈에 에셋 카탈로그 없음)
+    scenario: 워치 앱 AppIcon 에셋 미제공 → 빌드 경고. 설치·실행에는 영향 없음.
+    expected: 워치 AppIcon 에셋 카탈로그 포함(스토어 제출 전 필수).
+    actual: 경고. 후속 항목.
+
+  - id: ENV-01
+    severity: Low
+    category: FUNCTIONAL
+    cause: ENVIRONMENT_ERROR
+    location: 저장소 경로 …/심플프로젝트/… (비ASCII) + @react-native-community/cli-server-api
+    scenario: Metro dev 서버가 이 경로에서 /status 에 HTTP 500. CLI 버그. 프로덕션 번들 무관.
+    expected: Metro /status 200.
+    actual: 500. 오프라인 react-native bundle 로 우회 가능. 소스 결함 아님 — 후속/무조치.
+
+  - id: N-11-COV
+    severity: Low
+    category: FUNCTIONAL
+    cause: TEST_ERROR
+    location: tests/watchSync/** (라이브 시뮬레이터 미실행)
+    scenario: LWW tie→phone-wins, soft-deleted→REJECT, 200건 절단+truncated 는 node 테스트(V-36/37/38)로만 커버, 페어드 시뮬레이터 왕복 미실행.
+    expected: nfr §9 note — watchOS 빌드·WCSession 실왕복은 "환경 외 후속 검증"(N-11, §11.2)으로 분리 기록, FAIL/BLOCKED 아님.
+    actual: 설계가 허용하는 범위. WATCH-08 과 독립(WATCH-08 은 정적 리뷰로 검출된 계약 위반).
+```
+
+## AC / V / E / R 매핑 (v1.8, N-11)
+
+| 항목 | 결과 | 근거 |
+| --- | --- | --- |
+| AC-23 / AC-48 워치 완료 토글 → 폰 대시보드 집계 반영 | **미충족(FAIL)** | 경로는 §17.4 대로 구현(applyIncomingToggle → resolveToggleLWW → toggleDone → pushSnapshot)이나 WATCH-08 로 실기기 op 이 전부 REJECTED. node V-37 는 PASS(정수 주입) |
+| AC-47 워치 오늘 목록(시각순·최소 상세·헤더 카운트) | 충족 | `buildWatchSnapshot` today startAt 오름차순·필드 최소화, ContentView List + headerRow, DetailView 읽기전용. node V-36 PASS |
+| AC-49 오프라인 조회 + 보류 큐 | 부분 | 워치 `isStale`·"최신 아님"·보류 큐 파일·flushPendingQueue·"동기화 대기" 배지 구현. 단 큐 flush 후 폰 적용은 WATCH-08 에 종속 |
+| AC-50 오프라인 충돌 LWW | 부분 | `resolveToggleLWW` 순수 로직 정확(node V-38 PASS). 실 op 경로는 WATCH-08 로 차단 |
+| AC-51 워치 비범위 동작 차단 | 충족 | ContentView/DetailView 에 생성·수정·삭제·검색·설정·유형 진입점 없음. `setupPrompt`(E-19-2)만. 정적 확인 |
+| AC-52 알림 예약 주체 = 폰 | 충족 | 페이로드 스키마에 REMINDER 필드 0(WatchModels/types.ts). 워치 코드가 ReminderScheduler/알림 API 미호출(grep). V-40 |
+| AC-53 워치 페이로드 범위(오늘+다음 1건, 과거/검색 미전송) | 충족 | `buildWatchSnapshot` today(≤200)+nextUpcoming 1건. 이력·검색 인덱스·유형 전체정의 미포함. `toPlistSafe` 는 null 키만 제거(추가 없음) |
+| AC-54 워치 빈 상태(추가 버튼 없음) | 충족 | `snap.today.isEmpty` → "오늘 일정이 없습니다" 텍스트만 |
+| AC-55 Wear OS 제외 | 충족 | Android 어댑터 `isSupported()=false` 전 경로 no-op(node V-39). Wear 모듈 미생성 |
+| AC-56 워치 컴플리케이션(D-10 결정 시) | 부분 | 위젯 1종·탭→앱 실행·타임라인 reload 배선 정상. 그러나 WATCH-04(App Group 부재)로 상시 "—". D-10 미확정이면 검증 제외 대상 |
+| R-19-1 워치 열면 스냅샷 표시(오프라인 허용) | 충족 | activation 시 `receivedApplicationContext` 재독 + 로컬 파일 로드. `needsPhoneSetup`(E-19-2) |
+| R-19-2 워치 토글 → 워치 카운트 즉시 갱신 + 폰 역전파 | **미충족(FAIL)** | 워치 낙관 갱신(`applyOptimistic`)은 동작. 폰 역전파는 WATCH-08 |
+| R-19-3 폰 변경 → 다음 갱신에 워치 반영 | 충족(코드상) | App.tsx: `stale.dashboard` false→true 구독 + `AppState 'active'` → 500ms 디바운스 `pushSnapshot()`. 부트스트랩 후 activate + 즉시 push. 리스너/타이머 정리 있음(effect cleanup) |
+| R-19-4 epoch ms + IANA tz | 충족 | types.ts/WatchModels.swift 동일 계약, 워치 `timeText` 가 표시 시점에만 TimeZone 변환. (단 op 의 watchChangedAt 정수 계약 위반이 WATCH-08) |
+| E-19-1~E-19-7 | 대체로 반영 | E-19-1 "최신 아님"/보류 큐, E-19-2 setupPrompt, E-19-3 LWW, E-19-4 `resolveCategoryDisplay` 폴백("기타"/#8E8E93), E-19-5 빈 상태, E-19-6 200 절단+truncated+metric, E-19-7 알림 분리 — 모두 구현. E-19-3 실효는 WATCH-08 에 종속 |
+| V-36 스냅샷 빌더 | PASS | node |
+| V-37 역전파 서비스 로직 | PASS(node) / 실경로 FAIL | isValidToggleOp·dedup·NOT_FOUND·toggleDone 한정·pushSnapshot — 정수 주입 테스트는 통과, 실 op 은 WATCH-08 |
+| V-38 LWW 순수 | PASS | node |
+| V-39 채널 격리(NFR-12) | PASS | sendSnapshot/activate/ack throw 주입해도 폰 흐름 정상, Android no-op. 어댑터도 try/catch 로 격리. node + 정적 |
+| V-40 알림 무관 | PASS | 정적 grep — 페이로드 REMINDER 필드 0, 워치 코드 알림 미생성 |
+
+## 보안 점검 (logic §13.9 STRIDE / OWASP) — 미해결 취약점 없음
+
+| 점검 | 결과 |
+| --- | --- |
+| WCSession 신뢰 경계 · 수신 op = 비신뢰 입력 | 적합 — `applyIncomingToggle` 단일 처리 경로: 형식검증(`isValidToggleOp`: UUID 정규식·`Number.isInteger`>0 scheduleId·엄격 boolean·정수 유한 타임스탬프) → `ScheduleRepository.findById` 재조회(`!schedule || deletedAt!==null` → REJECT) → ring-50 dedup 원장(APP_SETTING `watch.appliedOps`) → LWW → APPLY 시 `ScheduleService.toggleDone(scheduleId, done)` **만** 호출. deps 노출면에 create/update/softDelete/settings/category 경로 없음(P-43). `sendMessage`·`transferUserInfo` 폴백 양경로가 동일 `parseToggleOp`→`toggleCb`→`applyIncomingToggle` 로 수렴 — 검증 우회 없음 |
+| 민감정보(V-40) | 적합 — 페이로드 필드: id/title/startAt/timeZone/categoryLabel/categoryColor/isHighPriority/isDone/doneAt/updatedAt + summary 카운트 + nextUpcoming(id/title/startAt/timeZone). 메모·이력·검색·유형 전체정의·계정·토큰·REMINDER 없음. `toPlistSafe` 는 null/undefined 키만 재귀 제거(값 추가 없음, false/0/"" 보존, 빈 배열/객체 보존, 순환 없음). Swift Codable optional(`doneAt`, `nextUpcoming`)은 키 부재 시 nil 디코드 — 계약 무변경 확인 |
+| 워치 로컬 파일 데이터 보호 | 적합 — `WatchSyncStore.persistSnapshot`/`persistQueue` 모두 `write(to:options:[.atomic, .completeFileProtection])` |
+| 비밀정보 | 적합 — 워치 채널에 키/토큰/자격증명 없음. 하드코딩 없음 |
+| 의존성 | 적합 — `react-native-watch-connectivity` 1.1.0 정확 핀(package.json/Podfile.lock RNWatch 1.1.0, React 의존만). 1.x major 고정(§13.6/§13.9 정책). watchOS 앱은 시스템 프레임워크(WatchConnectivity/SwiftUI/WidgetKit)만 |
+| 잔여 위험 | 잠금 해제된 분실 워치의 오늘 제목 열람 — §13.9 residual 로 문서화됨(코드 조치 불요). LWW 근사 유실(N-12) 문서화됨 |
+| 번들 id 정합 | phone `kr.purpledog.todaywhat` / watch `.watchkitapp` / complication `.watchkitapp.complication`, watch Info.plist `WKCompanionAppBundleIdentifier=kr.purpledog.todaywhat` 일치. phone 타깃 자체 빌드설정 무변경(신규 config 블록만 추가) |
+
+## 판정
+
+**FAIL** — 회귀(195/195)·tsc(src 신규 0)·보안(미해결 0)·계층 규칙(`src/core/watchSync/**` react-native/node 미import, `src/app` 역참조 없음)은 통과하나, **WATCH-08(High, FUNCTIONAL)** 로 워치→폰 완료 토글의 실제 네이티브 경로가 전부 거부되어 AC-23/AC-48/AC-50·R-19-2 가 실기기에서 미충족이다. 이 사이클의 목적이 네이티브 통합 + 라이브 왕복 검증이므로 pure-logic PASS 만으로 통과시킬 수 없다. 반드시 수정: WATCH-08(+WATCH-09 검증 규칙 일치화). WATCH-10 은 함께 수정 권장. 이관(비차단): WATCH-04(Architect 확인), WATCH-05·ENV-01·N-11-COV(후속). 다음 라우팅은 Orchestrator 결정.
+
+---
+
+# v1.9 — N-11: WATCH-08 / WATCH-09 / WATCH-10 수정 재검증 (Developer iteration 3)
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-08 |
+| 대상(iteration 3) | `ios/TodayWhatWatch/WatchModels.swift`(WATCH-08: `WatchClock`, op 타임스탬프 `Int`), `ios/TodayWhatWatch/WatchSyncStore.swift`(WATCH-08 `WatchClock.nowEpochMillis()`, WATCH-10 도달 가능화 시 `manualRefresh()`), 신규 `src/app/adapters/watch/watchMessage.ts`(WATCH-09/10 순수 파서·분류), `src/app/adapters/watch/WatchConnectivityGateway.native.ts`(분류 사용·`requestSnapshot` reply·`setSnapshotRequestHandler`), `src/app/bootstrap/composeNative.native.ts`(WATCH-10 배선), 신규 `tests/watchSync/watchMessage.test.ts`(12) |
+| 근거 | `plan.md` v1.4 (F-19, AC-23·AC-47~AC-56, E-19-1~7, R-19-1~4), `logic.md` v1.9 (§13.9, §17.1~17.10), `nfr.md` v1.7 (§14, V-36~V-40, NFR-12) |
+
+```text
+status: PASS
+summary: >
+  v1.8 FAIL 3건(WATCH-08 High / WATCH-09 Medium / WATCH-10 Medium)이 모두 종결됐다.
+  - WATCH-08: 워치 op 의 watchChangedAt/baseUpdatedAt 이 Swift Int 로 인코딩(WatchClock.nowEpochMillis()
+    가 .rounded()). 소수부 값은 (a) 워치 JSONDecoder(Int) 에서 디코드 실패 → 보류 큐 진입 불가,
+    (b) 폰 parseToggleOp(Number.isInteger) 에서 null. 다른 워치 생성 시각 필드(applyOptimistic
+    doneAt = 로컬 전용·정수, baseUpdatedAt = 폰 정수 유래)도 계약 위반 없음.
+  - WATCH-09: 신규 순수 모듈 src/app/adapters/watch/watchMessage.ts 의 parseToggleOp 가
+    WatchSyncService.isValidToggleOp 와 동일하게 Number.isInteger 를 요구. 어댑터가 서비스가
+    조용히 버릴 값을 더는 넘기지 않는다. watchSyncService.ts 무수정. RN/node import 없음.
+  - WATCH-10: classifyInboundMessage → toggle | requestSnapshot | malformedToggle | ignore.
+    watch.toggle.malformed 계측은 type:'toggle' 실패 시에만. requestSnapshot → 캐시 lastSnapshot
+    즉시 reply + snapshotRequestCb() → pushSnapshot(). composeNative.assemble() 이
+    setSnapshotRequestHandler(() => services.watchSync.pushSnapshot()) 배선(instanceof 가드).
+    워치 manualRefresh() 는 .onAppear/.refreshable + activation·reachability 도달 시점에도 실행.
+  - 회귀: node --test 207/207 (신규 watchMessage.test.ts 12건 포함). tsc src 신규 0 (사전 5건 허용).
+    src/core/** 무수정. DB DDL / ScheduleService / DashboardService / ReminderScheduler /
+    CategoryService / SettingService / 기존 셸 / SCREEN_BINDINGS / 알림 경로 / F-06·F-10·F-16·F-17·F-18
+    무변경.
+  - 보안(§13.9): 미해결 취약점 없음.
+  - 라이브 시뮬레이터 왕복은 이번 재검증에서 직접 미수행(Metro /status 500, ENV-01). 실경로 통합
+    테스트 + 정적 대조 + Developer 라이브 증거(정수 op JSON, is_done/done_at/updated_at 한정 델타,
+    원장 1건, ack, 큐 클리어, summary 재수렴, requestSnapshot 새로고침, malformed 0건)가 커밋
+    코드와 정합 → 플로우 검증 충분.
+
+tests:
+  total: 207
+  passed: 207
+  failed: 0
+  new: >
+    tests/watchSync/watchMessage.test.ts (12) — 실제 parseToggleOp/classifyInboundMessage 검증:
+    정수 op 파싱 / float watchChangedAt·baseUpdatedAt → null / NaN·Infinity → null /
+    비-UUID·비정수·비양수 scheduleId·비-boolean done → null / flat 형태 허용 /
+    classify 4분기 / 실경로 통합(parseToggleOp(raw) → applyIncomingToggle → APPLIED, malformed 0) /
+    음성 통합(float op 은 parse 단계에서 걸러져 서비스 미도달, 상태 불변). 공허한 assertion·비활성
+    조건 없음. emitIncoming 우회 아님 — 어댑터가 호출하는 실제 함수 검증.
+
+issues:
+  - id: WATCH-11
+    severity: Low
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: ios/TodayWhatWatch/WatchSyncStore.swift:loadLocal() (queueURL 디코드)
+    description: >
+      watch_pending_ops.json 디코드 실패 시 `(try? JSONDecoder().decode(...)) ?? []` 로 빈 큐를
+      취하나 손상된 파일을 즉시 재기록하지 않는다 → 다음 실제 토글(persistQueue) 전까지 손상 파일이
+      디스크에 잔존. 영향: 파일 손상이라는 희소 조건에서 미전송 보류 op 이 조용히 유실(재시도 안 됨).
+      완화: `.atomic`+`.completeFileProtection` 쓰기라 손상 확률 낮음, best-effort 모델(NFR-12) 범위,
+      폰이 SoT 이며 다음 pushSnapshot 이 워치 표시를 재수렴, 스냅샷 파일도 동일 패턴(`try? decode`).
+      재작업 트리거 아님 — 후속(디코드 실패 시 `[]` 재기록 또는 경고 로그) 권고.
+
+  - id: WATCH-04
+    severity: Medium
+    category: CODE_REVIEW
+    cause: DESIGN_CONFLICT
+    status: 이관(Architect) — 미해결, 이번 사이클 비차단
+    description: >
+      컴플리케이션 확장이 App Group entitlement 없이 워치 앱의 watch_snapshot.json 을 읽을 수 없어
+      상시 "—". 설계 §17.8 이 App Group id·entitlements 미명세. 위젯 스코프(1종)·탭·타임라인 reload
+      배선은 정상 → AC-56 = partial. D-10 "포함" 확정 시 선결.
+
+  - id: WATCH-05
+    severity: Low
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    status: 후속(비차단)
+    description: 워치 AppIcon 에셋 카탈로그 미포함 → 빌드 경고. 설치·실행 무영향. 스토어 제출 전 필수.
+
+  - id: ENV-01
+    severity: Low
+    category: FUNCTIONAL
+    cause: ENVIRONMENT_ERROR
+    status: 후속(비차단, 소스 결함 아님)
+    description: 비ASCII 저장소 경로에서 Metro /status HTTP 500(@react-native-community/cli-server-api 버그). 오프라인 번들 우회. 프로덕션 무관.
+
+  - id: N-11-COV
+    severity: Low
+    category: FUNCTIONAL
+    cause: TEST_ERROR
+    status: 후속(설계 허용 범위)
+    description: >
+      LWW tie→phone-wins, soft-deleted→REJECT, 200건 절단+truncated 는 node 테스트(V-36/37/38)로만
+      커버. nfr §9 note — watchOS 빌드·WCSession 실왕복은 "환경 외 후속 검증"(N-11, §11.2), FAIL/BLOCKED 아님.
+```
+
+## AC / V / E / R 매핑 (v1.9, N-11 재검증)
+
+| 항목 | v1.8 | v1.9 | 근거 |
+| --- | --- | --- | --- |
+| AC-23 / AC-48 워치 토글 → 폰 대시보드 집계 반영 | 미충족(FAIL) | **충족** | op 타임스탬프 Int 종단 → parseToggleOp(정수)·isValidToggleOp(정수) 통과 → resolveToggleLWW → toggleDone → dashboard 무효화. `watchMessage.test.ts` 실경로 통합 테스트가 parse→applyIncomingToggle→`isDone=true`/`doneAt`/ack APPLIED/`watch.toggle.applied` 계측 확인, malformed 0. Dev 라이브 델타(is_done/done_at/updated_at 한정, 원장 1건, 큐 클리어) 정합 |
+| AC-47 워치 오늘 목록 | 충족 | 충족 | `buildWatchSnapshot` (V-36) |
+| AC-49 오프라인 조회 + 보류 큐 flush | 부분 | **충족** | flush 가 이제 폰에 실제 적용됨(WATCH-08). `sessionReachabilityDidChange` 가 flush + `manualRefresh()` 재시도 |
+| AC-50 오프라인 충돌 LWW | 부분 | **충족** | `resolveToggleLWW` (V-38) + 실 op 경로가 정수 `baseUpdatedAt`/`watchChangedAt` 로 도달. tie/REJECT 분기는 node 테스트 커버(N-11-COV, 설계 허용) |
+| AC-51 워치 비범위 동작 차단 | 충족 | 충족 | 워치 UI 진입점 없음 + 인바운드 파서가 toggle/requestSnapshot 외 쓰기 경로 미생성 |
+| AC-52 알림 예약 주체 = 폰 | 충족 | 충족 | 페이로드 REMINDER 필드 0, 워치 알림 API 미호출 (V-40) |
+| AC-53 워치 페이로드 범위 | 충족 | 충족 | today(≤200)+nextUpcoming 1건. `requestSnapshot` reply 도 동일 `lastSnapshot` — 신규 필드 없음 |
+| AC-54 워치 빈 상태 | 충족 | 충족 | — |
+| AC-55 Wear OS 제외 | 충족 | 충족 | Android `isSupported()=false` no-op (V-39) |
+| AC-56 워치 컴플리케이션(D-10 시) | 부분 | **부분(변화 없음)** | 위젯 1종·탭·reload 정상, WATCH-04(App Group 부재)로 상시 "—". Architect 이관 |
+| R-19-2 워치 카운트 즉시 갱신 + 폰 역전파 | 미충족(FAIL) | **충족** | 워치 `applyOptimistic` 즉시 갱신 + 폰 역전파 동작 |
+| R-19-3 폰 변경 → 워치 반영 | 충족(코드상) | 충족 | App.tsx 디바운스 push + `requestSnapshot` 새로고침 경로 추가. Dev "WATCH-10 isolated" 증거(폰 단독 변경 → 워치 재실행 → requestSnapshot → reply 426 + pushSnapshot → 일치) 정합 |
+| R-19-4 epoch ms + IANA tz | 충족 | 충족 | 정수 계약 확립(WATCH-08). 표시 시점 TimeZone 변환 |
+| E-19-1~E-19-7 | 대체로 반영(E-19-3 실효 종속) | **충족** | E-19-3 LWW 실효 확보. E-19-1 최신아님/보류 큐, E-19-4 폴백, E-19-5 빈 상태, E-19-6 200 절단, E-19-7 알림 분리 |
+| V-36 / V-38 / V-39 / V-40 | PASS | PASS | node + 정적 |
+| V-37 역전파 서비스 로직 | PASS(node)/실경로 FAIL | **PASS(실경로 포함)** | `watchMessage.test.ts` 실경로 통합 — parse→applyIncomingToggle→APPLIED, 음성(float)은 서비스 미도달·상태 불변 |
+
+## 보안 재점검 (logic §13.9 STRIDE / OWASP) — 미해결 취약점 없음
+
+| 점검 | 결과 |
+| --- | --- |
+| 인바운드 파서 = 신뢰 경계 (`watchMessage.ts`) | 적합 — `classifyInboundMessage` 는 `toggle`(검증된 op → `applyIncomingToggle` → `ScheduleService.toggleDone` 만) / `requestSnapshot`(→ `pushSnapshot`, 읽기전용 아웃바운드) / `malformedToggle`(계측만) / `ignore`(no-op) 4종만 산출. create/update/delete/settings/category 로 이어지는 분기 없음. `message`(sendMessage)·`user-info`(transferUserInfo) 양경로 모두 `classifyInboundMessage` 사용(user-info 는 `toggle`/`malformedToggle` 만 처리) → 비-토글 쓰기 시도 전면 차단 |
+| `requestSnapshot` reply(캐시 `lastSnapshot`) | 적합 — `lastSnapshot` 은 직전 `sendSnapshot` 이 보낸 바로 그 페이로드(`toPlistSafe` 후, line 152). 이미 push 된 것의 상위집합이 될 수 없음(동일). V-40 민감정보 없음(스키마 동일 — memo/reminder/account/token/이력 미포함). 캐시는 프로세스 수명·`dispose()` 시 해제, 최초 push 전에는 `{ok:true}`(데이터 없음). 이후 `snapshotRequestCb()` 가 즉시 최신 push 보정. 단일 사용자·1 페어드 워치 — 다기기 발산 없음 |
+| 정수 계약(§13.9) | 적합 — 소수부 op 은 워치 `JSONDecoder`(Int) + 폰 `parseToggleOp`(`Number.isInteger`) 양쪽에서 거부. Tampering/replay 방어(scheduleId 재조회 + opId ring-50 dedup + LWW)는 무변경 유지 |
+| 워치 로컬 파일 | 적합 — `persistSnapshot`/`persistQueue` `.atomic`+`.completeFileProtection` 유지 |
+| 의존성 | 적합 — `react-native-watch-connectivity` 1.1.0 핀 무변경. `watchMessage.ts` 는 신규 서드파티 0, RN/node import 0 |
+| 계층 | 적합 — `watchMessage.ts` 는 `src/app/adapters/watch/`(앱 계층)에서 `core/watchSync/types` 타입만 참조(허용 방향). `composeNative.assemble()` 의 `instanceof` 배선은 조립 지점 한정, 포트 계약 무변경 |
+
+## 판정
+
+**PASS** — v1.8 FAIL 3건(WATCH-08/09/10) 종결 확인. 회귀 207/207(신규 12건은 실제 파싱 경로를 검증, 공허하지 않음), tsc src 신규 0, `src/core/**`·기존 서비스·DDL·셸·알림 경로·F-06/F-10/F-16/F-17/F-18 무변경. AC-23/AC-48/AC-49/AC-50·R-19-2·E-19-3 실효 충족(실경로 통합 테스트 + Developer 라이브 증거 정합). 보안 미해결 취약점 0 — 인바운드 파서가 비-토글 쓰기를 양 전송경로에서 차단, `requestSnapshot` reply 는 신규 노출 없음. 신규 지적 WATCH-11 은 Low·비차단(후속). 잔여 비차단: WATCH-04(Architect 이관, AC-56 partial), WATCH-05·ENV-01·N-11-COV. 라이브 시뮬레이터 왕복은 직접 미수행(ENV-01) — 실경로 테스트·정적 대조로 대체. 다음 라우팅은 Orchestrator 결정.
