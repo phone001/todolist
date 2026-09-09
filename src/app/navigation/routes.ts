@@ -28,8 +28,12 @@ export type StackRouteName = (typeof STACK_ROUTES)[keyof typeof STACK_ROUTES];
 export interface RootStackParamList {
   Tabs: undefined;
   ScheduleDetail: { scheduleId: number };
-  /** scheduleId 없으면 신규 작성. */
-  ScheduleEditor: { scheduleId?: number };
+  /**
+   * scheduleId 없으면 신규 작성.
+   * presetDate: 대시보드 기준 날짜(F-20)가 오늘이 아닐 때 FAB/빈 상태 버튼으로 진입 시 전달되는
+   * 로컬 자정 epoch ms. 신규 모드 기본 시작 일시 = presetDate + 9h (OI-19, logic §16.3.7).
+   */
+  ScheduleEditor: { scheduleId?: number; presetDate?: number };
   CategoryManager: undefined;
   Permissions: { from?: 'onboarding' | 'settings' } | undefined;
 }

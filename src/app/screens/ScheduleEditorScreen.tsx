@@ -7,6 +7,8 @@
  *   - startAt: number (epoch ms) 단일 상태
  *   - endAt: number | null (epoch ms), Switch 토글로 활성화
  *   - localWallToEpoch 저장 경로 사용 제거 (함수·V-26 테스트 유지)
+ * v1.10 변경(OI-19): 신규 모드에서 route.params.presetDate(대시보드 기준 날짜, F-20)가 있으면
+ *   기본 시작 일시 = presetDate + 9h. 저장·검증 규칙은 불변.
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -29,6 +31,7 @@ import { SETTING_KEYS } from '../state/bindings.ts';
 import { ValidationError, AppError } from '../../core/domain/errors.ts';
 import type { Category, Priority } from '../../core/domain/types.ts';
 import type { RootStackParamList } from '../navigation/routes.ts';
+import { editorPresetStartAt } from './dashboardViewModel.ts';
 
 const PRIORITY_OPTIONS: Array<{ value: Priority; label: string }> = [
   { value: 'LOW', label: '낮음' },
@@ -80,6 +83,7 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
   const { schedules, settings, categories } = useServices();
   const invalidate = useShellStore((s) => s.invalidate);
   const editingId = route.params?.scheduleId;
+  const presetDate = route.params?.presetDate;
 
   // ── 폼 상태 ────────────────────────────────────────────────────────────────
   const [title, setTitle] = useState('');
@@ -88,8 +92,15 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
   const [cats, setCats] = useState<Category[]>([]);
   /** 설정의 "알림 사용" 전역 스위치. false 면 알림 필드 비활성 + 저장 시 알림 미포함. */
   const [notifGloballyOn, setNotifGloballyOn] = useState(true);
-  /** 시작 일시: epoch ms 단일 상태 (기본값 = 다음 정시) */
-  const [startAt, setStartAt] = useState<number>(defaultStartEpoch);
+  /**
+   * 시작 일시: epoch ms 단일 상태.
+   * 신규 + presetDate(OI-19) → 해당 날짜 09:00 로컬, 그 외 → 다음 정시.
+   */
+  const [startAt, setStartAt] = useState<number>(() =>
+    editingId === undefined && presetDate !== undefined
+      ? editorPresetStartAt(presetDate)
+      : defaultStartEpoch(),
+  );
   /** 종료 일시 활성화 여부 */
   const [endAtEnabled, setEndAtEnabled] = useState(false);
   /** 종료 일시: epoch ms (endAtEnabled=false 시 null 전송) */

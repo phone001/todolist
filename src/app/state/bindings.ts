@@ -31,7 +31,12 @@ export interface ScreenBinding {
 export const SCREEN_BINDINGS: readonly ScreenBinding[] = [
   {
     screen: 'DashboardScreen',
-    reads: [{ service: 'schedules', method: 'findInRange' }],
+    reads: [
+      // 요약 상세 + 개수 카드(F-21) 소스. 기준 날짜(F-20)를 인자로 전달 — 시그니처 무변경 (logic §7.1).
+      { service: 'dashboard', method: 'getSummary' },
+      // 기준 날짜 일정 목록 소스. 인라인 검색(F-22)은 이 결과 배열의 표시 계층 순수 필터 — 서비스 미호출.
+      { service: 'schedules', method: 'findInRange' },
+    ],
     writes: [
       { service: 'schedules', method: 'toggleDone' },
       { service: 'schedules', method: 'softDelete' },
