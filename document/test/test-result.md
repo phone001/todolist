@@ -3,16 +3,18 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 검증 결과 (기능 테스트 + 코드 리뷰 + 보안 점검) |
-| 버전 | v1.9 |
-| 대상 | (v1.0) `src/core/**` · (v1.1~1.2) `src/app/**` · (v1.5) op-sqlite 6.2.11→9.3.0 상향 + iOS 온디바이스 빌드/실행 검증 · (v1.6) ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1) · (v1.7) 애플워치 워치 타깃 추가 (F-19, AC-23·AC-47~AC-56) |
-| 근거 | `document/planner/plan.md` v1.4, `document/architect/{overview,logic,nfr}.md` (overview/logic v1.9, nfr v1.7), `database.md` v1.2 |
+| 버전 | v1.11 |
+| 대상 | (v1.0) `src/core/**` · (v1.1~1.2) `src/app/**` · (v1.5) op-sqlite 6.2.11→9.3.0 상향 + iOS 온디바이스 빌드/실행 검증 · (v1.6) ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1) · (v1.7) 애플워치 워치 타깃 추가 (F-19, AC-23·AC-47~AC-56) · (v1.10) 대시보드("오늘" 탭) 개선 (F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색, AC-57~AC-66) · (v1.11) 대시보드 개선 **재확정 방향** (F-20 컴팩트 / F-21 진행률 한 줄 / F-22 접이식 검색, AC-57~AC-68, E-21-4·E-22-6·E-22-7) |
+| 근거 | `document/planner/plan.md` v1.6, `document/architect/{overview,logic,database,nfr}.md` (overview/logic v1.11, database v1.4, nfr v1.9) |
 | 작성 주체 | Tester |
-| 일자 | 2026-09-08 |
+| 일자 | 2026-09-09 |
 
 ## 변경 이력
 
 | 버전 | 변경 |
 | --- | --- |
+| v1.11 | Feature: 대시보드("오늘" 탭) 개선 **재확정 방향**(plan v1.6 / 설계 v1.11 — F-20 날짜 네비 컴팩트화 / F-21 개수 카드 2장→**진행률 한 줄** / F-22 상시 입력창→**접이식 검색**, AC-57~AC-68, E-21-4·E-22-6·E-22-7, P-52·P-53) — **PASS**. `node --experimental-strip-types --test 'tests/**/*.test.ts'` → 230/230(회귀 0, 기준선 224 + 신규 6: `isFutureDate` 2 · `progressFillRatio` 2 · `resolveSearchToggle` 2). `tsc -p tsconfig.json` src 신규 오류 0(사전 5건 유지: `repositories.ts` Buffer x2, `index.ts` console x2 + process x1). 신규 `dashboardViewModel.test.ts` 의 `node:test`/`node:assert` 미해석 2건은 `types:[]` 로 인한 20+ 기존 테스트 파일 공통 사전 패턴 — 신규 오류 아님. `src/core/**`·DB DDL/인덱스/트리거/`APP_SETTING`·포트(`gateways.ts`)·`package.json`/`package-lock.json` 무변경(git 대조). `bindings.ts`/`routes.ts` 는 v1.10 상태 유지(재확정 사이클 추가 변경 없음). 코드 리뷰 Critical/High 0. 보안 미해결 취약점 0(접이식 토글·검색 입력 = 인메모리 `String.includes` 순수 필터, SQL/FTS 미경유; `progressFillRatio` 음수·0 방어 + [0,1] 클램프; progress bar `accessibilityRole="progressbar"` + 인접 텍스트 색 비의존; `searchExpanded`/`referenceDate`/`inlineQuery` 비영속·비로그; `presetDate` 신뢰 경계 회귀 없음). 잔여(비차단): DASH-01 종결(logic §16.3.7 v1.11 정정, 구현 이미 방향 무관 `+HALF_DAY`) / DASH-04 Low(`bindings.ts` v1.5 주석 "개수 카드(F-21)" 문구 잔존 — 코드 무변경, 주석만) / OI-20 후속(펼침·접힘 무애니메이션·접힘 시 아이콘 포커스 복귀 미구현 — nfr §15.6 "즉시 전환"은 충족, 모션 폴리시는 Developer 재량 후속) / DASH-02(AC-46 브랜드·유형별 분포·다음 예정 미표시 — F-17 별도 트랙, 이번 사이클 트리거 아님) / DASH-03(`findInRange` 단일 페이지 200 — v1.10 이전부터, 재작업 트리거 아님). |
+| v1.10 | Feature: 대시보드("오늘" 탭) 개선(F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색, AC-57~AC-66, P-45~P-51, E-20/E-21/E-22) — **PASS**. `node --test` 224/224(회귀 0, 신규 `dashboardViewModel.test.ts` 17건). `tsc -p tsconfig.json` src 신규 오류 0(사전 5건 유지). `src/core/**`·DB DDL/인덱스/트리거/`APP_SETTING`·포트 계약·`package.json`/`package-lock.json` 무변경. `bindings.ts` 는 `DashboardScreen.reads` 에 `dashboard.getSummary` 1행 추가만(writes/invalidates 무변경). 코드 리뷰 Critical/High 0. 보안 미해결 취약점 0(인라인 검색 = 인메모리 `String.includes` 순수 필터 — SQL/FTS/`SearchService` 미경유, `<Text>` 렌더, `referenceDate`/`inlineQuery` 비영속·비로그; `presetDate` 는 `ScheduleEditor` 딥링크 비대상 — 내부 `referenceDate`(숫자)만 전달). DESIGN_DOC_FIX(DASH-01, Low, Architect 이관): logic §16.3.7 `stepReferenceDate` 예시식 `refTs + dir*DAY_MS + dir*HALF_DAY` 가 `dir=-1` 에서 목표일을 하루 더 지나침 — 구현은 방향 무관 `+HALF_DAY` 쿠션으로 교정(4개 tz·봄/가을 DST 왕복 테스트로 정합 확인). 캐리오버(비차단): DASH-02(Low) 브랜드 영역·유형별 분포·다음 예정 미표시로 AC-46 부분 미충족 — 본 변경 이전부터 존재(F-17 비범위 T-01 트랙), 이번 변경은 완료율 한 줄을 신규 추가하여 회귀 아님. |
 | v1.0 | 코어 계층 검증 — PASS (81 tests) |
 | v1.1 | RN 앱 셸 + 네이티브 어댑터 검증 — **FAIL** (SHELL-001 High: op-sqlite `exec()` 다중문 분할이 트리거 DDL 파손) |
 | v1.2 | SHELL-001 수정 재검증 — PASS (113 tests) |
@@ -23,6 +25,169 @@
 | v1.7 | Feature: 애플워치 워치 타깃 추가(F-19, AC-23·AC-47~AC-56) — **PASS**. `node --test` 195/195(회귀 0, 신규 watchSync 30건). 코드 리뷰 Critical/High 0. 보안 미해결 취약점 0(§13.9 STRIDE 통과 — 수신 op 비신뢰 입력 검증·`findById` 재조회·dedup 원장·`toggleDone` 한정·페이로드 비밀정보 미전송·워치 로컬 파일 `.completeFileProtection`). 지적 3건(WATCH-01 Medium: `package-lock.json`에 `react-native-watch-connectivity` 미반영 — `npm ci` 파손, 비차단·머지 전 수정 / WATCH-02 Low: `applyIncomingToggle`의 `toggleDone`/repo 예외 미격리 / WATCH-03 Low: 어댑터 `activate()` 비-iOS에서 throw). 어댑터·watchOS 스캐폴드 온디바이스 검증은 N-11 후속(범위 밖). |
 | v1.9 | N-11: WATCH-08/09/10 수정 재검증(Dev iteration 3) — **PASS**. `node --test` 207/207(회귀 0, 신규 `watchMessage.test.ts` 12건). `tsc` src 신규 오류 0(사전 5건 허용). `src/core/**` 이번 사이클 무수정(`watchSyncService.ts` 미수정 확인). **WATCH-08 종결**: `WatchToggleOp.watchChangedAt`/`baseUpdatedAt` 이 Swift `Int` 로 전송(`WatchClock.nowEpochMillis()` 반올림), 비정수는 워치 `JSONDecoder`(Int) 및 폰 `parseToggleOp`(`Number.isInteger`) 양쪽에서 거부 — 큐 진입조차 불가. **WATCH-09 종결**: 신규 순수 모듈 `src/app/adapters/watch/watchMessage.ts`(RN/node 미import)의 `parseToggleOp` 가 서비스 `isValidToggleOp` 와 동일 정수 규칙 적용 — 어댑터 경계에서 차단, 서비스 조용한 폐기 제거. **WATCH-10 종결**: `classifyInboundMessage` 4분기(toggle/requestSnapshot/malformedToggle/ignore), `watch.toggle.malformed` 은 `type:'toggle'` 실패 시에만 계측, `requestSnapshot` → 캐시 `lastSnapshot` 즉시 reply + `composeNative` 가 `setSnapshotRequestHandler(()=>pushSnapshot())` 배선, 워치 `manualRefresh()` 는 도달 가능화 시점에도 실행. AC-23/AC-48/AC-49/AC-50/R-19-2 충족(실경로 통합 테스트 + Dev 라이브 증거 정합). 보안 미해결 취약점 0(§13.9 재확인 — 인바운드 파서가 비-토글 쓰기 시도를 `sendMessage`/`transferUserInfo` 양경로에서 전부 차단, `requestSnapshot` reply 는 직전 push 페이로드와 동일 — 신규 노출 없음, V-40 유지). 신규 지적 WATCH-11(Low, 비차단: `loadLocal()` `?? []` 가 손상된 보류 큐 파일을 재기록 없이 흡수). 이관 유지: WATCH-04(Architect — 컴플리케이션 App Group, AC-56 partial), WATCH-05·ENV-01·N-11-COV. |
 | v1.8 | N-11: F-19 네이티브 통합 + 라이브 왕복 검증(Dev iteration 1+2) — **FAIL**. `node --test` 195/195(회귀 0), `tsc` src 신규 오류 0(사전 5건 허용). 코드 리뷰: **WATCH-08 High** — watchOS `WatchToggleOp.make` 가 `watchChangedAt = Date().timeIntervalSince1970 * 1000`(비정수 Double)을 전송하나 `WatchSyncService.isValidToggleOp` 는 `Number.isInteger` 를 요구(설계 §17.4/§13.9) → 실제 워치 발신 토글 op 이 전부 `malformed` 로 거부(`ack REJECTED`) → R-19-2/AC-23/AC-48/AC-50 실기기 파손. node 195건은 `emitIncoming` 에 정수값을 직접 주입해 이 경로를 못 짚음. Dev iteration-2 "라이브 토글 APPLY 관찰" 증거는 커밋된 코드와 모순(재현 불가). 부수: WATCH-09 Medium(어댑터 `parseToggleOp` `Number.isFinite` ↔ 서비스 `Number.isInteger` 이중검증 불일치), WATCH-10 Medium(폰 어댑터에 워치 `requestSnapshot`(수동 새로고침, §17.2 sendMessage 경로/§17.1(d)) 핸들러 없음 → 무동작 + 허위 `watch.toggle.malformed`). 보안 미해결 취약점 0(§13.9 재확인 — 수신 op 단일 경로 검증→`findById`→dedup→`toggleDone` 한정, `sendMessage`/`transferUserInfo` 양경로 동일, 페이로드 V-40 유지, 워치 파일 `.completeFileProtection`). 이월: WATCH-04 Medium(컴플리케이션 App Group 미설정 → 상시 "—", 설계 §17.8 미명세 — Architect 확인), WATCH-05 Low(워치 AppIcon 에셋 없음 — 빌드 경고), ENV-01 Low(비ASCII 경로에서 Metro `/status` 500 — CLI 버그, 오프라인 번들 우회), N-11-COV Low(LWW tie/REJECT/200절단은 node 테스트로 커버, 라이브 미실행 — 설계상 허용). |
+
+---
+
+# v1.11 — Feature: 대시보드("오늘" 탭) 개선 재확정 방향 (F-20 컴팩트 / F-21 진행률 한 줄 / F-22 접이식 검색)
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-10 |
+| 대상 | rename+재작성: `src/app/components/CountCards.tsx` → `src/app/components/ProgressLine.tsx` (props `{ total, done, isFuture, testID? }`) · 수정: `src/app/screens/DashboardScreen.tsx` (`searchExpanded` state, `ProgressLine` 교체, 미래 분기, 접힘 배선, 날짜 네비 컴팩트화) · `src/app/screens/dashboardViewModel.ts` (신규 순수 헬퍼 `isFutureDate` / `progressFillRatio` / `resolveSearchToggle`) · 테스트: `tests/app/dashboardViewModel.test.ts` (17 → 23, 신규 6건) |
+| 근거 | `plan.md` v1.6 (F-20/F-21/F-22, P-45~P-53, AC-57~AC-68, E-20/E-21(E-21-4)/E-22(E-22-6/E-22-7), D-12~D-19(D-14 CLOSED)), `logic.md` v1.11 (§7.1, §7.1.2/§7.1.3, §16.3.3, §16.3.7), `database.md` v1.4 (§11), `nfr.md` v1.9 (§15, §15.6, V-41~V-45) |
+
+```text
+status: PASS
+summary: >
+  대시보드 개선 재확정 방향(plan v1.6 / 설계 v1.11)을 순수 로직 단위 테스트 + 코드 리뷰 +
+  보안 점검으로 검증했다. RN 실제 렌더는 이 파이프라인 범위 밖(프로젝트 확립 관례) — 순수
+  뷰모델·컴포넌트 계약 + DashboardScreen 정적 대조로 대체.
+  - 회귀: node --experimental-strip-types --test "tests/**/*.test.ts" → 230 pass / 0 fail
+    (기준선 224 + 신규 6). tsc -p tsconfig.json → src/ 신규 오류 0(사전 5건 유지:
+    repositories.ts Buffer x2, index.ts console x2 + process x1). dashboardViewModel.test.ts 의
+    node:test/node:assert 미해석 2건은 types:[] 로 인한 20+ 기존 테스트 파일 공통 사전 패턴.
+    git 대조: src/core/** · migrations/DDL/인덱스/트리거/APP_SETTING · ports/gateways.ts ·
+    package.json/package-lock.json 무변경. bindings.ts/routes.ts 는 v1.10 상태 유지(재확정
+    사이클 추가 변경 없음).
+  - F-21 진행률 한 줄: ProgressLine.tsx 순수 프레젠테이션 — src/core/서비스/bindings.ts 무의존,
+    props 로만 수신, 부수효과·쿼리 0. total/done 은 load() 의 단일 dashboard.getSummary(referenceDate)
+    결과에서 파생 — 요약 상세(completionRate)와 동일 호출 1건 공유, 별도 집계·쿼리 없음(P-47).
+    progressFillRatio(total,done) = total<=0 ? 0 : clamp(done/total,0,1) — AC-60/AC-61 채움
+    비율 정확. 미래 날짜: isFutureDate(referenceDate, todayStart)=referenceDate>todayStart(로컬
+    자정 epoch 비교, 순수 표시 조건) → ProgressLine 이 "일정 N건"만 렌더, progress bar·완료 수·
+    완료율 숨김(P-52/D-19(a)/E-21-4/AC-68); getSummary 호출·인자·결과 무변경. 오늘·과거 복귀 시
+    isFuture 재평가로 "M / N 완료" + bar 복원. 빈 상태(과거·오늘 total=0) → "0 / 0 완료" +
+    빈(flex:0) bar, 영역 존치(E-21-1/AC-61). 완료 토글 시 optimistic setItems → void load() →
+    getSummary 재조회로 M·bar·완료율 실시간 갱신(AC-60). AC-46 회귀: 요약 상세 완료율 존치
+    (미래 날짜여도 기존대로 산출). 검색어와 무관(P-49/D-16/E-21-3) — ProgressLine 은 summary 만
+    참조, visible 미참조.
+  - F-22 접이식 검색: searchExpanded: boolean useState(기본 false, P-53). toggleSearch →
+    resolveSearchToggle(exp) = { searchExpanded: !exp, clearQuery: exp } — 펼침 전환은 검색어
+    불변, 접힘 전환은 setInlineQuery('')(D-18(a)/E-22-6). 펼침 시 TextInput autoFocus(AC-67).
+    clear 컨트롤 = setInlineQuery('')(펼침 유지, AC-64/E-22-4). goPrevDay/goNextDay 는
+    setReferenceDate 만 호출 — searchExpanded·inlineQuery 미변경(AC-65/E-22-2/D-17). "오늘로"/
+    탭 blur(형제 탭)/콜드 스타트(재마운트) → resetDashboardView = referenceDate=today +
+    searchExpanded=false + inlineQuery/debouncedQuery=''(AC-58/E-22-7). ScheduleDetail/
+    ScheduleEditor Stack push 는 부모 스택 포커스 라우트로 구분해 리셋 제외(§16.3.7).
+    visible = useMemo(filterByInlineQuery(items, debouncedQuery)) = 이미 조회된 items 배열의
+    표시 계층 순수 필터(제목+메모, trim+toLowerCase, D-15), FlatList data={visible} 에만 적용 —
+    getSummary·ProgressLine·완료율 미접촉(AC-62). dashboardListEmptyState(items.len, visible.len,
+    q) → no-schedules(E-10-1) vs no-search-results(E-22-1) 문구 분기, 0건이면 검색어 유무 무관
+    no-schedules 우선(E-22-5/AC-63). 완료 토글/삭제/자정 갱신 후 visible 파생 재계산으로 검색어
+    자동 재적용(E-22-3). inlineQuery/searchExpanded = DashboardScreen 로컬 useState, SearchScreen
+    은 search Zustand 슬라이스 — 전파 경로 없음(P-51/AC-66).
+  - F-20 컴팩트화: stepReferenceDate 는 방향 무관 +HALF_DAY 쿠션(DASH-01 정정 반영) —
+    UTC/Asia_Seoul/America_New_York/Australia_Lord_Howe 4개 tz·봄(3/7→3/8 23h)·가을(11/1→11/2
+    25h) 왕복 테스트 통과. Clock 포트(now/timeZone) + 순수 time.ts startOfLocalDay 경유, 화면에
+    +86400000·d.setDate() 없음(new Date(ts) 는 포맷 전용). resolveMidnightRollover 자정 롤오버,
+    isFreshLoadSequence stale 폐기(E-20-4) — v1.10 로직 불변. 컴팩트화는 styles(dateNav
+    paddingVertical 6 / arrow 28 / dateLabel 13) 축소에 한정, 이동 로직 미변경(AC-57~AC-59).
+  - 설계 준수: 신규 헬퍼 3종(isFutureDate/progressFillRatio/resolveSearchToggle)은
+    dashboardViewModel.ts 의 순수 함수 — react/react-native 미import, 부수효과·I/O·Date.now() 없음.
+    searchExpanded/referenceDate/inlineQuery 전부 화면 로컬 비영속(P-45/P-50/P-53) —
+    SettingRepository/APP_SETTING/Zustand/파일 미기록 확인. 계층 경계 준수.
+  - 신규 테스트 6건: isFutureDate(내일=true/오늘·어제=false, 같은 날 시각차 미래 아님),
+    progressFillRatio(total 0 이하→0, done/total, done>total→1, done<0→0 클램프),
+    resolveSearchToggle(접힘→펼침 clearQuery=false / 펼침→접힘 clearQuery=true / 두 번 토글
+    왕복). 전부 실제 export 함수 직접 호출, 계산된 기대값 대조(assert.equal/deepEqual) —
+    공허 단언·조건 무력화 없음.
+  - 보안(logic §13.3/§13.8 / STRIDE): 접이식 토글은 boolean 상태 전이 — 신뢰 경계 미교차.
+    검색 입력은 인메모리 String.includes 순수 필터(정규식·SQL·FTS·SearchService 미경유),
+    결과는 <Text> 렌더. progressFillRatio 는 total<=0·done<0·done>total 방어 + [0,1] 클램프
+    (NaN 은 COUNT(*) 정수 계약상 도달 불가, summary?.x ?? 0 가드). progress bar 접근성:
+    accessibilityRole="progressbar" + accessibilityValue{min,max,now} + 인접 "M / N 완료"
+    텍스트로 색 비의존 진척(nfr §15.6). 검색 아이콘: accessibilityRole="button" +
+    accessibilityState{expanded} + 열기/닫기 레이블. searchExpanded/referenceDate/inlineQuery
+    비영속·비로그. presetDate: ScheduleEditor 딥링크 비대상 — in-app goAddSchedule 이
+    referenceDate(startOfLocalDay 숫자)만 전달, editorPresetStartAt 산술(+9h)에만 사용, 저장은
+    코어 검증 경유(회귀 없음). 비밀정보 하드코딩 0. 신규 의존성 0.
+  판정: 핵심 요구사항(F-20 컴팩트 / F-21 진행률 한 줄 / F-22 접이식 검색, AC-57~AC-68) 충족,
+  주요 정상·실패 흐름 통과, 치명적 회귀 0, 코드 리뷰 Critical/High 0, 미해결 보안 취약점 0 → PASS.
+tests:
+  total: 230
+  passed: 230
+  failed: 0
+  new: 6   # tests/app/dashboardViewModel.test.ts (17 → 23)
+ac_mapping:
+  AC-57 날짜 앞뒤 이동: PASS — goPrevDay/goNextDay → stepReferenceDate(±1) → useEffect([load]) 재조회, !isToday 시 "오늘로" 노출
+  AC-58 오늘로 복귀: PASS — resetDashboardView = referenceDate=today + searchExpanded=false + inlineQuery/debouncedQuery=''
+  AC-59 다른 날짜 조회 중 자정: PASS — resolveMidnightRollover(prevTodayStartRef 대비), AppState 'active' + useFocusEffect 재평가
+  AC-60 진행률 한 줄 표시·실시간 갱신: PASS — <ProgressLine total done isFuture />, 완료 토글 → void load() → getSummary 재조회
+  AC-61 진행률 한 줄 빈 상태: PASS — total=0 & !isFuture → "0 / 0 완료" + flex:0 bar, 영역 존치 (E-21-1)
+  AC-62 접이식 검색 실시간 필터·진행률 불변: PASS — visible=useMemo(filterByInlineQuery), ProgressLine 은 summary 참조
+  AC-63 결과 없음 vs 빈 날짜 문구 구분: PASS — dashboardListEmptyState → DASHBOARD_EMPTY_TEXT vs DASHBOARD_SEARCH_EMPTY_TEXT (E-10-1 vs E-22-1)
+  AC-64 clear 초기화·펼침 유지: PASS — clear Pressable → setInlineQuery(''), searchExpanded 불변 (E-22-4)
+  AC-65 날짜 이동 시 검색어·펼침 유지: PASS — goPrevDay/goNextDay 는 setReferenceDate 만 호출
+  AC-66 전역 검색 F-11 독립: PASS — 로컬 useState vs search Zustand 슬라이스, 공유 스토어 없음 (P-51)
+  AC-67 접이식 검색 토글: PASS — toggleSearch → resolveSearchToggle, 펼침 시 TextInput autoFocus, 재탭 → 접힘 + inlineQuery 초기화
+  AC-68 미래 날짜 진행률 한 줄: PASS — isFutureDate → ProgressLine "일정 N건"만, bar·완료 수 숨김, 오늘·과거 복귀 시 복원 (E-21-4/P-52/D-19(a))
+  E-20-1~E-20-5: PASS(캐리오버) — 무제한 이동/로드 실패 캐시 유지/자정 유지/연속 탭 stale 폐기/재진입 리셋 (v1.10 로직 불변)
+  E-21-1 과거·오늘 0건: PASS — "0 / 0 완료" + 빈 bar
+  E-21-2 집계 로드 실패: PASS — loadError → 리스트 영역 재시도 오버레이, 날짜 네비·FAB 유지
+  E-21-3 검색 활성 중 진행률 불변: PASS — ProgressLine props = summary, visible 미참조
+  E-21-4 미래 날짜: PASS — isFuture → "일정 N건"만
+  E-22-1 검색 결과 0건: PASS — no-search-results 문구
+  E-22-2 검색 중 날짜 이동: PASS — 검색어·펼침 유지, 새 items 에 visible 파생 재적용
+  E-22-3 검색어 활성 중 목록 변동: PASS — visible useMemo 파생 자동 재계산
+  E-22-4 검색어 공백만: PASS — filterByInlineQuery q.length===0 → 전체 목록(slice)
+  E-22-5 기준 날짜 0건 + 검색: PASS — no-schedules 우선
+  E-22-6 검색창 접힘: PASS — toggleSearch 접힘 전환 → setInlineQuery('') → 필터 해제
+  E-22-7 펼친 채 탭 이탈·재시작: PASS — blur → resetDashboardView(형제 탭), 재마운트 → useState 기본값
+issues:
+  - id: DASH-04
+    severity: Low
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: src/app/state/bindings.ts SCREEN_BINDINGS DashboardScreen.reads 주석
+    description: >
+      v1.5 사이클에 추가된 주석 "요약 상세 + 개수 카드(F-21) 소스" 가 재확정(진행률 한 줄)
+      명칭으로 갱신되지 않았다. 코드(reads 배열)·타입·런타임 무영향 — 문서 일관성 nit.
+      비차단. Developer 가 "개수 카드" → "진행률 한 줄" 로 주석 문구만 정정 권장.
+  - id: OI-20
+    severity: Low
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: src/app/screens/DashboardScreen.tsx 접이식 검색 토글 렌더
+    description: >
+      펼침/접힘이 무애니메이션(조건부 렌더 즉시 전환)이고, 접힘 시 검색 아이콘으로의 명시적
+      포커스 복귀(ref.focus())가 없다(TextInput 언마운트에 의존). nfr §15.6 의 "Reduce Motion
+      시 즉시 전환"·"포커스 트랩 방지"는 사실상 충족(전환 즉시·언마운트 시 포커스 자동 이탈)
+      하나, "짧은 높이/opacity 전환 모션"·"아이콘으로 포커스 복귀"는 미구현. §15.6 이 OI-20
+      (LayoutAnimation)·Developer 재량으로 위임한 폴리시이며 온디바이스 실렌더·SR 포커스 측정은
+      nfr §11 셸 후속 취급 → 비차단. PASS 유지, 모션·포커스 폴리시는 후속 트랙.
+  - id: DASH-02
+    severity: Low
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: src/app/screens/DashboardScreen.tsx (브랜드 영역 / 요약 상세)
+    description: >
+      상단 브랜드(logo/tagline) 영역 미렌더, 요약 상세가 완료율(%)만 표시하고 유형별 분포·
+      다음 예정 일정 미표시 → AC-46 부분 미충족. **본 재확정 사이클 이전부터 존재**(F-17
+      비범위 T-01 트랙, logic §16.3.3 DASH-02). 이번 변경은 진행률 한 줄을 재정의했을 뿐
+      해당 표시요소를 제거하지 않았으므로 회귀 아님. 상태 재확인만 — 이번 사이클 트리거 아님.
+  - id: DASH-03
+    severity: Low
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: src/app/screens/DashboardScreen.tsx load() — schedules.findInRange
+    description: >
+      기준 날짜 목록을 단일 페이지(DASHBOARD_LIST_LIMIT=200, cursor=null, 루프 없음)로 조회 —
+      logic §16.3.5 의 DASHBOARD_PAGE_SIZE=100 + keyset cursor 루프 미적용. v1.10 이전부터 존재
+      (재설계 코드 하드코딩). 당일 폭 조회라 실사용 영향 낮음. 상태 재확인만 — 이번 사이클
+      재작업 트리거 아님(logic §15 에 캐리오버로 명시됨).
+regression:
+  status: PASS
+  detail: >
+    node --test 230/230(회귀 0). tsc src 신규 오류 0(사전 5건 유지). src/core/** ·
+    migrations/DDL/인덱스/트리거/APP_SETTING · ports/gateways.ts · package.json/package-lock.json
+    무변경(git diff HEAD 대조). F-20 이동 로직·자정 롤오버·stale 시퀀스 v1.10 대비 불변.
+resolved:
+  - id: DASH-01
+    detail: >
+      logic §16.3.7 날짜 스텝 예시식이 v1.11 에서 방향 무관 `+ HALF_DAY` 로 정정됨. 구현
+      (dashboardViewModel.ts stepReferenceDate)은 이미 방향 무관 `+ halfDay` — 4개 tz·봄/가을
+      DST 왕복 테스트 통과. 문서·구현 정합 확인 → 종결.
+```
 
 ---
 
@@ -1006,3 +1171,166 @@ issues:
 ## 판정
 
 **PASS** — v1.8 FAIL 3건(WATCH-08/09/10) 종결 확인. 회귀 207/207(신규 12건은 실제 파싱 경로를 검증, 공허하지 않음), tsc src 신규 0, `src/core/**`·기존 서비스·DDL·셸·알림 경로·F-06/F-10/F-16/F-17/F-18 무변경. AC-23/AC-48/AC-49/AC-50·R-19-2·E-19-3 실효 충족(실경로 통합 테스트 + Developer 라이브 증거 정합). 보안 미해결 취약점 0 — 인바운드 파서가 비-토글 쓰기를 양 전송경로에서 차단, `requestSnapshot` reply 는 신규 노출 없음. 신규 지적 WATCH-11 은 Low·비차단(후속). 잔여 비차단: WATCH-04(Architect 이관, AC-56 partial), WATCH-05·ENV-01·N-11-COV. 라이브 시뮬레이터 왕복은 직접 미수행(ENV-01) — 실경로 테스트·정적 대조로 대체. 다음 라우팅은 Orchestrator 결정.
+
+---
+
+# v1.10 — Feature: 대시보드("오늘" 탭) 개선 (F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색)
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-09 |
+| 대상 | 신규 순수: `src/app/screens/dashboardViewModel.ts` · 신규 순수 프레젠테이션: `src/app/components/CountCards.tsx` · 수정: `src/app/screens/DashboardScreen.tsx` · `src/app/screens/ScheduleEditorScreen.tsx` · `src/app/navigation/routes.ts` · `src/app/state/bindings.ts` · 테스트: `tests/app/dashboardViewModel.test.ts`(17건) |
+| 근거 | `plan.md` v1.5 (F-20/F-21/F-22, P-45~P-51, E-20-1~5·E-21-1~3·E-22-1~5, AC-57~AC-66, D-12~D-17, OI-15~OI-19), `logic.md` v1.10 (§7.1, §16.3.7, §16.3.3, §13.3, §16.9.8 #2), `database.md` v1.3 (§11), `nfr.md` v1.8 (§15, V-41~V-43) |
+
+```text
+status: PASS
+summary: >
+  대시보드 날짜 탐색(F-20)·개수 카드(F-21)·날짜별 인라인 검색(F-22)을 순수 로직 단위 테스트 +
+  코드 리뷰 + 보안 점검으로 검증했다. RN 실제 렌더는 이 파이프라인 범위 밖(프로젝트 확립 관례) —
+  순수 뷰모델·컴포넌트 계약 + DashboardScreen 정적 대조로 대체.
+  - 회귀: node --experimental-strip-types --test "tests/**/*.test.ts" → 224 pass / 0 fail
+    (기준선 207 + 신규 17). tsc -p tsconfig.json → src/ 신규 오류 0(사전 5건 유지:
+    repositories.ts Buffer x2, index.ts console x2 + process x1). tests/dashboardViewModel.test.ts
+    의 node:test/node:assert 모듈 미해석 2건은 types:[] 설정으로 ~30개 기존 테스트 파일과
+    동일한 사전존재 패턴 — 신규 오류 아님.
+  - F-20: stepReferenceDate 가 Clock 포트(now/timeZone) + 코어 순수 time.ts startOfLocalDay 경유.
+    화면에 +86400000·d.setDate() 직접 조작 없음. 방향 무관 +HALF_DAY(12h) 쿠션은 최대 DST 편차
+    1h ≪ 12h 이므로 dir=±1 양방향 모두 인접 달력일로만 이동 — UTC/Asia_Seoul/America_New_York/
+    Australia_Lord_Howe 4개 tz·봄(3/7→3/8 23h)·가을(11/1→11/2 25h) 전환 왕복 테스트로 확인
+    (assert.equal 정확 epoch 대조 + wallDay 문자열 + Δ 범위 — 공허 단언 아님).
+    "오늘로" 복귀 = referenceDate=today + inlineQuery/debouncedQuery 초기화(AC-58).
+    자정 롤오버 = resolveMidnightRollover(이전 todayStart 대비) — 오늘 보던 중이면 새 오늘로,
+    다른 날짜면 유지(AC-59/E-10-2/E-20-3/P-46). 연속 탭 = 함수형 setState 누적 +
+    loadSeqRef/isFreshLoadSequence 로 stale 응답 폐기(E-20-4). 로딩 중 날짜 탐색 영역 유지
+    (§16.9.8 #2 — 인디케이터는 리스트 영역 overlay만).
+  - F-21: CountCards 는 부수효과·쿼리 0의 순수 프레젠테이션. total/done 은 load() 의 단일
+    dashboard.getSummary(referenceDate) 결과에서 파생 — 완료율(summary.completionRate)과 동일 호출
+    1건 공유, 별도 집계·추가 쿼리 없음(P-47). 완료 토글 시 optimistic setItems 후 void load()
+    → getSummary 재조회로 카드·완료율 실시간 갱신(AC-60). 빈 상태 총 0/완료 0(E-21-1/AC-61).
+    인라인 검색어와 무관(P-49/D-16) — 카드 props 는 summary 만 참조, visible 미참조.
+  - F-22: filterByInlineQuery(items, debouncedQuery) = 이미 조회된 items 배열의 표시 계층
+    순수 필터(제목+메모, trim+toLowerCase, D-15). 목록 렌더(FlatList data={visible})에만 적용,
+    getSummary·CountCards·완료율 미접촉(AC-62). dashboardListEmptyState 로 no-schedules(E-10-1)
+    vs no-search-results(E-22-1) 문구 분기 — 0건이면 검색어 유무와 무관하게 no-schedules 우선
+    (E-22-5). 공백만 검색어 → 필터 미적용·전체 목록(E-22-4). 검색어는 좌/우 화살표 이동 시
+    미변경(파생 visible 이 새 items 에 자동 재적용, AC-65), "오늘로"·탭 blur 시 초기화(P-50).
+    완료 토글/삭제/자정 갱신 후 visible·emptyState 는 useMemo 파생이라 현재 검색어로 자동
+    재계산 — 명령형 "검색 해제" 없음(E-22-3). inlineQuery = DashboardScreen 로컬 useState,
+    SearchScreen 은 search Zustand 슬라이스 — 전파 경로 없음(P-51/AC-66).
+  - 설계 준수: src/core/** · migrations/DDL/인덱스/트리거/APP_SETTING · 포트 계약 ·
+    package.json/package-lock.json 무변경(git 대조). bindings.ts 는 reads 에
+    {service:'dashboard',method:'getSummary'} 1행 추가만 — writes(toggleDone/softDelete)·
+    invalidates(list/dashboard/search) 무변경. dashboardViewModel.ts 는 react/react-native
+    미import, core/domain/time.ts 순수 유틸만 참조(계층 방향 준수). CountCards.tsx 순수.
+    routes.ts 는 ScheduleEditor 파라미터에 presetDate?: number 1필드 추가.
+  - 신규 테스트 17건: 전부 실제 export 함수 경로 커버, 계산된 기대값 대조(assert.equal/deepEqual).
+    DST 왕복·자정 롤오버 3분기·빈상태 3분기·필터 우선순위·프리셋·디바운스 상수 — 조건 무력화·
+    공허 단언 없음. 도큐먼트 버그 공식(dir*HALF_DAY)을 구현에 넣으면 테스트 1·4가 실패(검증력 확인).
+  - 보안(logic §13.3 / STRIDE): 인라인 검색은 인메모리 String.includes 필터 —
+    SQL/FTS/SearchService 미경유, 동적 쿼리 표면 없음. 결과는 <Text> 렌더(XSS 없음).
+    referenceDate/inlineQuery 는 화면 로컬 state — SettingRepository/APP_SETTING/Zustand/파일/
+    로그 미기록(P-45/P-50). presetDate: ScheduleEditor 는 linking config(Tabs + ScheduleDetail만)
+    비대상 딥링크 — presetDate 는 in-app goAddSchedule 에서 referenceDate(startOfLocalDay 숫자)
+    만 전달, 산술(+9h)에만 사용. 원거리 날짜 조회 DoS: 기존 IDX_SCHEDULE_START 범위 쿼리
+    재사용(하루 폭 고정, D-13 무제한도 B-tree 탐색은 날짜 거리 무관). 비밀정보 하드코딩 0.
+  판정: 핵심 요구사항(F-20/F-21/F-22, AC-57~AC-66) 충족, 주요 정상/실패 흐름 통과,
+  치명적 회귀 0, 코드 리뷰 Critical/High 0, 미해결 보안 취약점 0 → PASS.
+  DASH-01(Low, DESIGN_DOC_FIX)은 Architect 이관(문서 정정, 재작업 트리거 아님).
+tests:
+  total: 224
+  passed: 224
+  failed: 0
+  new: 17   # tests/app/dashboardViewModel.test.ts
+issues:
+  - id: DASH-01
+    severity: Low
+    category: CODE_REVIEW
+    cause: DESIGN_CONFLICT
+    location: document/architect/logic.md §16.3.7 "날짜 스텝 — 자정/DST 안전" 코드 블록
+    description: >
+      예시식 `clock.startOfLocalDay(refTs + dir * DAY_MS + dir * HALF_DAY, tz)` 는 dir=-1 에서
+      refTs - 36h(목표일 전날 정오) 로 스냅해 목표일을 하루 더 지나친다(어제 대신 그저께).
+      구현 dashboardViewModel.ts stepReferenceDate 는 방향 무관 `+ halfDay` 로 교정했고,
+      이는 §16.3.7 본문 의도("인접일로만 이동")·overview.md "12h 쿠션" 서술과 일치하며
+      4개 tz·봄/가을 DST 왕복 테스트로 정확성이 확인된다. 또한 같은 코드 블록이 참조하는
+      `clock.startOfLocalDay()` 는 Clock 포트(now/timeZone 만)에 존재하지 않으며, 구현은
+      §16.3.7 이 허용한 대안대로 core/domain/time.ts 의 순수 startOfLocalDay 를 직접 쓴다.
+    disposition: >
+      구현 정상 — 재작업 불필요. logic §16.3.7 예시식을 `+ HALF_DAY`(방향 무관)로,
+      의사코드의 `clock.startOfLocalDay` 참조를 순수 time.ts 유틸로 정정하도록 Architect 이관.
+      비차단.
+  - id: DASH-02
+    severity: Low
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: src/app/screens/DashboardScreen.tsx (요약 상세·브랜드 영역)
+    description: >
+      요약 상세 영역이 "완료율 X%" 한 줄만 렌더하고 유형별 분포·다음 예정 일정·상단 브랜드
+      영역(logo.png/tagline.png)은 여전히 없다 → AC-46(브랜드·요약 공존) 부분 미충족.
+      단, 본 변경 이전 DashboardScreen 은 "오늘 일정 N개 · 완료 M개" 텍스트만 렌더했고
+      완료율·브랜드·유형별 분포·다음 예정 모두 부재했다. 이번 변경은 완료율 한 줄을 신규
+      추가하므로 새 회귀가 아니며, 잔여분은 F-17 비범위에 명시된 T-01 별도 트랙 항목이다.
+    disposition: 캐리오버(비차단). AC-46 완전 충족은 브랜드 로딩/헤더 트랙(T-01)에서 처리.
+  - id: DASH-03
+    severity: Low
+    category: CODE_REVIEW
+    cause: IMPLEMENTATION_ERROR
+    location: src/app/screens/DashboardScreen.tsx load()
+    description: >
+      logic §16.3.7/§16.3.5 는 기준 날짜 목록을 DASHBOARD_PAGE_SIZE(=100) cursor 루프로
+      수집하도록 규정하나, 구현은 findInRange(..., DASHBOARD_LIST_LIMIT=200, null) 단일 호출을
+      유지한다(변경 전 코드와 동일). 하루 범위라 실무상 200건 상한에 도달할 가능성이 낮아
+      기능 영향은 미미하다.
+    disposition: 캐리오버(비차단, 변경 전부터 존재). 대량 당일 일정 시나리오에서만 유의.
+```
+
+## AC / 예외 매핑 (F-20 / F-21 / F-22)
+
+| 항목 | 판정 | 근거 |
+| --- | --- | --- |
+| AC-57 날짜 앞뒤 이동 | PASS | `goPrevDay`/`goNextDay` → `stepReferenceDate(d, ∓1, tz)` 함수형 setState → `useEffect([load←referenceDate])` 재조회(`getSummary`+`findInRange`), `!isToday` 시 "오늘로" 노출. 테스트 V-41(UTC 인접일·로컬 자정 고정점) |
+| AC-58 오늘로 복귀 | PASS | `resetDashboardView()` = `setReferenceDate(today)` + `setInlineQuery('')` + `setDebouncedQuery('')` + `prevTodayStartRef=today`. 날짜 라벨 Pressable 도 `!isToday` 시 동일 호출 |
+| AC-59 다른 날짜 조회 중 자정 경과 | PASS | `runRollover()` → `resolveMidnightRollover({referenceDate, prevTodayStart, newTodayStart})` — `wasViewingToday` 면 `newTodayStart` 로 이동(changed=true→effect 재조회), 아니면 유지. AppState 'active'·useFocusEffect 양쪽 배선. 테스트 V-41 3분기 |
+| AC-60 개수 카드 표시·실시간 갱신 | PASS | `<CountCards total={summary?.total??0} done={summary?.done??0}/>`, `toggle()` → `toggleDone` + optimistic + `invalidate` + `void load()` → `getSummary` 재조회로 카드·완료율 갱신 |
+| AC-61 개수 카드 빈 상태 | PASS | `summary` 0/0 → 카드 "0"/"0", 완료율 0%, `emptyState='no-schedules'` → "오늘 일정이 없습니다" + 「일정 추가」 |
+| AC-62 인라인 검색 실시간 필터 | PASS | `visible = filterByInlineQuery(items, debouncedQuery)` (200ms 디바운스), `FlatList data={visible}`. 카드는 `summary` 참조 → 수치 불변. 테스트 V-43(제목2+메모1 잔존, 무관3 제외) |
+| AC-63 인라인 검색 무결과 | PASS | `dashboardListEmptyState(items.length>0, visible.length===0, q>0)` → `'no-search-results'` → `DASHBOARD_SEARCH_EMPTY_TEXT`("검색어에 해당하는 오늘 일정이 없습니다") + 「검색어 지우기」, `DASHBOARD_EMPTY_TEXT` 와 상수 분리 |
+| AC-64 검색어 초기화 | PASS | clear 버튼·무결과 버튼 `setInlineQuery('')` → 디바운스 후 `filterByInlineQuery('')` = `items.slice()` 전체 복원. 테스트 V-43(빈/공백 → 전체, 복사본 반환) |
+| AC-65 날짜 이동 시 검색어 유지·재적용 | PASS | `goPrevDay`/`goNextDay` 는 `inlineQuery` 미변경 → 새 `items` 에 파생 `visible` 자동 재적용. "오늘로"·탭 blur 만 초기화 |
+| AC-66 인라인 ↔ 전역 검색 독립 | PASS | `inlineQuery` = `DashboardScreen` `useState`, `SearchScreen` = `search` 슬라이스. 공유 스토어·전파 없음(정적 확인) |
+| E-20-2 이동 날짜 로드 실패 | PASS | `load()` catch → `setLoadError(true)`, 날짜 탐색 영역·화살표 유지, 리스트 영역 overlay + 재시도 |
+| E-20-4 연속 탭 stale | PASS | `seq = ++loadSeqRef.current`, 반영 직전·catch·finally 에서 `isFreshLoadSequence(seq, loadSeqRef.current)` 검사. 테스트 커버 |
+| E-20-5 탭 재진입/재시작 리셋 | PASS | 탭 `blur`(형제 탭) → `resetDashboardView()`; Stack push(Detail/Editor) 는 부모 스택 포커스 라우트 확인으로 제외. 마운트 시 `referenceDate=todayStart()`·`inlineQuery=''` |
+| E-21-1 기준 날짜 0건 | PASS | 카드 0/0, 완료율 0%, 목록 빈 상태 안내 |
+| E-21-2 집계 로드 실패 | PASS | `loadError` → 리스트/카드 영역 재시도, 브랜드(현재 미표시)·날짜 탐색 유지 |
+| E-21-3 인라인 검색 활성 | PASS | 카드 props = `summary` 만 → 검색어 무관 |
+| E-22-1 vs E-10-1 문구 구분 | PASS | `DASHBOARD_SEARCH_EMPTY_TEXT` ≠ `DASHBOARD_EMPTY_TEXT`, `dashboardListEmptyState` 3-값 enum |
+| E-22-2 검색 중 화살표 이동 | PASS | 검색어 보존, 새 기준 날짜 목록에 파생 재적용 |
+| E-22-3 검색 중 목록 변동 | PASS | `visible`/`emptyState` = `useMemo`/파생 → 토글·삭제·롤오버 후 자동 재계산. 명령형 해제 없음 |
+| E-22-4 검색어 공백만 | PASS | `inlineNormalize('  ')` = '' → 필터 미적용, `emptyState='hidden'`. 테스트 커버 |
+| E-22-5 기준 날짜 0건 + 검색 | PASS | `dashboardListEmptyState(0, 0, '회의')` = `'no-schedules'`(우선). 검색 입력창은 상시 렌더 유지 |
+| OI-19 프리셋 시작 일시 | PASS | `goAddSchedule` → `referenceDate===todayStartValue ? {} : { presetDate: referenceDate }`, `ScheduleEditorScreen` 신규 모드 + `presetDate` → `editorPresetStartAt(presetDate)` = `presetDate + 9h`. 테스트 커버 |
+| §16.9.8 #2 로딩 중 날짜 탐색 유지 | PASS | 인디케이터는 리스트 컨테이너 `overlay`(absolute) 한정, `dateNav`/`CountCards`/FAB 는 형제로 상시 렌더 |
+
+## 회귀 / 빌드
+
+| 항목 | 결과 |
+| --- | --- |
+| `node --experimental-strip-types --test "tests/**/*.test.ts"` | 224 pass / 0 fail / 0 skip (기준선 207 + 신규 17). watchSync·core·app 기존 스위트 전부 통과 |
+| `tsc -p tsconfig.json` | src/ 신규 오류 0. 사전 5건 유지(`src/core/infra/memory/repositories.ts` Buffer x2, `src/index.ts` console x2 + process x1). `tests/app/dashboardViewModel.test.ts` 의 `node:test`/`node:assert/strict` 미해석 2건은 `types:[]` 로 인한 ~30개 기존 테스트 파일 공통 패턴 — 신규 아님 |
+| `src/core/**` | 무변경(git 대조) |
+| DB DDL/인덱스/트리거/시드/`APP_SETTING` | 무변경 (`database.md` §11 은 문서상 무변경 검토) |
+| `package.json` / `package-lock.json` | 무변경 |
+| 포트 계약(`Clock`/`DashboardService`/`ScheduleService` 시그니처) | 무변경 — 화면이 `referenceDate` 를 인자로 전달만 |
+| `bindings.ts` | `DashboardScreen.reads` 에 `dashboard.getSummary` 1행 추가. `writes`/`invalidates` 무변경 |
+| 기존 대시보드 상호작용(완료 토글 F-05 / 스와이프 삭제 F-04 / FAB / 빈 상태 「일정 추가」) | 유지 — `toggle`/`confirmDelete`/`goAddSchedule` 로직 보존, `invalidate` 대상 동일 |
+
+## Failure 분류 / Regression
+
+- 기능 결함(FAIL 사유) 없음.
+- 코드 리뷰 지적 3건 모두 Low·비차단: DASH-01(DESIGN_CONFLICT — 문서 예시식 오류, 구현은 정상 → Architect 이관), DASH-02(변경 전부터 존재하는 AC-46 부분 미충족, T-01 트랙), DASH-03(변경 전부터 존재하는 페이지네이션 미적용).
+- Regression: 없음 — 공통 모듈/포트/DB/스토어 무변경, 기존 224개 테스트 전부 통과.
+
+## 판정 (v1.10)
+
+**PASS** — F-20/F-21/F-22 핵심 요구사항과 AC-57~AC-66·E-20/E-21/E-22 가 순수 로직 테스트(17건 신규, 공허 단언 없음) + DashboardScreen 정적 대조로 충족됨을 확인했다. 회귀 224/224, tsc src 신규 0, `src/core/**`·DB·포트·`package.json` 무변경. 코드 리뷰 Critical/High 0, 보안 미해결 취약점 0(인라인 검색 = 인메모리 순수 필터, 상태 비영속, `presetDate` 신뢰 경계 안전). 지적 DASH-01(Low)은 logic §16.3.7 예시식 정정 건으로 **Architect 이관**(구현 정상, 재작업 트리거 아님). DASH-02/03 은 본 변경 이전부터의 캐리오버(비차단). 다음 라우팅은 Orchestrator 결정.

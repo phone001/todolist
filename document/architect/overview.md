@@ -3,15 +3,17 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 설계 총괄 (Overview) |
-| 버전 | v1.9 |
+| 버전 | v1.11 |
 | 상태 | 작성 완료 (Developer 착수 가능) |
-| 근거 기획서 | `document/planner/plan.md` v1.4 |
+| 근거 기획서 | `document/planner/plan.md` v1.6 |
 | 작성 주체 | Architect |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
+| v1.11 | 2026-09-09 | **설계 델타 — 대시보드("오늘" 탭) 개선 재확정 방향** (plan.md v1.6). 조정자가 방향을 재확정하여 Planner 가 plan 을 v1.6 으로 개정: **F-20** 날짜 네비게이션에 "시각적으로 작게(컴팩트)" 요건 추가(규칙 유지), **F-21** 개수 카드 2장 → **진행률 한 줄**("M / N 완료" 텍스트 + 얇은 progress bar 1개, 채움 = 완료율 P-07; 미래 날짜는 bar·완료 수 숨기고 총 개수만 — P-52 / D-19(a)), **F-22** 상시 인라인 입력창 → **접이식 검색**(검색 아이콘 탭 → 펼침, 기본 접힘; 화면 로컬 state `searchExpanded` 기본 false — P-53; 접으면 검색어 초기화 + 필터 해제 — D-18(a); "오늘로" 복귀·탭 이탈·앱 재시작 시 접힘 + 검색어 초기화). 신규 AC-67(검색 토글)/AC-68(미래 날짜 진행률), AC-60/61 재작성, AC-62~66 접이식 개정, E-21-4/E-22-6/E-22-7 신규. **기획 검증 PASS** — D-18/D-19 는 Planner 가 비차단·가정값(초기화 / 총 개수만)으로 규정한 게이트, 가정값으로 설계 진행. D-14(개수 카드 구성)는 plan v1.6 에서 (d) "진행률 한 줄"로 **CLOSED**. **델타는 전부 UI 계층 한정** — 코어 도메인/서비스/포트/DB DDL/`ReminderScheduler`/`DashboardService.getSummary(referenceDate)`/`ScheduleService.findInRange` 무변경. 검색은 로드된 배열 대상 순수 표시 필터. 진행률 한 줄도 `getSummary` 의 `total`/`done` 재사용 — 새 집계·쿼리 없음. Developer 변경분: `DashboardScreen.tsx` + `ProgressLine.tsx`(구 `CountCards.tsx` 대체) + `dashboardViewModel.ts` 순수 헬퍼(`isFutureDate`, `stepReferenceDate` DASH-01 정정 반영). `bindings.ts`·`routes.ts`(`presetDate?` 유지) 무변경. **DASH-01 문서 정정(직전 Tester 캐리오버, Low)**: `logic.md §16.3.7` 날짜 스텝 예시식 `+ dir*HALF_DAY`(dir=-1 에서 그저께로 이동) → **방향 무관 `+ HALF_DAY`**, 예시가 `clock.startOfLocalDay()` 를 부르던 서술을 `Clock` 포트(now/timeZone만)에 맞춰 순수 `src/core/domain/time.ts` `startOfLocalDay` 직접 사용으로 정정. `logic.md` v1.11 / `nfr.md` v1.9(§15 "개수 카드"→"진행률 한 줄", 접이식 토글 접근성) / `database.md` v1.4(§11 무변경 재검토). 「API 설계」 섹션 미신설. 캐리오버 DASH-02(AC-46 렌더 잔여 — F-17 별도 트랙)·DASH-03(`findInRange` cursor 루프 미적용 — 기존부터 존재)은 범위 밖으로 미결/후속에 명시만 |
+| v1.10 | 2026-09-09 | **설계 델타 — 대시보드("오늘" 탭) 개선: F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색** (plan.md v1.5, P-45~P-51, AC-57~AC-66). 기획 검증 **PASS**(D-12~D-17 은 기획이 가정값을 지정한 비차단 게이트 — 가정값으로 설계 진행, 게이트 형식상 OPEN). 주요 결정: (1) **상태 소유권** — 대시보드 `referenceDate`(기준 날짜, 로컬 자정 epoch)와 `inlineQuery`(인라인 검색어)는 `DashboardScreen` 로컬 React state. 영구 저장·Zustand 슬라이스·`APP_SETTING` 키 없음(P-45/P-50). (2) **서비스/셀렉터 시그니처 무변경** — `DashboardService.getSummary(dateTs?)` 는 이미 기준일 파라미터를 받고, `ScheduleService.findInRange(from,to,…)` 는 이미 임의 범위를 받는다 → 대시보드가 `today` 고정 대신 `referenceDate` 를 인자로 넘기는 것만으로 일반화 완료. **코어 도메인/서비스 무변경**. (3) **개수 카드(F-21)** = `getSummary(referenceDate)` 결과의 `total`/`done` 재사용 — 새 집계 규칙·추가 쿼리 없음(P-47). 완료율·유형별 분포·다음 예정은 요약 상세 영역에 존치(AC-46 회귀 방지). (4) **인라인 검색(F-22)** = 이미 로드된 `items`(≤ `DASHBOARD_PAGE_SIZE`) 배열에 대한 **표시 계층 순수 필터**(제목+메모, 트림+소문자, D-15). 개수 카드/요약 셀렉터 미적용(P-49/D-16). 완료 토글·삭제·자동 갱신 후 파생 재계산으로 검색어 자동 재적용(E-22-3). SQL·서비스 호출 없음 → 주입 표면 없음. (5) **F-11 경계**: 인라인 검색 상태는 `DashboardScreen` 로컬, `SearchScreen` 은 `search` 슬라이스 — 전파 없음(P-51). (6) **자정 롤오버(P-46)**: `AppState 'active'`·포커스 시 이전 `todayStart` 대비 판별해 "오늘을 보고 있었으면 새 오늘로 이동, 아니면 유지" — 기존 E-10-2 로직 통합. (7) **신규 API/DB 변경 없음** — `logic.md` v1.10(§7.1 신설·§16.3.7 신설·§16.3.3 레이아웃 갱신·§13.3 인라인 검색 보안 노트·§14/§15 갱신). `database.md` v1.3(§11 무변경 검토). `nfr.md` v1.6(§15 신설·V-41~V-43). **코어(`src/core/**`)·DB DDL·포트 계약·`ReminderScheduler`/`DashboardService`/`ScheduleService` 로직 무변경**, `bindings.ts` `DashboardScreen.reads` 에 `dashboard.getSummary` 명시 추가(logic v1.8 지시 반영). 「API 설계」 섹션 미신설 |
 | v1.9 | 2026-09-08 | **설계 델타 — F-19 애플워치(watchOS) 워치 타깃 착수** (plan.md v1.4, NFR-10 승격). 기획 검증 PASS(D-09/D-10/D-11 은 기획이 가정값을 지정한 비차단 게이트 — 가정값으로 설계 진행, 게이트 형식상 OPEN). 주요 결정: (1) **워치 타깃 구성 = 네이티브 WatchKit(SwiftUI) 독립 앱 타깃 신규 + "공유 도메인 *계약*"(코드 공유 아님)**. RN 은 watchOS UI 를 렌더하지 않고 `src/core` 순수 TS 는 watchOS 확장에서 실행 불가 → 워치 앱은 Swift 로 축소 읽기 모델(오늘 목록 렌더·LWW·보류 큐)을 재구현하되, **페이로드 스키마·시각 표현(epoch ms + IANA tz, P-39)·상태 규칙(§7.6)** 을 폰과 공유한다. 폰(RN/TS) 측은 `src/core/watchSync/`(순수 스냅샷 빌더 + 역전파 조정) + iOS 네이티브 WatchConnectivity 브리지 모듈을 추가한다. (2) **전송 메커니즘**: 폰→워치 스냅샷 = `updateApplicationContext`(최신 1건만 유지·병합) + 도달 가능 시 `sendMessage` 즉시 갱신(D-09 (b)); 워치→폰 완료 토글 = `sendMessage`(도달 시 즉시·ack) → 실패/미도달 시 `transferUserInfo`(FIFO 보장 전달) + 워치 보류 큐 유지. (3) **LWW(E-19-3/P-38)** = 기존 `SCHEDULE.UPDATED_AT` + 스냅샷 `baseUpdatedAt` 기준 비교 — **공유 스키마 무변경**. 중복 적용 방지 원장은 `APP_SETTING` k/v(`watch.appliedOps` 링버퍼) 재사용. (4) **컴플리케이션(D-10)** = `logic.md` §17.8 조건부 설계 섹션("오늘 남은 일정 수" 1종)으로 분리. (5) **알림(P-41)**: 워치 독립 예약 없음 — `ReminderScheduler` 무변경, 워치 페이로드에 알림 데이터 미포함, iOS 기본 미러링에 위임. (6) **신규 npm 의존성**: `react-native-watch-connectivity` 1.x(iOS WC 브리지) — Android 미지원이므로 iOS 전용 부분 채택, 필요 시 커스텀 네이티브 모듈로 대체 가능. `logic.md` v1.9(§0.1 포트·§17 신설·§13.9 보안)·`database.md` v1.2(§10 스키마 영향 검토)·`nfr.md` v1.7(§14 워치 동기화·V-36~V-40) 동반 개정. **코어 도메인/서비스/포트(watchSync 외)·DB DDL·기존 셸 화면 무변경** |
 | v1.8 | 2026-09-07 | **설계 델타 — v1.3 재설계분 정식화(F-06 유형 관리 / F-10 상호작용형 대시보드 / F-18 앱 설정)** (plan.md v1.3). 기획 검증 PASS(D-07·D-08은 사용자가 방향 (B) 확정하며 기본안 채택 — 비차단, 이해관계자 추인만 대기). 주요 결정: (1) **대시보드 데이터 소스 = 요약 서비스 병행 유지** — `DashboardService.getSummary`(요약 표시요소) + `ScheduleService.findInRange`(오늘 목록 행) 두 경로. 재설계 코드가 요약까지 `findInRange` 파생으로 바꾼 것을 되돌려 정합화(T-02). (2) **로고·태그라인 회귀 복구**(T-01) — §16.3.2 렌더 규약을 상호작용형 대시보드 레이아웃(브랜드 / 요약 / 오늘 목록 / 상시 FAB)에 명시. (3) **유형 스키마 = ID 참조 확정**(이미 그러함), 이름 유일성(트림 + 대소문자 무시)·기본 유형("기타") 보호·rename 계약을 `CategoryService`에 추가 — **DB 스키마 무변경**(`IS_SYSTEM` 기존, `CANCELLED` state 기존, `APP_SETTING` k/v). `database.md` v1.1(스키마 무변경 검토 섹션 추가). (4) **전역 알림 토글 게이트 = `ReminderScheduler.syncOnce()` 단일 지점** + 신규 `applyGlobalNotificationsToggle(enabled)`(off 전환 시 기존 예약 일괄 취소 — D-07 (a); on 복귀 시 무회귀). (5) **페이지네이션 설계값 승격** — 하드코딩 200/500 → `DASHBOARD_PAGE_SIZE=100` / `CALENDAR_MONTH_PAGE_SIZE=200`(+월당 최대 10페이지) / `SEARCH_PAGE_SIZE=50`, keyset cursor `(start_at,id)` 유지(T-05). (6) **표시 계층 시각도 Clock 포트 경유** 규칙 명시(T-04, P-16/P-17). (7) **신규 의존성 없음** — `SwipeableRow`는 RN 내장 `PanResponder`+`Animated` 유지, `react-native-gesture-handler` 도입 안 함. `logic.md` v1.8(§5.1 유형 관리 계약·§6 알림 게이트·§7 대시보드·§10 설정 키·§16.3 바인딩·§16.3.3~16.3.5 신설·§16.10 SwipeableRow·§16.11 표시 시각)·`nfr.md` v1.6·`database.md` v1.1 동반 개정 |
 | v1.7 | 2026-09-07 | **설계 델타 — F-17 브랜드 오리 로딩 인디케이터** (plan.md v1.2). 기획 검증 PASS(D-06 5건은 정책 미결이 아니라 기술/UX 튜닝값 — 기획이 Architect 위임, 가정값 확정으로 설계 진행, D-03~D-05와 동일 취급). 렌더 수단 결정: **A안 `react-native-svg` 15.x 신규 도입 + RN 내장 `Animated`(useNativeDriver) 루프** (B/C/D 폐기 — 근거 `logic.md` §16.9.1). 기술 스택 표에 `react-native-svg` 15.x 추가, 「주요 기술 결정」 #7 추가. D-06 세부 설계값 확정: 표시 지연 200ms / 활동 노출 2500ms·전환 300ms / 최소 표시 600ms / 타임아웃 보조안내 10s / 인라인 72dp·풀스크린 160dp / 인라인도 전체 활동 순환 / 부트스트랩은 네이티브 스플래시 후 별도 풀스크린 인디케이터(스플래시 미연장). 저사양·절전 판정 = 신규 의존성 없이 rAF 프레임 저하 휴리스틱 + `AccessibilityInfo` Reduce Motion. `logic.md` v1.7(§16.9 신설, §16.7 보안 노트)·`nfr.md` v1.5(§13 로딩 애니메이션 성능, V-27~V-30) 동반 개정. **코어(`src/core/**`)·DB 스키마·포트 계약·`bindings.ts` 무변경** — `database.md` v1.0 유지. |
@@ -34,6 +36,66 @@
 ---
 
 ## 기획 검증 결과
+
+### v1.11 재검증 (plan.md v1.6 — 대시보드 개선 재확정 방향: F-20 컴팩트 / F-21 진행률 한 줄 / F-22 접이식 검색)
+
+**결과: PASS (설계 가능, Planner 재작업 불필요)**
+
+| 검증 항목 | 판정 | 비고 |
+| --- | --- | --- |
+| 원본 사용자 요청 반영 | OK | v1.5 요청("화살표로 어제·내일" / "총·완료 개수 카드형식" / "오늘 일정에서 검색")을 조정자가 재확정한 방향으로 개정. F-20 "작게" 요건, F-21 "진행률 한 줄", F-22 "접이식(아이콘 토글)". plan §10 매핑에 F-20~F-22·P-45~P-53·E-20-1~5·E-21-1~4·E-22-1~7·AC-57~AC-68·D-12~D-19·OI-15~OI-21·§5.15·§7.11 등재 |
+| 기능 목적/범위/시나리오 | OK | F-20(±1일 + "오늘로", 컴팩트 배치), F-21("M / N 완료" + progress bar 1개; 미래 날짜는 총 개수만 — P-52), F-22(검색 아이콘 탭 펼침, 기본 접힘 — `searchExpanded` 로컬 state P-53; 접힘 시 검색어 초기화 + 필터 해제 — D-18). §7.11 8단계 흐름 재작성. F-10 화면 구조 = 브랜드 → 날짜 네비(작게) → 진행률 한 줄 → 접이식 검색 → 요약 상세 → 리스트 → FAB |
+| 입력·출력·상태변화·예외 | OK | E-21-4(미래 날짜 진행률 표시)·E-22-6(검색창 접힘 시 초기화)·E-22-7(펼친 채 탭 이탈/재시작) 신규. 기존 E-20-x/E-21-1~3/E-22-1~5 유지·문구 정정. AC-60/61 재작성(카드→진행률 한 줄), AC-62~66 접이식 개정, AC-67(토글)/AC-68(미래 날짜) 신규 — 전부 Given/When/Then |
+| 비기능 요구사항 | OK | 신규 정량 NFR 없음. 데이터 소스 동일(`getSummary`/`findInRange` 재사용) → 성능 영향 낮음. 접이식 토글 관련 모션·접근성(포커스 이동, progress bar 접근성 레이블)은 `nfr.md` §15 로 구체화. 날짜 라벨 로캘 = NFR-09 |
+| 요구사항 충돌 | 없음 | 진행률 한 줄 ↔ 요약 상세 = 공존(완료율은 요약 상세 존치, P-47/AC-46). 접이식 검색(F-22) ↔ 전역 검색(F-11) = 독립(P-51/AC-66). 진행률 한 줄 ↔ 접이식 검색 = 검색어가 수치·bar 를 바꾸지 않음(P-49/D-16/E-21-3). 미래 날짜 완료 체크(F-05/P-06)와 P-52 = "진행률 한 줄에는 미반영, 요약 상세 완료율은 기존대로"로 명시 분리(OI-21) |
+| 가정/확정 구분 | OK | F-20~F-22 "확정". D-18(접힘 시 검색어 처리)·D-19(미래 날짜 진행률)는 plan §8 이 "본 기획의 가정값으로 설계·구현을 진행할 수 있다"고 규정한 **비차단** 게이트(D-18(a) 초기화+필터 해제 / D-19(a) 총 개수만). D-14 는 v1.6 에서 (d) 진행률 한 줄로 CLOSED |
+| Acceptance Criteria 검증 가능성 | OK | AC-57~AC-68 Given/When/Then. AC-67(아이콘 탭 ↔ 접힘 토글·포커스 이동)·AC-68(미래 날짜 "일정 N건"만, 오늘·과거 복귀 시 복원) 검증 가능 |
+| 미결정 게이트 영향 | **비차단** | **D-18·D-19** 가정값으로 설계 진행 가능. D-12(상태 지속 범위)·D-18·D-19 는 레이아웃·상태 관리·지표 의미에 직접 영향 → 착수 초기 이해관계자 확인 권장. BLOCK 아님 |
+
+**D-14 (CLOSED) / D-18·D-19 (가정값 채택, 게이트 형식상 OPEN — 이해관계자 추인 대기)**:
+
+| 게이트 | 상태 / 채택값 | 설계 반영 |
+| --- | --- | --- |
+| D-14 개수 카드 구성 | **CLOSED (plan v1.6)** — (d) "진행률 한 줄"(텍스트 + progress bar 1개) | `CountCards.tsx` → `ProgressLine.tsx`(`logic.md` §7.1.2 / §16.3.7). 카드 2장 폐기. 완료율은 요약 상세 존치(P-47/AC-46) |
+| D-18 접이식 검색창 접을 때 검색어·필터 | (a) 접으면 검색어 초기화 + 필터 해제 (가정값) | `toggleSearch()` 가 `searchExpanded=false` 시 `setInlineQuery('')` (`logic.md` §7.1.3 / §16.3.7, E-22-6). (b) "유지" 확정 시 접힘 시 보존·재펼침 복원으로 화면 로직만 조정 |
+| D-19 미래 기준 날짜의 진행률 한 줄 표시 | (a) 총 일정 수만 표시(완료율·progress bar 숨김) (가정값) | `isFutureDate(referenceDate, todayStart)` 순수 표시 조건 → `<ProgressLine isFuture>` "일정 N건" (`logic.md` §7.1.2, P-52, E-21-4, AC-68). `getSummary` 집계 경로 무변경 |
+
+**캐리오버(이번 v1.11 범위 밖, 미결/후속에 명시)**:
+
+- **DASH-01 (직전 Tester, Low)** — `logic.md §16.3.7` 날짜 스텝 예시식이 `dir=-1` 에서 목표일을 하루 더 지나침(그저께 이동). 구현은 이미 방향 무관 `+ HALF_DAY` 쿠션으로 교정되어 4개 tz + 봄/가을 DST 왕복 테스트 통과. → **이번 v1.11 에서 예시식·서술을 정정**(방향 무관 `+ HALF_DAY`, 순수 `time.ts` `startOfLocalDay` 직접 사용). **해소**.
+- **DASH-02 (직전 Tester, Low)** — 재설계 코드의 AC-46 브랜드·유형별 분포·다음 예정 렌더 잔여 정합은 F-17 별도 트랙 — 이번 범위 밖, `logic.md` §15 / §16.3.3 표에 명시만.
+- **DASH-03** — `DashboardScreen` 의 `findInRange` cursor 루프 미적용(현 구현 단일 페이지 `DASHBOARD_LIST_LIMIT=200`)은 v1.10 이전부터 존재. §16.3.5 설계값(`DASHBOARD_PAGE_SIZE=100` + cursor 루프)과 불일치 — 별도 후속. 이번 범위 밖, `logic.md` §15 에 명시만.
+
+### v1.10 재검증 (plan.md v1.5 — 대시보드 F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색)
+
+**결과: PASS (설계 가능, Planner 재작업 불필요)**
+
+| 검증 항목 | 판정 | 비고 |
+| --- | --- | --- |
+| 원본 사용자 요청 반영 | OK | "오늘 메뉴에서 화살표로 어제·내일" → F-20 / "총 일정·완료 일정 개수 카드형식" → F-21 / "검색 기능으로 오늘 일정에서 검색" → F-22. plan §10 커버리지 매핑에 F-20~F-22·P-45~P-51·E-20-1~5·E-21-1~3·E-22-1~5·AC-57~AC-66·D-12~D-17·OI-15~OI-19·§5.15·§7.11 등재 |
+| 기능 목적/범위/시나리오 | OK | F-20(좌/우 화살표 ±1일 + "오늘로" 복귀), F-21(기준 날짜 총·완료 카드), F-22(기준 날짜 목록 내 제목·메모 실시간 필터). §7.11 8단계 사용자 흐름. F-10 화면 구조에 4개 신규 영역 위치 명시(브랜드→날짜 탐색→개수 카드→인라인 검색→요약 상세→목록→FAB) |
+| 입력·출력·상태변화·예외 | OK | E-20-1(이동 범위 D-13)·E-20-2(로드 실패)·E-20-3(자정 경과)·E-20-4(연속 탭)·E-20-5(탭 재진입/재시작 리셋), E-21-1~3(0건·로드 실패·검색 무관), E-22-1~5(0건 문구 구분·날짜 이동 시 검색어 유지·목록 변동 재적용·공백만·0건 입력창 처리) |
+| 비기능 요구사항 | OK | 신규 NFR 없음. 날짜 라벨 로캘 = NFR-09. 원거리 날짜 조회 = `idx_schedule_start` 범위 쿼리(CalendarScreen 월 조회와 동형, NFR-04). 실시간 필터 = ≤ `DASHBOARD_PAGE_SIZE` 인메모리 필터. `nfr.md` §15 로 구체화 |
+| 요구사항 충돌 | 없음 | 개수 카드 ↔ 요약 상세 = 공존 확정(P-47/AC-46). 인라인 검색(F-22) ↔ 전역 검색(F-11) = 독립 명시(P-51/AC-66). 자정(P-46) ↔ 기존 E-10-2 = 통합 정의. 인라인 검색 ↔ 개수 카드/요약 = 미반영 확정(P-49/D-16) |
+| 가정/확정 구분 | OK | F-20~F-22 "확정". D-12~D-17 은 기획이 가정값을 명시하고 "본 기획의 가정값으로 설계·구현을 진행할 수 있다"(plan §8 주석)고 규정한 **비차단** 게이트 |
+| Acceptance Criteria 검증 가능성 | OK | AC-57~AC-66 Given/When/Then. AC-59(자정+다른 날짜)·AC-65(날짜 이동 시 검색어 유지) 포함 |
+| 미결정 게이트 영향 | **비차단** | **D-12~D-17** 모두 가정값으로 설계 진행 가능. D-14(카드 구성)·D-12(기준 날짜 지속 범위)는 레이아웃·상태 관리에 직접 영향 → 착수 초기 이해관계자 확인 권장. BLOCK 아님 |
+
+**D-12~D-17 게이트 미결정 — 가정값 채택(게이트 형식상 OPEN, 이해관계자 추인 대기)**:
+
+| 게이트 | 채택 가정값 (plan) | 설계 반영 |
+| --- | --- | --- |
+| D-12 기준 날짜 상태 지속 범위 | (a) 탭 이탈·앱 재시작 시 항상 오늘로 리셋 | `referenceDate`/`inlineQuery` = `DashboardScreen` 로컬 state. 마운트 시 `startOfLocalDay(now)`, 탭 이탈→재진입·앱 재시작 시 리셋(`resetDashboardView()`). ScheduleDetail/Editor 로의 Stack push·복귀는 리셋 아님(같은 탭 흐름). `logic.md` §16.3.7 |
+| D-13 날짜 이동 범위 제한 | 무제한 | 화살표 항상 활성. 원거리 날짜 = `findInRange` 인덱스 범위 쿼리(성능 우려 낮음, `nfr.md` §15). 제한 도입 시 경계에서 해당 방향 화살표 비활성(E-20-1) |
+| D-14 개수 카드 구성 | (a) 카드 2장(총 일정 / 완료) | 개수 카드 = `getSummary(referenceDate).total` / `.done` 2장. 완료율(%)·유형별 분포·다음 예정은 요약 상세 영역 존치(P-47/AC-46). `logic.md` §16.3.7 |
+| D-15 인라인 검색 대상 필드 | 제목 + 메모 (유형명 미포함) | 필터 술어 = `norm(title).includes(q) \|\| norm(memo??'').includes(q)`, `norm(s)=s.trim().toLowerCase()`. 유형명은 F-11(P-12)·유형 필터가 담당. `logic.md` §16.3.7 / §7.1 |
+| D-16 인라인 검색의 카드·요약 반영 | 반영 안 함(카드 = 날짜 전체) | 인라인 필터는 "오늘 일정 목록" 렌더에만 적용. `getSummary` 재호출·카드 수치·요약 상세는 검색어 무관(P-49). `logic.md` §7.1 |
+| D-17 날짜 이동 시 검색어 처리 | 유지 후 재적용 | 좌/우 화살표 이동 = `inlineQuery` 보존, 새 `items` 에 파생 재적용(E-22-2/AC-65). "오늘로" 복귀·탭 이탈·앱 재시작 시 초기화(P-50). `logic.md` §16.3.7 |
+
+**미결 게이트에 딸린 소규모 설계 판단(비차단, Planner 가시화용)**:
+
+- **"다음 예정 일정"(요약 상세)의 기준일 스코프**: `DashboardService.getSummary` 는 `total`/`done`/`completionRate`/`byCategory` 를 `dateTs`(=`referenceDate`) 로 스코프하지만 `nextScheduleId`("다음 예정")는 기존 코어 구현대로 **현재 시각(`clock.now()`) 기준의 실제 다음 예정**을 반환한다. "다음 예정"은 특정 날짜 지표가 아니라 전방 참조 도우미이므로 기준일이 과거/미래여도 "지금 이후의 다음 예정"을 그대로 보여준다. 기준일 스코프 "다음 예정"이 필요하면 코어 `getSummary` 확장(스키마 무변경, 후속) — 이번 사이클은 코어 무변경 유지. AC-16/AC-46 회귀 없음.
+- **OI-19 (과거/미래 기준일에서 FAB 추가 시 시작 일시 프리필)**: `referenceDate !== todayStart` 인 상태에서 FAB/"일정 추가" → `navigate('ScheduleEditor', { presetDate: referenceDate })`. 신규 모드 기본 시작 일시 = `referenceDate + 9h`(해당 날짜 09:00 로컬), 그 외엔 기존 `now + 1h`. `routes.ts` 의 `ScheduleEditor` 파라미터에 `presetDate?: number` 추가(선택). `logic.md` §16.3.1 기본값 규칙 각주. 저장·검증 규칙 무변경.
 
 ### v1.9 재검증 (plan.md v1.4 — F-19 애플워치(watchOS) 워치 타깃)
 
@@ -189,6 +251,7 @@
 | F-06 유형(카테고리) 관리 — 추가/이름변경/삭제 전용 화면, P-34 이름 규칙·기본 유형 보호 | `CategoryService.list/create/rename/remove` (logic §5, §5.1) + `CategoryManagerScreen` (logic §16.3, §16.3.4). 일정→유형은 **ID 참조**이므로 rename은 참조 유지·표시 라벨만 갱신(AC-39). DB 스키마 무변경 |
 | F-08/F-09 사전·정시 알림, P-09 재부팅 복원, P-10 오프셋 최대 5 | `REMINDER` 테이블 + ReminderScheduler + OS 트리거 어댑터 (logic 3.6) |
 | F-10 대시보드(상호작용형), P-07 완료율, P-35 브랜드·요약·목록 공존 | 요약 = `DashboardService.getSummary` 집계 쿼리 (logic 3.7) / 오늘 목록 행 = `ScheduleService.findInRange` + 인라인 `toggleDone`(F-05)·스와이프 `softDelete`(F-04). 레이아웃: 브랜드(logo/tagline) / 요약 / 오늘 목록 / 상시 FAB (logic §16.3.3) |
+| F-20 날짜 네비게이션(컴팩트) / F-21 진행률 한 줄 / F-22 접이식 검색 (P-45~P-53, AC-57~AC-68, D-12~D-19) | `DashboardScreen` 로컬 state `referenceDate`(로컬 자정 epoch)·`inlineQuery`·`searchExpanded`(기본 false) — 저장 없음(P-45/P-50/P-53). 요약·진행률 한 줄 = `DashboardService.getSummary(referenceDate)` 재사용(신규 집계 없음, P-47) — 진행률 한 줄 = `total`/`done` + progress bar(채움 = 완료율 P-07); `isFutureDate(referenceDate, todayStart)` 순수 표시 조건이면 총 개수만(P-52/D-19). 기준 날짜 목록 = `ScheduleService.findInRange(referenceDate, referenceDate+DAY_MS, …)` / 접이식 검색(`searchExpanded` 펼침 시) = `items` 표시 계층 순수 필터(제목+메모, D-15) — 진행률 한 줄·요약 미적용(P-49/D-16), F-11 과 독립(P-51); 접힘 시 검색어 초기화(D-18). 자정 롤오버 = 이전 `todayStart` 대비 판별(P-46, E-10-2 통합). "오늘로"·탭 blur·콜드 스타트 시 `searchExpanded=false` + 검색어 초기화(P-50/P-53). 신규 순수 컴포넌트 `ProgressLine.tsx`(구 `CountCards.tsx` 대체), 순수 헬퍼 `isFutureDate`·`stepReferenceDate`(DASH-01 정정: 방향 무관 `+ HALF_DAY`, 순수 `time.ts` `startOfLocalDay`). **코어·DB·포트·API 무변경** (logic §7.1/§16.3.7, database §11, nfr §15) |
 | F-18 앱 설정 — 전역 알림 토글(P-32, D-07), 새 일정 기본값(P-33) | `APP_SETTING` 키 `notif.enabled` / `schedule.defaultPriority` / `schedule.defaultCategoryId` + `SettingService` (logic §10). 토글 off 전환 = `ReminderScheduler.applyGlobalNotificationsToggle(false)` 일괄 취소; 예약 게이트는 `syncOnce()` 단일 지점 (logic §6) |
 | F-11 검색, P-11/P-12 | SearchService + FTS 인덱스 (logic 3.8, database 5) |
 | F-12 계정 연동, D-01=(c) | AuthService + OAuth(app-auth) + Keychain 토큰 저장 (logic 3.9, 보안 설계) |
@@ -379,7 +442,7 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 
 | 화면 | 사용 서비스/메서드 | 상태 슬라이스 |
 | --- | --- | --- |
-| Dashboard | `DashboardService.getSummary`(요약) + `ScheduleService.findInRange`(오늘 목록, `DASHBOARD_PAGE_SIZE=100` cursor 루프), 인라인 `toggleDone`(F-05)·스와이프 `softDelete`(F-04) | `dashboard`, `list` |
+| Dashboard | `DashboardService.getSummary(referenceDate)`(요약·진행률 한 줄) + `ScheduleService.findInRange(dayStart, dayEnd, …)`(기준 날짜 목록, `DASHBOARD_PAGE_SIZE=100` cursor 루프), 인라인 `toggleDone`(F-05)·스와이프 `softDelete`(F-04). 기준 날짜(F-20)·검색어·`searchExpanded`(F-22)는 화면 로컬 state — 서비스 인자로만 전달, 저장 없음. 미래 날짜 진행률(P-52)은 `isFutureDate` 순수 표시 조건 | `dashboard`, `list` |
 | Calendar / List | `ScheduleService.findInRange` (Calendar=월 단위 `CALENDAR_MONTH_PAGE_SIZE=200` cursor 루프 / List=keyset 무한 스크롤 50), `toggleDone` | `list` |
 | ScheduleEditor | `ScheduleService.create/update/getById`, `CategoryService.list/create`, `SettingService`(새 일정 기본값 프리필 — 신규 모드만) | 저장 후 `list`·`dashboard`·`search`·`categories` invalidate → `goBack` (상세 §16.3.1) |
 | CategoryManager | `CategoryService.list/create/rename/remove` | `categories`·`list`·`dashboard` invalidate (rename/삭제가 일정 표시 라벨에 영향) |
@@ -402,7 +465,7 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 
 - **인증**: 앱 자체 인증 없음(단말 로컬 앱). 계정 연동은 **OAuth 2.0 + PKCE**(외부 IdP)로 위임하며, 액세스/리프레시 토큰은 OS 보안 저장소(Keychain/Keystore)에 저장. 세부는 `logic.md` 「보안 설계」.
 - **권한(앱 내)**: 단일 사용자, 역할 구분 없음. 모든 로컬 데이터는 단말 소유자만 접근. OS 권한(알림, 캘린더)은 런타임 요청하며 거부 시 해당 기능만 비활성(E-08-1, E-14-1).
-- **시각 취급 규칙(v1.8, P-16/P-17)**: "현재 시각"과 "로컬 자정(날짜 경계)"은 **표시 계층을 포함한 모든 계층에서 `Clock` 포트를 경유**한다. 화면 컴포넌트는 `Date.now()` / `new Date()` 로 현재 시각을 얻지 않고 `clock.now()` / `clock.startOfLocalDay()` 를 사용한다(단, 이미 알고 있는 epoch ms 를 `new Date(ts)` 로 포맷팅하는 것은 허용 — 포맷 전용). 상세 `logic.md` §16.11.
+- **시각 취급 규칙(v1.8, P-16/P-17 / v1.11 표기 정정)**: "현재 시각"은 **표시 계층을 포함한 모든 계층에서 `Clock` 포트(`now()`/`timeZone()`)를 경유**한다. 화면 컴포넌트는 `Date.now()` / 무인자 `new Date()` 로 현재 시각을 얻지 않는다. "로컬 자정(날짜 경계)"은 `Clock` 포트 메서드가 아니라 순수 함수 `startOfLocalDay(clock.now(), clock.timeZone())`(`src/core/domain/time.ts` — `DashboardService` 내부와 동일)로 계산한다(DASH-01). 이미 알고 있는 epoch ms 를 `new Date(ts)` 로 포맷팅하는 것은 허용(포맷 전용). 상세 `logic.md` §16.11 / §0.1.
 - **오류 처리 방침**:
   - 입력 검증 실패는 저장 이전에 필드 단위 오류로 반환(AC-02/03), 데이터 변경 없음.
   - 쓰기 작업은 단일 SQLite 트랜잭션. 실패 시 전체 롤백, UI 상태 롤백(E-05-2).
@@ -426,8 +489,9 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 | 민감정보 로그 노출 — Information Disclosure | 로그에서 제목/메모/토큰/좌표 마스킹, 릴리스 빌드 로그 레벨 축소 |
 | 워치로 일정 제목 노출면 확대 — Information Disclosure (F-19) | 페이로드 최소화(오늘 + 다음 1건, 제목/시작시각/유형라벨·색/완료상태만 — 메모·이력·토큰·알림·계정 미포함, P-40), WatchConnectivity 는 OS 페어링·암호화 채널, 워치 로컬 스냅샷 파일에 데이터 보호 적용. 상세 `logic.md` §13.9 |
 | 워치→폰 완료 토글 op 위조/재생 — Tampering (F-19) | op = `{opId, scheduleId(정수), done(bool), watchChangedAt, baseUpdatedAt}` 만; 수신 시 `scheduleId` 재조회 + `opId` 중복 제거 원장 + LWW; `toggleDone` 외 경로 없음(P-43). WCSession 은 동일 team ID 페어드 확장으로 OS 제한 |
+| 대시보드 접이식 검색(F-22) 입력 — Injection (v1.10 / v1.11) | 접이식 검색은 이미 로드된 `items` 배열의 표시 계층 순수 필터(`String.includes`) — SQL·FTS·`SearchService` 미경유, 동적 쿼리 표면 없음. 결과는 `<Text>` 렌더. `referenceDate`/`inlineQuery`/`searchExpanded` 는 화면 로컬 state — 저장소·로그 미기록(P-45/P-50/P-53). v1.11 `searchExpanded` 토글은 UI 표시 상태일 뿐 새 입력·저장 표면 없음. 신뢰 경계·비밀정보 변화 없음(표면 축소). 상세 `logic.md` §13.3 |
 
-잔여 위험: 루팅/탈옥 단말, OS 백업에 포함되는 평문(암호화 미선택 시), 디바이스 잠금 미설정 사용자, 잠금 해제된 분실 워치에서 오늘 일정 제목 열람 — `nfr.md`/`logic.md`에 residual risk로 기록.
+잔여 위험: 루팅/탈옥 단말, OS 백업에 포함되는 평문(암호화 미선택 시), 디바이스 잠금 미설정 사용자, 잠금 해제된 분실 워치에서 오늘 일정 제목 열람 — `nfr.md`/`logic.md`에 residual risk로 기록. (대시보드 진행률 한 줄·접이식 검색(v1.11)은 새 저장·전송·주입 표면을 만들지 않는다 — 표면 축소.)
 
 ---
 
@@ -436,13 +500,52 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 | 문서 | 목적 |
 | --- | --- |
 | `overview.md` | 전체 구조, 기술 스택 결정, 설계 간 관계, **클라이언트 셸 아키텍처(v1.1)**, 미결정 사항 (본 문서) |
-| `logic.md` | 서비스의 처리 흐름 + 상태 변화 + 예외, 「API 설계」(외부 OAuth/캘린더 연동 계약 — 워치는 외부 API 아님·해당 없음), 「보안 설계」, **§16 클라이언트 셸 처리 흐름(v1.1)**, **§16.9 브랜드 로딩 인디케이터(v1.7, F-17)**, **§5.1 유형 관리 계약 / §6 전역 알림 게이트 / §7 대시보드 데이터 소스 / §16.3.3~16.3.5 / §16.10 SwipeableRow / §16.11 표시 시각(v1.8)**, **§17 애플워치 워치 동기화 + §13.9 워치 보안(v1.9, F-19)** |
-| `database.md` | SQLite 스키마(테이블·인덱스·FTS·제약), 마이그레이션 러너, 초기 데이터. **v1.2 — 스키마 무변경**(v1.3 재설계분 §9 + v1.4 F-19 워치 §10 검토: LWW=`SCHEDULE.UPDATED_AT`, op 중복 제거 원장=`APP_SETTING` k/v, 워치 로컬 스냅샷/보류 큐는 공유 SQLite 아님) |
-| `nfr.md` | 성능/용량/가용성/관측성 목표의 기술적 구체화, Tester 검증 관점, **§11 셸 검증 관점(v1.1)**, **§13 로딩 애니메이션 성능(v1.5, NFR-11)**, **§14 워치 동기화(v1.7, F-19 / NFR-10·NFR-12)** |
+| `logic.md` | 서비스의 처리 흐름 + 상태 변화 + 예외, 「API 설계」(외부 OAuth/캘린더 연동 계약 — 워치는 외부 API 아님·해당 없음), 「보안 설계」, **§16 클라이언트 셸 처리 흐름(v1.1)**, **§16.9 브랜드 로딩 인디케이터(v1.7, F-17)**, **§5.1 유형 관리 계약 / §6 전역 알림 게이트 / §7 대시보드 데이터 소스 / §16.3.3~16.3.5 / §16.10 SwipeableRow / §16.11 표시 시각(v1.8)**, **§17 애플워치 워치 동기화 + §13.9 워치 보안(v1.9, F-19)**, **§7.1 대시보드 기준 날짜·진행률 한 줄·접이식 검색 + §16.3.7 화면 레이아웃/상태(v1.10 신설 / v1.11 재작성 — 진행률 한 줄·`searchExpanded`·`isFutureDate`·DASH-01 정정, F-20/F-21/F-22)** |
+| `database.md` | SQLite 스키마(테이블·인덱스·FTS·제약), 마이그레이션 러너, 초기 데이터. **v1.4 — 스키마 무변경**(v1.3 재설계분 §9 + v1.4 F-19 워치 §10 + 대시보드 개선 §11 재검토: F-20~F-22(v1.6 재확정 방향 포함 — 진행률 한 줄·`searchExpanded`·미래 날짜 분기)는 화면 로컬 state + 기존 `getSummary(dateTs)`/`findInRange` 재사용, 신규 테이블·컬럼·인덱스·`APP_SETTING` 키 없음) |
+| `nfr.md` | 성능/용량/가용성/관측성 목표의 기술적 구체화, Tester 검증 관점, **§11 셸 검증 관점(v1.1)**, **§13 로딩 애니메이션 성능(v1.5, NFR-11)**, **§14 워치 동기화(v1.7, F-19 / NFR-10·NFR-12)**, **§15 대시보드 날짜 네비게이션·진행률 한 줄·접이식 검색(v1.8 신설 / v1.9 재확정 방향 — "개수 카드"→"진행률 한 줄", 접이식 토글 접근성·모션, F-20~F-22 / NFR-04·NFR-08·NFR-09)** |
 
 ---
 
 ## 영향 범위
+
+### v1.11 (대시보드 재확정 방향 — F-20 컴팩트 / F-21 진행률 한 줄 / F-22 접이식 검색 / DASH-01 정정)
+
+- **구현 예정(Developer) — 셸(`src/app`)만, v1.5(=설계 v1.10) 구현 대비 변경분**:
+  - **F-21 진행률 한 줄 교체**: `src/app/components/CountCards.tsx` → `src/app/components/ProgressLine.tsx` 로 대체(파일 rename + 재작성). props `{ total: number; done: number; isFuture: boolean; testID? }`. 과거·오늘 = "M / N 완료" 텍스트 + 얇은 progress bar 1개(채움 = `total===0 ? 0 : done/total`, P-07). 미래(`isFuture`) = "일정 N건"만(bar·완료 수·완료율 숨김, P-52). 순수 프레젠테이션(`src/core`·서비스·`bindings.ts` 무의존). `accessibilityRole="progressbar"` + 인접 텍스트로 색 비의존 진척 전달(NFR-08).
+  - **`DashboardScreen.tsx`**:
+    - `<CountCards total done />` → `<ProgressLine total={summary?.total ?? 0} done={summary?.done ?? 0} isFuture={isFutureDate(referenceDate, todayStartValue)} />`.
+    - **`searchExpanded` 도입**: `const [searchExpanded, setSearchExpanded] = useState(false)`(P-53). 진행률 한 줄과 리스트 사이에 검색 아이콘 상시 렌더 → 탭 시 `toggleSearch()`(펼침 시 `TextInput` `autoFocus`, 접힘 시 `setInlineQuery('')` — D-18(a)/E-22-6). `TextInput`+clear 는 `searchExpanded === true` 일 때만 렌더.
+    - **`resetDashboardView()` 에 `setSearchExpanded(false)` 추가**(현재 `setReferenceDate`/`setInlineQuery`/`setDebouncedQuery` 만) — "오늘로" 복귀·탭 blur·콜드 스타트 시 접힘(P-50/P-53/E-22-7). `goPrevDay`/`goNextDay` 는 `searchExpanded`·`inlineQuery` 미변경(E-22-2/AC-65 유지).
+    - 날짜 네비게이션 영역을 한 줄 컴팩트 배치로(F-20 "작게" 요건 — 높이·타이포 축소, OI-15). 규칙·핸들러 로직은 무변경.
+    - 빈 상태·검색 무결과 문구 분기(`dashboardListEmptyState`)는 그대로. 미래 날짜 & 0건이면 진행률 한 줄 "일정 없음", 목록은 E-10-1.
+  - **`src/app/screens/dashboardViewModel.ts`**:
+    - 신규 순수 헬퍼 `isFutureDate(refTs: number, todayStartTs: number): boolean` = `refTs > todayStartTs`(둘 다 로컬 자정 epoch ms, P-17).
+    - **DASH-01 정정 반영**: `stepReferenceDate` 는 이미 방향 무관 `+ halfDay` 로 교정되어 있음(현 구현 유지). 문서(logic §16.3.7)만 예시식을 `+ dir*HALF_DAY` → `+ HALF_DAY` 로, `clock.startOfLocalDay()` 서술을 순수 `startOfLocalDay`(`src/core/domain/time.ts`) 직접 사용으로 정정 — **구현 변경 없음**.
+- **무변경**: `src/core/**`(도메인/포트/서비스/infra/migration) — `DashboardService.getSummary(dateTs?)`·`ScheduleService.findInRange` 시그니처·로직 그대로 재사용, DB DDL/인덱스/트리거/시드(`database.md` §11), `ReminderScheduler`/알림 경로, 기존 코어 테스트·`npm run demo`, 다른 셸 화면(Calendar/Search/Settings/…), Zustand 슬라이스 정의, `bindings.ts`(`DashboardScreen.reads` 는 v1.10 지시대로 `dashboard.getSummary` 포함), `routes.ts`(`ScheduleEditor { presetDate?: number }` 유지 — OI-19).
+- **신규 의존성**: **없음**. progress bar 는 RN `<View>` 너비 비율로 구현(신규 네이티브 모듈·npm 패키지 없음).
+- **재검증 필요 AC (Developer 구현 후 Tester)**: **AC-60**(진행률 한 줄 "M / N 완료" + 25%/50% bar, 토글 시 갱신), **AC-61**(빈 상태 "0 / 0 완료" + 0% bar), **AC-62**(검색 아이콘 탭 펼침 후 실시간 필터, 진행률 한 줄 수치·bar 불변), **AC-63**(접이식 무결과 문구 구분), **AC-64**(검색어 초기화 — clear 및 접힘 시 D-18(a)), **AC-65**(날짜 이동 시 검색어·펼침 유지; "오늘로"·탭 이탈 시 초기화·접힘), **AC-66**(접이식 ↔ 전역 검색 독립), **AC-67**(검색 아이콘 토글·포커스 이동 — 신규), **AC-68**(미래 날짜 "일정 N건"만, 오늘·과거 복귀 시 복원 — 신규). 회귀 확인: AC-57~59(날짜 이동·오늘로·자정), AC-04/15/16/44~46(대시보드 기존 동작).
+- **회귀 위험**: 낮음. 코어·DB·서비스·포트 무영향. `DashboardScreen` 단일 화면 + 순수 컴포넌트 1개 rename·재작성 + 순수 헬퍼 1개 추가. `referenceDate = 오늘` & `searchExpanded = false` 기본 경로가 v1.10 동작과 동일하므로 AC-04/15/16/44~46 회귀 가드됨. DASH-01 은 문서 정정만(구현 무변경).
+
+### v1.10 (대시보드 F-20 날짜 탐색 / F-21 개수 카드 / F-22 인라인 검색)
+
+- **구현 예정(Developer) — 셸(`src/app`)만**:
+  - `src/app/screens/DashboardScreen.tsx`:
+    - `referenceDate`(number, 로컬 자정 epoch)·`inlineQuery`(string) 로컬 state 추가. 초기값 `referenceDate = clock.startOfLocalDay(clock.now(), clock.timeZone())`, `inlineQuery = ''`.
+    - `load()` 를 `referenceDate` 파라미터화: `getSummary(referenceDate)` + `findInRange(referenceDate, referenceDate + DAY_MS, undefined, 'startAt', DASHBOARD_PAGE_SIZE, cursor)` cursor 루프. `todayRange()` 제거.
+    - `useEffect([referenceDate])` 로 날짜 변경 시 재로딩. in-flight 응답 stale 처리(`loadSeq` ref 비교, E-20-4).
+    - **날짜 탐색 영역**(F-20): 좌/우 화살표(`stepReferenceDate(refTs, dir)` — `clock.startOfLocalDay` + 12h 쿠션, §16.3.7 자정/DST-안전 공식), 날짜 라벨(`Intl.DateTimeFormat` 로캘, `referenceDate === todayStart` 시 "오늘 ·" 접두), "오늘로" 버튼(`referenceDate !== todayStart` 일 때만; 탭 시 `referenceDate = todayStart` + `inlineQuery = ''`).
+    - **개수 카드 영역**(F-21): `<CountCards total={summary.total} done={summary.done} />` 순수 컴포넌트. 로드 실패 시 카드 영역 재시도(E-21-2).
+    - **인라인 검색 영역**(F-22): `TextInput` + clear 버튼 → `inlineQuery`. `debouncedQuery`(200ms). 목록은 `useMemo(() => filterByQuery(items, debouncedQuery), [items, debouncedQuery])`.
+    - **자정 롤오버**(P-46): `AppState 'active'`·`useFocusEffect` 에서 `prevTodayStartRef` 대비 판별 → 오늘을 보고 있었으면 `referenceDate` 를 새 오늘로, 아니면 유지(§16.3.7).
+    - **탭 이탈 리셋**(D-12): Dashboard 탭 `blur`(형제 탭 전환) 시 `resetDashboardView()`. Stack push(Detail/Editor) 복귀는 리셋 아님.
+    - 빈 상태/검색 무결과 문구 분기(E-10-1 vs E-22-1). FAB/"일정 추가" 는 `referenceDate !== todayStart` 시 `presetDate` 파라미터 동반(OI-19).
+  - `src/app/components/CountCards.tsx`(신규, 순수 프레젠테이션 — `src/core`·서비스·`bindings.ts` 무의존, props 만): 총 일정·완료 일정 2장 카드.
+  - `src/app/state/bindings.ts`: `DashboardScreen.reads` 에 `{ service: 'dashboard', method: 'getSummary' }` 추가(현재 `findInRange` 만 — logic v1.8/§7 지시 반영). `invalidates` 슬라이스 변경 없음.
+  - `src/app/navigation/routes.ts`: `ScheduleEditor` 파라미터에 `presetDate?: number` 추가(선택, OI-19).
+  - (선택·Developer 재량) `src/core/domain/time.ts` 에 순수 헬퍼 `addLocalDays(ts, days, tz)` 추가 가능 — `startOfLocalDay`/`DAY_MS` 와 동일 파일의 순수 시간 유틸. 미추가 시 화면이 `clock.startOfLocalDay` + 쿠션 공식으로 처리(§16.3.7). 어느 쪽이든 **포트·서비스 계약 무변경**.
+- **무변경**: `src/core/{domain(추가 헬퍼 예외),ports,services,infra,migration}/**` — `DashboardService.getSummary(dateTs?)`·`ScheduleService.findInRange` 시그니처·로직 그대로 재사용, DB DDL/인덱스/트리거/시드(`database.md` §11), `ReminderScheduler`/알림 경로, 기존 코어 테스트·`npm run demo`, 다른 셸 화면(Calendar/Search/Settings/…), Zustand 슬라이스 정의.
+- **신규 의존성**: **없음**. `Intl.DateTimeFormat` 은 RN Hermes 내장(로캘 데이터는 기존 국제화 설정 범위). 새 네이티브 모듈·npm 패키지 없음.
+- **회귀 위험**: 낮음. 코어·DB·서비스·포트 무영향. `DashboardScreen` 단일 화면에 로컬 state·파생 필터·신규 UI 영역 추가(기존 요약/목록/토글/삭제 경로는 인자만 `referenceDate` 로 일반화). AC-04/AC-15/AC-16/AC-44/AC-45/AC-46 회귀는 "referenceDate = 오늘" 기본 경로가 기존 동작과 동일하므로 가드됨.
 
 ### v1.9 (F-19 애플워치 워치 타깃)
 
@@ -612,4 +715,13 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 | D-11 | 워치 완료 토글 역전파 지연/실패 시 노출 수준 (F-19) | **(b) 워치에 "동기화 대기" 표시** 채택(plan v1.4 가정) — 보류 큐 비어있지 않은 동안 워치 목록에 배지(§17.5). 폰 배지·안내 미도입. 게이트 형식상 OPEN(비차단) |
 | N-11 | watchOS 앱 타깃 온디바이스 검증 (F-19) | 현 파이프라인에 워치 시뮬레이터/기기 없음 → `src/core/watchSync/**` 순수 로직 + `WatchSyncService` + `WatchConnectivityGateway` 계약만 `npm test`/`typecheck` 로 검증. watchOS 앱 빌드·WCSession 실왕복·컴플리케이션 타임라인은 워치 기기 있는 후속 환경. `nfr.md` §11.2 |
 | N-12 | 워치 LWW 정밀도 (F-19) | `SCHEDULE.UPDATED_AT` 기반 근사 LWW 채택(스키마 무변경). 완료와 무관한 폰 편집이 워치 토글보다 나중일 때 워치 토글이 드롭될 수 있음(residual risk, `logic.md` §17.6). 필드 수준 정밀 LWW(전용 `DONE_CHANGED_AT` 컬럼)는 후속 — 스키마 변경 수반이라 이번 릴리스 보류 |
+| D-12 | 대시보드 기준 날짜 상태 지속 범위 (F-20) | **(a) 탭 이탈·앱 재시작 시 오늘로 리셋** 채택(plan v1.5 가정). `referenceDate`/`inlineQuery` = `DashboardScreen` 로컬 state, 영구 저장 없음(P-45). ScheduleDetail/Editor Stack push·복귀는 리셋 아님. `logic.md` §16.3.7. 게이트 형식상 OPEN(추인 대기), 비차단 |
+| D-13 | 날짜 탐색 이동 범위 제한 (F-20) | **무제한** 채택(plan v1.5 가정). 원거리 날짜 = `findInRange` 인덱스 범위 쿼리(`nfr.md` §15). 제한 도입 시 경계 화살표 비활성(E-20-1). 비차단 |
+| D-14 | 개수 카드 구성 (F-21) | **CLOSED (plan v1.6)** — 조정자 재확정으로 (d) **"진행률 한 줄"**(텍스트 + progress bar 1개)로 확정. 카드 2장 안(a) 폐기. `CountCards.tsx` → `ProgressLine.tsx`(`logic.md` §7.1.2 / §16.3.7). 완료율·유형별 분포·다음 예정은 요약 상세 존치(P-47/AC-46). 미결정 아님 |
+| D-15 | 접이식 검색 대상 필드 (F-22) | **제목 + 메모**(유형명 미포함) 채택(plan v1.6 가정). 정규화 = 트림 + 소문자. 유형명은 F-11(P-12)·유형 필터 담당. `logic.md` §7.1. 비차단 |
+| D-16 | 접이식 검색이 진행률 한 줄·요약에 반영되는지 (F-22) | **반영 안 함(진행률 한 줄 = 기준 날짜 전체)** 채택(plan v1.6 가정). 필터는 목록 렌더에만 적용(P-49). `logic.md` §7.1. 비차단 |
+| D-17 | 날짜 이동 시 접이식 검색어 처리 (F-22) | **유지 후 재적용** 채택(plan v1.6 가정). 좌/우 화살표 = 검색어·펼침 상태 보존·재적용(E-22-2/AC-65); "오늘로"·탭 이탈·앱 재시작 = 초기화 + 접힘(P-50/P-53). `logic.md` §16.3.7. 비차단 |
+| D-18 | 접이식 검색창 접을 때 검색어·필터 처리 (F-22, plan v1.6 신규) | **(a) 접으면 검색어 초기화 + 필터 해제** 채택(가정값). `toggleSearch()` 가 `searchExpanded=false` 시 `setInlineQuery('')`(`logic.md` §7.1.3 / §16.3.7, E-22-6). (b) "유지" 확정 시 접힘 시 보존·재펼침 복원으로 화면 로직만 조정(서비스·스키마 무영향). 게이트 형식상 OPEN(추인 대기), 비차단 — 상태 관리 영향 → 착수 초기 확인 권장 |
+| D-19 | 미래 기준 날짜의 진행률 한 줄 표시 (F-21, plan v1.6 신규) | **(a) 총 일정 수만 표시(완료율·progress bar 숨김)** 채택(가정값). `isFutureDate(referenceDate, todayStart)` 순수 표시 조건 → `<ProgressLine isFuture>` "일정 N건"(`logic.md` §7.1.2, P-52, E-21-4, AC-68). `getSummary` 집계 경로 무변경. (b) "일관성" 확정 시 `isFuture` 분기만 제거. 게이트 형식상 OPEN(추인 대기), 비차단 — 지표 의미 영향 → 착수 초기 확인 권장 |
+| N-13 | 요약 상세 "다음 예정 일정"의 기준일 스코프 (F-20) | 이번 사이클 코어 `getSummary` 무변경 → `nextScheduleId` 는 `clock.now()` 기준 실제 다음 예정 반환(기준일 과거/미래 무관). 기준일 스코프 필요 시 코어 `getSummary` 확장(스키마 무변경) 후속. 비차단, AC 회귀 없음. `logic.md` §15, `nfr.md` §12 |
 | D-03 | SQLCipher 기본 활성 → op-sqlite 어댑터의 `PRAGMA key` 경로 | 셸은 빌드 플래그로 토글 가능하게 설계, 최종 정책은 D-03 확정 대기 |

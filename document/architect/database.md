@@ -3,15 +3,17 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 데이터베이스 설계 (Database) |
-| 버전 | v1.2 |
+| 버전 | v1.4 |
 | 상태 | 작성 완료 (스키마 무변경) |
-| 근거 | `document/planner/plan.md` v1.4, `document/architect/overview.md` v1.9 |
+| 근거 | `document/planner/plan.md` v1.6, `document/architect/overview.md` v1.11 |
 | DB 엔진 | SQLite 3 (op-sqlite, 선택적 SQLCipher) |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
+| v1.4 | 2026-09-09 | plan v1.6 대시보드 개선 **재확정 방향**(F-20 컴팩트 / **F-21 진행률 한 줄**(개수 카드 폐기) / **F-22 접이식 검색**(상시 입력창 폐기)) 스키마 영향 재검토 — **DDL·인덱스·트리거·시드 무변경**. §11 갱신. 추가 검토: (1) **진행률 한 줄**(F-21)도 `DashboardService.getSummary(referenceDate)` 의 `total`/`done` 재사용 — progress bar 채움은 UI 계산(완료율 P-07), 새 집계 컬럼·뷰 없음, (2) **`searchExpanded`**(F-22 접이식 펼침/접힘, P-53)는 `DashboardScreen` 로컬 React state — 영구 저장 금지, `APP_SETTING` 키 미추가, (3) **미래 날짜 진행률 표시**(P-52, D-19)는 `isFutureDate(referenceDate, todayStart)` 순수 표시 조건 — `getSummary` 호출·인자·결과 무변경, (4) **접힘 시 검색어 초기화**(D-18)는 화면 state 조작만. 결론 유지: 마이그레이션 번호 부여 없음 |
+| v1.3 | 2026-09-09 | plan v1.5 대시보드 개선(F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색) 스키마 영향 검토 — **DDL·인덱스·트리거·시드 무변경**. §11 "F-20/F-21/F-22 대시보드 개선 스키마 영향 검토" 추가. 사유: (1) 기준 날짜(`referenceDate`)·인라인 검색어는 `DashboardScreen` 로컬 React state — 영구 저장 안 함(P-45/P-50), `APP_SETTING` 키 미추가, (2) 요약·개수 카드는 기존 `DashboardService.getSummary(dateTs)` 를 `referenceDate` 인자로 재사용(집계 규칙·쿼리 무변경, P-47), (3) 기준 날짜 목록은 기존 `ScheduleService.findInRange(dayStart, dayEnd, …)` 재사용 — `IDX_SCHEDULE_START` 가 임의-일 범위 쿼리 지원(D-13 무제한 이동 포함), (4) 인라인 검색은 이미 로드된 행 배열의 표시 계층 순수 필터 — FTS·신규 쿼리 없음(SCHEDULE_FTS 무관) |
 | v1.2 | 2026-09-08 | plan v1.4 F-19(애플워치 워치 타깃 착수) 스키마 영향 검토 — **DDL·인덱스·트리거·시드 무변경**. §10 "F-19 워치 타깃 스키마 영향 검토" 추가. 사유: (1) LWW(E-19-3/P-38)는 기존 `SCHEDULE.UPDATED_AT` + 워치 스냅샷 `baseUpdatedAt` 비교로 충족, (2) 워치 완료 토글 op 중복 적용 방지 원장은 `APP_SETTING` k/v(`watch.appliedOps`)로 충족, (3) 워치 로컬 스냅샷·보류 큐는 **공유 SQLite 가 아니라 워치 앱 컨테이너 파일**, (4) 폰 측 outbound 상태 영속화 불필요(스냅샷은 온디맨드 파생) |
 | v1.1 | 2026-09-07 | plan v1.3 재설계분(F-06 유형 관리 정식화 / F-18 전역 알림 토글·새 일정 기본값 / F-10 상호작용형 대시보드) 스키마 영향 검토 — **DDL·인덱스·트리거·시드 무변경**. §9 "v1.3 재설계분 스키마 영향 검토" 추가. 사유: 필요 기능이 기존 스키마로 충족(아래 §9) |
 | v1.0 | 2026-09-04 | 신규 스키마 최초 설계 |
@@ -380,3 +382,26 @@ VALUES ('notif.showTitle', 'true', 1756944000000);
 | P-44 Android Wear OS 비범위 | — | Wear Data Layer·별도 저장 이번 릴리스 미구현(OI-11) | 없음 |
 
 **결론**: 마이그레이션 번호 부여 없음. F-19 는 `migrations/001_init.sql` + `APP_SETTING` k/v 로 충족한다. 워치 로컬 영속화(스냅샷·보류 큐)는 watchOS 앱의 파일 저장이며 본 문서(공유 SQLite 스키마)의 대상이 아니다 — 형태·보호 규약은 `logic.md` §17.5 / §13.9.
+
+---
+
+## 11. F-20 / F-21 / F-22 대시보드 개선 스키마 영향 검토 (스키마 무변경) — v1.3 / v1.4 재확정 방향
+
+`plan.md` v1.6 의 대시보드("오늘" 탭) 개선 재확정 방향 — F-20(좌/우 화살표 날짜 네비게이션 + "오늘로" 복귀, 시각적으로 작게), F-21(기준 날짜 **진행률 한 줄**: "M / N 완료" 텍스트 + progress bar 1개; 미래 날짜는 총 개수만), F-22(**접이식** 검색 아이콘 토글 → 기준 날짜 목록 내 제목·메모 필터) — 에 대해 로컬 저장소 변경 필요성을 재검토한 결과 **DDL·인덱스·트리거·초기 데이터 모두 변경 없음**. 근거:
+
+| 요구 (plan v1.6) | 필요 저장/조회 요소 | 기존 스키마 충족 방식 | 변경 |
+| --- | --- | --- | --- |
+| P-45 대시보드 "기준 날짜" 상태 (기본 오늘, ±1일 이동, 영구 저장 금지) | — | `DashboardScreen` 로컬 React state(`referenceDate`: 로컬 자정 epoch ms). `APP_SETTING`·파일·Zustand 어디에도 쓰지 않음(logic §16.3.7). 재마운트 시 순수 `startOfLocalDay(clock.now(), tz)` (`Clock` 포트 = now/timeZone만, DASH-01 정정) | 없음 |
+| P-50 접이식 검색어 생명주기 (영구 저장 금지, 특정 시점 초기화) | — | `DashboardScreen` 로컬 state(`inlineQuery`: string) | 없음 |
+| P-53 접이식 검색 펼침/접힘 상태 (기본 접힘, 영구 저장 금지) | — | `DashboardScreen` 로컬 state(`searchExpanded`: boolean, 기본 false). `APP_SETTING` 키 미추가. 탭 이탈·재시작 시 `false` 리셋(logic §16.3.7) | 없음 |
+| P-47 진행률 한 줄 지표 (기준 날짜 총 일정 수 / 완료 일정 수, 기존 F-10 요약과 동일 집계 규칙) | 기준 날짜 범위 집계 | 기존 `DashboardService.getSummary(dateTs)` 를 `dateTs = referenceDate` 로 호출 — 내부 `startOfLocalDay(dateTs)` / `findForDashboard(dayStart, dayEnd)`. `IDX_SCHEDULE_DONE_START`·`IDX_SCHEDULE_START` 재사용. progress bar 채움 비율(`done/total`)은 UI 계산(완료율 P-07). **새 집계 컬럼·뷰·쿼리 없음** | 없음 |
+| P-52 / D-19 미래 기준 날짜 진행률 한 줄 = 총 개수만 (progress bar·완료 수 숨김) | — | `isFutureDate(referenceDate, todayStart)`(`referenceDate > todayStart`) 순수 표시 조건. `getSummary` 호출·인자·결과 무변경 — 화면이 표시만 분기 | 없음 |
+| F-20 임의 날짜(과거·미래, D-13 무제한)의 요약·목록 조회 | 임의 하루 범위 스캔 | `ScheduleService.findInRange(dayStart, dayEnd, undefined, 'startAt', DASHBOARD_PAGE_SIZE, cursor)` — CalendarScreen 월 범위 조회와 동형. `IDX_SCHEDULE_START`(`start_at` 오름차순, soft-deleted 제외 부분 인덱스)가 keyset cursor + 범위 조건 지원 | 없음 |
+| P-46 자정 경과 시 기준 날짜 롤오버 분기 | 현재 로컬 자정 | 순수 `startOfLocalDay(clock.now(), tz)`. 화면이 이전 `todayStart` 대비 판별(logic §16.3.7). 저장 요소 없음 | 없음 |
+| P-48 / F-22 접이식 검색 (기준 날짜 목록 내 제목·메모, 대소문자·공백 무시, D-15) | 이미 로드된 행의 부분 문자열 매칭 | **표시 계층 순수 필터** — `items.filter(x => norm(x.title).includes(q) \|\| norm(x.memo??'').includes(q))`. SQL·`SCHEDULE_FTS`·`SearchService` 미경유. `SCHEDULE.TITLE`/`SCHEDULE.MEMO` 는 이미 조회된 행에 포함 | 없음 |
+| P-49 / D-16 접이식 검색이 진행률 한 줄·요약에 미반영 | — | 진행률 한 줄·요약은 `getSummary(referenceDate)` 결과 그대로(검색어 무관). 필터는 목록 렌더에만 | 없음 |
+| D-18 접이식 검색창 접힘 시 검색어 초기화 + 필터 해제 | — | `toggleSearch()` 가 `searchExpanded=false` 시 `setInlineQuery('')` — 화면 state 조작만(E-22-6) | 없음 |
+| P-51 접이식 검색(F-22) ↔ 전역 검색(F-11) 독립 | — | 접이식 = 화면 로컬 state, 전역 = `search` Zustand 슬라이스 + `SCHEDULE_FTS`. 공유 저장 요소 없음 | 없음 |
+| OI-19 과거/미래 기준일에서 FAB 추가 시 시작 일시 프리필 | 네비게이션 파라미터 | `routes.ts` `ScheduleEditor { presetDate?: number }` (라우트 타입, DB 아님). `SCHEDULE.START_AT` 저장 형식 무변경 | 없음 |
+
+**결론**: 마이그레이션 번호 부여 없음. F-20/F-21/F-22(v1.6 재확정 방향 포함)는 `migrations/001_init.sql` 스키마와 기존 `IDX_SCHEDULE_START` / `IDX_SCHEDULE_DONE_START` 인덱스로 충족한다. 기준 날짜·검색어·`searchExpanded` 는 영속 데이터가 아니다(화면 로컬 state, P-45/P-50/P-53). 신규 `APP_SETTING` 키도 없다. 진행률 한 줄·미래 날짜 분기는 기존 `getSummary` 결과의 UI 표현일 뿐이다.
