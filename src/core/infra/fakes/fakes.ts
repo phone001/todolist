@@ -1,6 +1,6 @@
 /**
- * 테스트/데모용 게이트웨이 구현. 운영 어댑터(Notifee, app-auth, Keychain 등)를 대체한다.
- * 설계 근거: document/architect/logic.md 0.1, 13.
+ * 테스트/데모용 게이트웨이 구현. 운영 어댑터(Notifee, app-auth, Keychain, WatchConnectivity 등)를 대체한다.
+ * 설계 근거: document/architect/logic.md 0.1, 13, §17.
  */
 import type {
   AuthGateway,
@@ -14,7 +14,9 @@ import type {
   PermissionStatus,
   TokenSet,
   TokenStore,
+  WatchSyncGateway,
 } from '../../ports/gateways.ts';
+import type { WatchSnapshot, WatchToggleAck, WatchToggleOp } from '../../watchSync/types.ts';
 
 export interface ScheduledNotification {
   osRequestId: string;
@@ -221,5 +223,87 @@ export class FakeCalendarGateway implements CalendarGateway {
 
   async deleteEvent(calendarId: string, eventId: string): Promise<void> {
     this.events = this.events.filter((e) => !(e.calendarId === calendarId && e.eventId === eventId));
+  }
+}
+
+/**
+ * 미지원 워치 채널 — Android 및 `watchSync` 미주입 시 기본값(§17.2).
+ * 모든 메서드가 조용히 no-op 이며 `GATEWAY_WATCH_UNAVAILABLE` 도 던지지 않는다.
+ */
+export class NoopWatchSyncGateway implements WatchSyncGateway {
+  isSupported(): boolean {
+    return false;
+  }
+
+  async activate(): Promise<void> {
+    // no-op
+  }
+
+  async sendSnapshot(_snapshot: WatchSnapshot): Promise<void> {
+    // no-op
+  }
+
+  onIncomingToggle(_cb: (op: WatchToggleOp) => void): void {
+    // no-op
+  }
+
+  async ack(_opId: string, _result: WatchToggleAck): Promise<void> {
+    // no-op
+  }
+}
+
+/**
+ * 스냅샷 전송·op 수신·ack 를 기록하는 워치 채널 스파이(테스트용).
+ * `emitIncoming(op)` 로 워치→폰 토글을, 각 `fail*` 플래그로 채널 장애를 흉내낸다.
+ */
+export class FakeWatchSyncGateway implements WatchSyncGateway {
+  supported: boolean;
+  failActivate = false;
+  failSend = false;
+  failAck = false;
+
+  activated = 0;
+  readonly sentSnapshots: WatchSnapshot[] = [];
+  readonly acks: Array<{ opId: string; result: WatchToggleAck }> = [];
+  private cb: ((op: WatchToggleOp) => unknown) | null = null;
+
+  constructor(supported = true) {
+    this.supported = supported;
+  }
+
+  isSupported(): boolean {
+    return this.supported;
+  }
+
+  async activate(): Promise<void> {
+    this.activated += 1;
+    if (this.failActivate) throw new Error('GATEWAY_WATCH_UNAVAILABLE');
+  }
+
+  async sendSnapshot(snapshot: WatchSnapshot): Promise<void> {
+    if (this.failSend) throw new Error('GATEWAY_WATCH_UNAVAILABLE');
+    this.sentSnapshots.push(snapshot);
+  }
+
+  onIncomingToggle(cb: (op: WatchToggleOp) => void): void {
+    this.cb = cb;
+  }
+
+  async ack(opId: string, result: WatchToggleAck): Promise<void> {
+    if (this.failAck) throw new Error('GATEWAY_WATCH_UNAVAILABLE');
+    this.acks.push({ opId, result });
+  }
+
+  /** 워치 → 폰 완료 토글 op 수신을 흉내낸다. 등록된 핸들러가 반환한 값(Promise)을 그대로 돌려준다. */
+  emitIncoming(op: WatchToggleOp): unknown {
+    return this.cb?.(op);
+  }
+
+  hasHandler(): boolean {
+    return this.cb !== null;
+  }
+
+  lastSnapshot(): WatchSnapshot | undefined {
+    return this.sentSnapshots[this.sentSnapshots.length - 1];
   }
 }

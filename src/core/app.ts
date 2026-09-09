@@ -1,11 +1,12 @@
 /**
  * 조립 지점 (Composition Root). 포트에 구체 어댑터를 주입한다.
  *
- * - `assembleServices(ports)` — 포트 구현을 받아 8개 서비스를 조립하는 재사용 seam.
- *   RN 앱 셸은 SQLite/Notifee/AppAuth/Keychain 어댑터를 이 함수에 주입한다(overview v1.1 §"조립 지점 리팩터", logic §16.1).
+ * - `assembleServices(ports)` — 포트 구현을 받아 서비스 묶음을 조립하는 재사용 seam.
+ *   RN 앱 셸은 SQLite/Notifee/AppAuth/Keychain/WatchConnectivity 어댑터를 이 함수에 주입한다
+ *   (overview v1.1 §"조립 지점 리팩터", v1.9 워치 배선, logic §16.1 / §17.2).
  * - `buildApp(options)` — 인메모리/Fake 어댑터로 조립하는 기존 진입점. 후방 호환 유지.
  *
- * 설계 근거: document/architect/overview.md v1.1 "전체 구조"·"클라이언트 셸 아키텍처", logic.md 0.1, §16.1.
+ * 설계 근거: document/architect/overview.md v1.9 "전체 구조", logic.md 0.1, §16.1, §17.
  */
 import { SystemClock } from './domain/clock.ts';
 import type { Clock } from './domain/clock.ts';
@@ -24,6 +25,7 @@ import {
   FakeCalendarGateway,
   FakeNotificationGateway,
   InMemoryTokenStore,
+  NoopWatchSyncGateway,
 } from './infra/fakes/fakes.ts';
 import { AuthService } from './services/authService.ts';
 import { CalendarSyncService } from './services/calendarSyncService.ts';
@@ -33,6 +35,7 @@ import { ReminderScheduler } from './services/reminderScheduler.ts';
 import { ScheduleService } from './services/scheduleService.ts';
 import { SearchService } from './services/searchService.ts';
 import { SettingService } from './services/settingService.ts';
+import { WatchSyncService } from './services/watchSyncService.ts';
 import type {
   AccountRepository,
   CalendarLinkRepository,
@@ -48,6 +51,7 @@ import type {
   Logger,
   NotificationGateway,
   TokenStore,
+  WatchSyncGateway,
 } from './ports/gateways.ts';
 
 /** 6개 저장소 포트 묶음. 어댑터 계층(인메모리 / SQLite)이 이 형태로 제공한다. */
@@ -72,6 +76,8 @@ export interface CorePorts {
   tokenStore: TokenStore;
   /** CalendarSyncService 가 조회할 외부 캘린더 ID 목록. 미지정 시 빈 목록. */
   calendarIds?: string[];
+  /** F-19 폰↔워치 채널. 미지정 시 `NoopWatchSyncGateway`(후방 호환 no-op). */
+  watchSync?: WatchSyncGateway;
 }
 
 /** 조립된 애플리케이션 서비스 묶음. UI/셸은 이 인터페이스에만 의존한다. */
@@ -86,10 +92,12 @@ export interface CoreServices {
   settings: SettingService;
   auth: AuthService;
   calendarSync: CalendarSyncService;
+  /** F-19. `watchSync` 포트 미주입 시에도 존재하나 no-op 게이트(NoopWatchSyncGateway)로 동작. */
+  watchSync: WatchSyncService;
 }
 
 /**
- * 포트 구현을 받아 8개 서비스를 조립한다. 저장소 종류(인메모리/SQLite)에 무관하다.
+ * 포트 구현을 받아 서비스를 조립한다. 저장소 종류(인메모리/SQLite)에 무관하다.
  * 서비스 간 결선은 여기 한 곳에서만 이뤄진다(SRP).
  */
 export function assembleServices(ports: CorePorts): CoreServices {
@@ -132,13 +140,37 @@ export function assembleServices(ports: CorePorts): CoreServices {
     calendarIds: ports.calendarIds ?? [],
   });
 
-  return { clock, logger, schedules, scheduler, dashboard, search, categories, settings, auth, calendarSync };
+  const watchSync = new WatchSyncService({
+    clock,
+    schedules: repo.schedules,
+    categories: repo.categories,
+    settings: repo.settings,
+    scheduleService: schedules,
+    gateway: ports.watchSync ?? new NoopWatchSyncGateway(),
+    logger,
+  });
+
+  return {
+    clock,
+    logger,
+    schedules,
+    scheduler,
+    dashboard,
+    search,
+    categories,
+    settings,
+    auth,
+    calendarSync,
+    watchSync,
+  };
 }
 
 export interface AppOptions {
   clock?: Clock;
   logger?: Logger;
   notifications?: FakeNotificationGateway;
+  /** F-19. 미지정 시 NoopWatchSyncGateway — 기존 테스트·demo 무영향(후방 호환). */
+  watchSync?: WatchSyncGateway;
 }
 
 export interface App extends CoreServices {
@@ -184,6 +216,7 @@ export function buildApp(options: AppOptions = {}): App {
     auth: authGateway,
     tokenStore,
     calendarIds: ['cal-1'],
+    watchSync: options.watchSync,
   });
 
   return {

@@ -1,6 +1,7 @@
 /**
  * RN용 Composition Root (네이티브 바인딩).
- * 설계 근거: document/architect/overview.md v1.1 "조립 지점 리팩터", logic.md v1.1 §16.1/§16.4.
+ * 설계 근거: document/architect/overview.md v1.1 "조립 지점 리팩터", logic.md v1.1 §16.1/§16.4,
+ *           v1.9 워치 배선 (overview §"전체 구조", logic §17.2).
  * 환경 제약: 네이티브 어댑터 import → 파이프라인 미실행(정적 리뷰). 온디바이스 검증.
  *
  * bootstrapSequence 의 BootstrapSteps 구현을 제공한다.
@@ -17,6 +18,7 @@ import { RNCalendarEventsGateway } from '../adapters/calendar/RNCalendarEventsGa
 import { AppAuthGateway, type AppAuthGatewayConfig } from '../adapters/auth/AppAuthGateway.native.ts';
 import { KeychainTokenStore, loadOrCreateDbKey } from '../adapters/secure/KeychainTokenStore.native.ts';
 import { MaskingLogger, type LogRecord } from '../adapters/logging/maskingLogger.ts';
+import { WatchConnectivityGateway } from '../adapters/watch/WatchConnectivityGateway.native.ts';
 
 export interface NativeConfig {
   dbName?: string;
@@ -47,6 +49,8 @@ export function createBootstrapSteps(cfg: NativeConfig): BootstrapSteps {
         auth: new AppAuthGateway(cfg.auth),
         tokenStore: new KeychainTokenStore(),
         calendarIds: cfg.calendarIds ?? [],
+        // F-19: iOS 는 WatchConnectivity 어댑터, Android 는 isSupported()=false 로 전 경로 no-op (§17.2).
+        watchSync: new WatchConnectivityGateway(logger),
       };
     },
 
@@ -56,7 +60,15 @@ export function createBootstrapSteps(cfg: NativeConfig): BootstrapSteps {
     },
 
     assemble(ports: CorePorts): CoreServices {
-      return assembleServices(ports);
+      const services = assembleServices(ports);
+      // F-19(WATCH-10): 워치의 "스냅샷 주세요"(requestSnapshot, 수동 새로고침) 수신 시 최신 스냅샷을
+      // 다시 빌드·전송하도록 어댑터에 배선한다. 포트 계약 무변경 — 구체 어댑터의 배선 지점.
+      if (ports.watchSync instanceof WatchConnectivityGateway) {
+        ports.watchSync.setSnapshotRequestHandler(() => {
+          void services.watchSync.pushSnapshot();
+        });
+      }
+      return services;
     },
 
     async loadSettings(services: CoreServices): Promise<void> {

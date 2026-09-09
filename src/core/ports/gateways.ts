@@ -1,7 +1,8 @@
 /**
- * 외부 시스템 게이트웨이 포트 (OS 알림 / OS 캘린더 / OAuth / 보안 저장소 / 로그).
- * 설계 근거: document/architect/logic.md 0.1, 9 (API 설계), 13 (보안 설계).
+ * 외부 시스템 게이트웨이 포트 (OS 알림 / OS 캘린더 / OAuth / 보안 저장소 / 로그 / 워치 채널).
+ * 설계 근거: document/architect/logic.md 0.1, 9 (API 설계), 13 (보안 설계), §17 (워치).
  */
+import type { WatchSnapshot, WatchToggleAck, WatchToggleOp } from '../watchSync/types.ts';
 
 export type PermissionStatus = 'granted' | 'denied' | 'undetermined';
 
@@ -72,6 +73,26 @@ export interface TokenStore {
   save(ref: string, tokens: TokenSet): Promise<void>;
   load(ref: string): Promise<TokenSet | null>;
   clear(ref: string): Promise<void>;
+}
+
+/**
+ * 폰 ↔ 워치 채널 포트 (F-19). iOS = WatchConnectivity(`WCSession`); Android = no-op.
+ * 설계 근거: document/architect/logic.md 0.1, §17.2, §13.9.
+ *
+ * 전송/활성화 예외는 폰 흐름을 저해하지 않는다(베스트-에포트, NFR-12) — 구현체·호출부
+ * 양쪽이 실패를 격리한다. `GATEWAY_WATCH_UNAVAILABLE`(logic §0.2).
+ */
+export interface WatchSyncGateway {
+  /** iOS + 페어드 워치 확장 지원 여부. false 면 모든 메서드는 조용히 no-op. */
+  isSupported(): boolean;
+  /** `WCSession.activate()`. 활성 전에는 전송을 큐잉하거나 skip. */
+  activate(): Promise<void>;
+  /** 폰 → 워치 스냅샷 전송(`updateApplicationContext` + 도달 시 `sendMessage`). 실패해도 throw 하지 않음. */
+  sendSnapshot(snapshot: WatchSnapshot): Promise<void>;
+  /** 워치 → 폰 완료 토글 op 수신 콜백 등록(`didReceiveMessage`/`didReceiveUserInfo`). */
+  onIncomingToggle(cb: (op: WatchToggleOp) => void): void;
+  /** op 처리 결과를 워치에 알림(`replyHandler` 또는 다음 `applicationContext.ackedOpIds`). */
+  ack(opId: string, result: WatchToggleAck): Promise<void>;
 }
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
