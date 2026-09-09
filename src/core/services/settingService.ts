@@ -46,6 +46,25 @@ export class SettingService {
     return this.settings.set(key, JSON.stringify(value), this.clock.now());
   }
 
+  /** 일반 키 접근 (UI 편의). 반환값은 저장된 원본 JSON 문자열(없으면 null). */
+  get(key: string): Promise<string | null> {
+    return this.settings.get(key);
+  }
+
+  /** 일반 키 저장 (UI 편의). `jsonValue` 는 이미 JSON 직렬화된 문자열이어야 한다. */
+  set(key: string, jsonValue: string): Promise<void> {
+    return this.settings.set(key, jsonValue, this.clock.now());
+  }
+
+  /** 정책: 알림 전역 사용 여부. 기본 true. false 면 새/수정 일정에 알림을 걸지 않는다. */
+  notificationsEnabled(): Promise<boolean> {
+    return this.readJson<boolean>('notif.enabled', true);
+  }
+
+  setNotificationsEnabled(enabled: boolean): Promise<void> {
+    return this.write('notif.enabled', enabled);
+  }
+
   async getTheme(): Promise<ThemeSettings> {
     return {
       mode: await this.readJson<ThemeMode>(SettingKeys.THEME_MODE, DEFAULT_THEME.mode),

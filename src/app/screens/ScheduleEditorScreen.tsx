@@ -8,10 +8,11 @@
  *   - endAt: number | null (epoch ms), Switch 토글로 활성화
  *   - localWallToEpoch 저장 경로 사용 제거 (함수·V-26 테스트 유지)
  */
-import React, { useState, useEffect, useCallback, Platform } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Button,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   Switch,
@@ -24,8 +25,25 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import { useServices } from '../bootstrap/AppContext.tsx';
 import { useShellStore } from '../state/stores.native.ts';
+import { SETTING_KEYS } from '../state/bindings.ts';
 import { ValidationError, AppError } from '../../core/domain/errors.ts';
+import type { Category, Priority } from '../../core/domain/types.ts';
 import type { RootStackParamList } from '../navigation/routes.ts';
+
+const PRIORITY_OPTIONS: Array<{ value: Priority; label: string }> = [
+  { value: 'LOW', label: '낮음' },
+  { value: 'NORMAL', label: '보통' },
+  { value: 'HIGH', label: '높음' },
+];
+
+function parseJson<T>(raw: string | null, fallback: T): T {
+  if (raw === null) return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
 
 type Props = {
   route: { params?: RootStackParamList['ScheduleEditor'] };
@@ -59,12 +77,17 @@ type PickerMode = 'date' | 'time';
 // ── 컴포넌트 ───────────────────────────────────────────────────────────────────
 
 export function ScheduleEditorScreen({ route, navigation }: Props) {
-  const { schedules } = useServices();
+  const { schedules, settings, categories } = useServices();
   const invalidate = useShellStore((s) => s.invalidate);
   const editingId = route.params?.scheduleId;
 
   // ── 폼 상태 ────────────────────────────────────────────────────────────────
   const [title, setTitle] = useState('');
+  const [priority, setPriority] = useState<Priority>('NORMAL');
+  const [categoryId, setCategoryId] = useState<number | undefined>(undefined);
+  const [cats, setCats] = useState<Category[]>([]);
+  /** 설정의 "알림 사용" 전역 스위치. false 면 알림 필드 비활성 + 저장 시 알림 미포함. */
+  const [notifGloballyOn, setNotifGloballyOn] = useState(true);
   /** 시작 일시: epoch ms 단일 상태 (기본값 = 다음 정시) */
   const [startAt, setStartAt] = useState<number>(defaultStartEpoch);
   /** 종료 일시 활성화 여부 */
@@ -89,6 +112,28 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
 
+  // ── 유형 목록 + 설정(전역 알림·신규 기본값) 로드 ───────────────────────────
+  useEffect(() => {
+    void (async () => {
+      const [list, notifRaw, prioRaw, catRaw] = await Promise.all([
+        categories.list(),
+        settings.get(SETTING_KEYS.notifEnabled),
+        settings.get(SETTING_KEYS.scheduleDefaultPriority),
+        settings.get(SETTING_KEYS.scheduleDefaultCategoryId),
+      ]);
+      setCats(list);
+      const notifOn = parseJson<boolean>(notifRaw, true);
+      setNotifGloballyOn(notifOn);
+      if (!notifOn) setNotifyAtStart(false);
+      // 신규 작성일 때만 설정 기본값 적용
+      if (editingId === undefined) {
+        setPriority(parseJson<Priority>(prioRaw, 'NORMAL'));
+        const defCat = parseJson<number | null>(catRaw, null);
+        if (defCat != null && list.some((c) => c.id === defCat)) setCategoryId(defCat);
+      }
+    })();
+  }, [categories, settings, editingId]);
+
   // ── 수정 모드 프리필 ───────────────────────────────────────────────────────
   useEffect(() => {
     if (editingId === undefined) return;
@@ -106,6 +151,8 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
       }
       setMemo(s.memo ?? '');
       setNotifyAtStart(s.notifyAtStart);
+      setPriority(s.priority);
+      setCategoryId(s.categoryId);
     });
   }, [editingId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -268,6 +315,10 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
       return;
     }
 
+    // 설정에서 알림 전역 OFF 면 이 일정에는 알림을 걸지 않는다.
+    const effNotify = notifGloballyOn && notifyAtStart;
+    const effOffsets = notifGloballyOn ? [10] : [];
+
     try {
       if (editingId === undefined) {
         await schedules.create({
@@ -275,8 +326,10 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
           startAt,
           endAt: endAtVal,
           memo: memoVal,
-          notifyAtStart,
-          reminderOffsets: [10],
+          priority,
+          categoryId,
+          notifyAtStart: effNotify,
+          reminderOffsets: effOffsets,
         });
       } else {
         await schedules.update(editingId, {
@@ -284,7 +337,11 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
           startAt,
           endAt: endAtEnabled ? endAt : null,
           memo: memoVal ?? null,
-          notifyAtStart,
+          priority,
+          categoryId,
+          notifyAtStart: effNotify,
+          // 알림 전역 OFF 면 기존 알림도 제거. ON 이면 기존 사전 알림 오프셋은 유지(미전달).
+          ...(notifGloballyOn ? {} : { reminderOffsets: [] }),
         });
       }
       invalidate('list', 'dashboard', 'search', 'categories');
@@ -417,6 +474,62 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
         <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.memo}</Text>
       ) : null}
 
+      {/* 중요도 */}
+      <Text style={{ fontWeight: 'bold', marginTop: 8 }}>중요도</Text>
+      <View
+        style={{
+          flexDirection: 'row',
+          borderWidth: 1,
+          borderColor: '#ddd',
+          borderRadius: 6,
+          overflow: 'hidden',
+          marginTop: 4,
+        }}
+      >
+        {PRIORITY_OPTIONS.map((o, i) => {
+          const active = o.value === priority;
+          return (
+            <Pressable
+              key={o.value}
+              onPress={() => setPriority(o.value)}
+              style={{
+                flex: 1,
+                paddingVertical: 10,
+                alignItems: 'center',
+                backgroundColor: active ? '#007AFF' : '#fff',
+                borderLeftWidth: i === 0 ? 0 : 1,
+                borderLeftColor: '#ddd',
+              }}
+            >
+              <Text style={{ color: active ? '#fff' : '#333' }}>{o.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* 유형 */}
+      <Text style={{ fontWeight: 'bold', marginTop: 8 }}>유형</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+        {cats.map((c) => {
+          // 미선택 상태에서는 시스템 기본 유형("기타")이 저장 시 적용되므로 그것을 활성 표시
+          const active = categoryId === undefined ? c.isSystem : c.id === categoryId;
+          return (
+            <Pressable
+              key={c.id}
+              onPress={() => setCategoryId(c.id)}
+              style={{
+                paddingVertical: 6,
+                paddingHorizontal: 12,
+                borderRadius: 16,
+                backgroundColor: active ? '#007AFF' : '#f0f0f0',
+              }}
+            >
+              <Text style={{ color: active ? '#fff' : '#333' }}>{c.name}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {/* 알림 여부 */}
       <View
         style={{
@@ -426,9 +539,18 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
           marginTop: 8,
         }}
       >
-        <Text style={{ fontWeight: 'bold' }}>시작 시 알림</Text>
-        <Switch value={notifyAtStart} onValueChange={setNotifyAtStart} />
+        <Text style={{ fontWeight: 'bold', color: notifGloballyOn ? '#111' : '#aaa' }}>시작 시 알림</Text>
+        <Switch
+          value={notifGloballyOn && notifyAtStart}
+          disabled={!notifGloballyOn}
+          onValueChange={setNotifyAtStart}
+        />
       </View>
+      {!notifGloballyOn ? (
+        <Text style={{ fontSize: 12, color: '#999' }}>
+          설정에서 "알림 사용"이 꺼져 있어 이 일정에는 알림이 걸리지 않습니다.
+        </Text>
+      ) : null}
 
       {/* 저장 버튼 */}
       <View style={{ marginTop: 16 }}>

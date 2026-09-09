@@ -17,6 +17,7 @@ export const STACK_ROUTES = {
   Tabs: 'Tabs',
   ScheduleDetail: 'ScheduleDetail',
   ScheduleEditor: 'ScheduleEditor',
+  CategoryManager: 'CategoryManager',
   Permissions: 'Permissions',
 } as const;
 
@@ -29,6 +30,7 @@ export interface RootStackParamList {
   ScheduleDetail: { scheduleId: number };
   /** scheduleId 없으면 신규 작성. */
   ScheduleEditor: { scheduleId?: number };
+  CategoryManager: undefined;
   Permissions: { from?: 'onboarding' | 'settings' } | undefined;
 }
 

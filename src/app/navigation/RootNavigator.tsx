@@ -19,6 +19,7 @@ import { SearchScreen } from '../screens/SearchScreen.tsx';
 import { SettingsScreen } from '../screens/SettingsScreen.tsx';
 import { ScheduleDetailScreen } from '../screens/ScheduleDetailScreen.tsx';
 import { ScheduleEditorScreen } from '../screens/ScheduleEditorScreen.tsx';
+import { CategoryManagerScreen } from '../screens/CategoryManagerScreen.tsx';
 import { PermissionsScreen } from '../screens/PermissionsScreen.tsx';
 
 // 탭 아이콘 에셋 (logic v1.5 §16.2, P-21: 빌드 타임 번들 포함, 런타임 경로 주입 없음)
@@ -135,6 +136,7 @@ export function RootNavigator() {
         <Stack.Screen name={STACK_ROUTES.Tabs} component={Tabs} options={{ headerShown: false }} />
         <Stack.Screen name={STACK_ROUTES.ScheduleDetail} component={ScheduleDetailScreen} options={{ title: '일정' }} />
         <Stack.Screen name={STACK_ROUTES.ScheduleEditor} component={ScheduleEditorScreen} options={{ title: '일정 편집' }} />
+        <Stack.Screen name={STACK_ROUTES.CategoryManager} component={CategoryManagerScreen} options={{ title: '유형 관리' }} />
         <Stack.Screen name={STACK_ROUTES.Permissions} component={PermissionsScreen} options={{ title: '권한' }} />
       </Stack.Navigator>
     </NavigationContainer>

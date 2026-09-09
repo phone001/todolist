@@ -31,9 +31,12 @@ export interface ScreenBinding {
 export const SCREEN_BINDINGS: readonly ScreenBinding[] = [
   {
     screen: 'DashboardScreen',
-    reads: [{ service: 'dashboard', method: 'getSummary' }],
-    writes: [],
-    invalidates: [],
+    reads: [{ service: 'schedules', method: 'findInRange' }],
+    writes: [
+      { service: 'schedules', method: 'toggleDone' },
+      { service: 'schedules', method: 'softDelete' },
+    ],
+    invalidates: ['list', 'dashboard', 'search'],
   },
   {
     screen: 'CalendarScreen',
@@ -49,7 +52,10 @@ export const SCREEN_BINDINGS: readonly ScreenBinding[] = [
   },
   {
     screen: 'ScheduleEditorScreen',
-    reads: [{ service: 'categories', method: 'list' }],
+    reads: [
+      { service: 'categories', method: 'list' },
+      { service: 'settings', method: 'get' },
+    ],
     writes: [
       { service: 'schedules', method: 'create' },
       { service: 'schedules', method: 'update' },
@@ -61,12 +67,16 @@ export const SCREEN_BINDINGS: readonly ScreenBinding[] = [
   },
   {
     screen: 'ScheduleDetailScreen',
-    reads: [{ service: 'schedules', method: 'findInRange' }],
+    reads: [
+      { service: 'schedules', method: 'getById' },
+      { service: 'categories', method: 'list' },
+    ],
     writes: [
+      { service: 'schedules', method: 'toggleDone' },
       { service: 'schedules', method: 'softDelete' },
       { service: 'schedules', method: 'restore' },
     ],
-    invalidates: ['list', 'dashboard'],
+    invalidates: ['list', 'dashboard', 'search'],
   },
   {
     screen: 'SearchScreen',
@@ -79,6 +89,7 @@ export const SCREEN_BINDINGS: readonly ScreenBinding[] = [
     reads: [
       { service: 'settings', method: 'get' },
       { service: 'settings', method: 'getAll' },
+      { service: 'categories', method: 'list' },
     ],
     writes: [
       { service: 'settings', method: 'set' },
@@ -87,6 +98,15 @@ export const SCREEN_BINDINGS: readonly ScreenBinding[] = [
       { service: 'calendarSync', method: 'pull' },
     ],
     invalidates: ['settings', 'account'],
+  },
+  {
+    screen: 'CategoryManagerScreen',
+    reads: [{ service: 'categories', method: 'list' }],
+    writes: [
+      { service: 'categories', method: 'create' },
+      { service: 'categories', method: 'remove' },
+    ],
+    invalidates: ['categories', 'list', 'dashboard'],
   },
   {
     screen: 'PermissionsScreen',
@@ -101,7 +121,10 @@ export const SETTING_KEYS = {
   themeMode: 'theme.mode',
   themeAccent: 'theme.accent',
   themeFontScale: 'theme.fontScale',
+  notifEnabled: 'notif.enabled',
   notifShowTitle: 'notif.showTitle',
+  scheduleDefaultPriority: 'schedule.defaultPriority',
+  scheduleDefaultCategoryId: 'schedule.defaultCategoryId',
   calendarPushEnabled: 'calendar.pushEnabled',
   calendarConflictPolicy: 'calendar.conflictPolicy',
 } as const;
