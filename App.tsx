@@ -1,10 +1,12 @@
 /**
  * 앱 루트 — 부트스트랩 시퀀스 실행 후 네비게이터 또는 안전 모드 렌더.
  * 설계 근거: document/architect/logic.md v1.1 §16.4, overview.md v1.1 "앱 라이프사이클 → 부트스트랩".
+ * 부트스트랩 대기 표시: 브랜드 로딩 인디케이터(fullscreen) — F-17, logic §16.9.8 #1 (네이티브 스플래시 종료 후,
+ *   스플래시 미연장). 하드 실패는 SafeModeScreen 경로 유지 → onRetry 미지정.
  * 환경 제약: react / react-native / 네이티브 어댑터 의존 → 파이프라인 미실행(정적 리뷰).
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, View } from 'react-native';
+import { AppState } from 'react-native';
 import { bootstrap, runPostRender, type BootstrapResult } from './src/app/bootstrap/bootstrapSequence.ts';
 import {
   createBootstrapSteps,
@@ -14,6 +16,7 @@ import {
 import { ServicesProvider } from './src/app/bootstrap/AppContext.tsx';
 import { RootNavigator } from './src/app/navigation/RootNavigator.tsx';
 import { SafeModeScreen } from './src/app/screens/SafeModeScreen.tsx';
+import { BrandLoadingIndicator } from './src/app/components/BrandLoadingIndicator.tsx';
 import appConfig from './app.json';
 
 // 운영값(issuer/clientId/redirectUrl)은 빌드 환경에서 주입한다. 아래는 자리표시자.
@@ -67,11 +70,7 @@ export default function App() {
   }, [result]);
 
   if (!result) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator />
-      </View>
-    );
+    return <BrandLoadingIndicator variant="fullscreen" loading />;
   }
 
   if (!result.ok) return <SafeModeScreen migration={result.migration} />;
