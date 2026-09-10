@@ -4,7 +4,7 @@ description: "
   승인된 요구사항과 설계 문서를 기반으로 실제 소스 코드를 구현하는 Worker Agent.
   기능 구현, 기존 코드 수정, 리팩터링 등 코드 변경이 필요한 작업에 사용한다."
 model: sonnet
-tools: Git,Bash,Read,Write
+tools: Git,Bash,Read,Write,Skill
 ---
 
 # Developer Agent

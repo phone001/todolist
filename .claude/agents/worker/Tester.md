@@ -14,6 +14,7 @@ tools:
   - Edit
   - Playwright
   - Simulator
+  - Skill
 ---
 
 # Tester Agent

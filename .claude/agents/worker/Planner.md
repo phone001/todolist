@@ -6,6 +6,7 @@ tools:
   - Read
   - Write
   - Edit
+  - Skill
 ---
 
 # Planner
