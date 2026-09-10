@@ -3,15 +3,17 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 데이터베이스 설계 (Database) |
-| 버전 | v1.4 |
+| 버전 | v1.6 |
 | 상태 | 작성 완료 (스키마 무변경) |
-| 근거 | `document/planner/plan.md` v1.6, `document/architect/overview.md` v1.11 |
+| 근거 | `document/planner/plan.md` v1.7, `document/architect/overview.md` v1.14 |
 | DB 엔진 | SQLite 3 (op-sqlite, 선택적 SQLCipher) |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
+| v1.6 | 2026-09-10 | 설계 델타(overview v1.14 / logic v1.14 / nfr v1.12 — F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수: Xcode 타깃·SwiftUI UI·`WCSessionDelegate`·워치 로컬 영속). **공유 SQLite 스키마 영향 없음 — DDL·인덱스·트리거·시드 무변경, `database.md` v1.5 내용 전부 유효.** §10 말미에 "v1.6 구현 착수 확인" 문단 추가. 사유: 이번 델타는 (1) `ios/` Xcode 프로젝트에 watchOS 앱 타깃 추가, (2) `ios/TodayWhatWatch/**` Swift 소스(UI·WCSession·LWW 재구현), (3) 워치 앱 컨테이너의 JSON 파일 2개(마지막 스냅샷·보류 큐) — 전부 **공유 SQLite 밖**. 폰 측은 이미 구현된 `src/core/watchSync/**` + `WatchSyncService` + `WatchConnectivityGateway` 를 그대로 사용(§10 검토 시점과 동일). LWW 는 여전히 `SCHEDULE.UPDATED_AT` 근사(N-12), dedup 원장은 `APP_SETTING` `watch.appliedOps` k/v. 새 테이블·컬럼·인덱스·`APP_SETTING` 키·마이그레이션 번호 없음 |
+| v1.5 | 2026-09-10 | plan v1.7 세 번째 탭 "검색"→"통계" 교체 + 통계 화면(F-23) 스키마 영향 검토 — **DDL·인덱스·트리거·시드 무변경**. §12 "F-23 통계 화면 스키마 영향 검토" 추가. 사유: (1) 상단 카드(총/완료 건수, 전체 기간 누적 — D-21(a)/P-55)는 기존 `ScheduleService.findInRange(0, Number.MAX_SAFE_INTEGER, …)` cursor 루프 전건 스캔으로 충족 — `IDX_SCHEDULE_START`(부분 인덱스, `deleted_at IS NULL`)가 스캔 지원, 삭제분 자동 제외, (2) 하단 그래프(선택 연도 1개 × 1~12월 × 유형별 건수 — D-23(a)/P-56)는 `ScheduleService.findInRange(yearStartTs, yearEndTs, …)` `start_at` 연 범위 스캔(CalendarScreen 월 조회와 동형) + **인메모리** 월·유형 집계(순수 `statisticsViewModel.ts` + 코어 공개 `localWallToEpoch`) — 새 집계 컬럼·뷰·인덱스·GROUP BY 쿼리 없음, (3) 선택 연도는 `StatisticsScreen` 로컬 React state — 영구 저장 금지, `APP_SETTING` 키 미추가, (4) F-11 진입점 이전(검색 탭 → 캘린더 헤더, D-20(a))은 네비게이션 배선 변경 — `SCHEDULE_FTS`·검색 쿼리 무관, (5) 삭제 유형 집계(E-23-5)는 E-06-2 의 기존 `SCHEDULE.CATEGORY_ID` 재지정(트랜잭션 내 UPDATE) 결과를 그대로 반영 — 뷰모델이 현재 `category_id` 만 사용. 결론: 마이그레이션 번호 부여 없음 |
 | v1.4 | 2026-09-09 | plan v1.6 대시보드 개선 **재확정 방향**(F-20 컴팩트 / **F-21 진행률 한 줄**(개수 카드 폐기) / **F-22 접이식 검색**(상시 입력창 폐기)) 스키마 영향 재검토 — **DDL·인덱스·트리거·시드 무변경**. §11 갱신. 추가 검토: (1) **진행률 한 줄**(F-21)도 `DashboardService.getSummary(referenceDate)` 의 `total`/`done` 재사용 — progress bar 채움은 UI 계산(완료율 P-07), 새 집계 컬럼·뷰 없음, (2) **`searchExpanded`**(F-22 접이식 펼침/접힘, P-53)는 `DashboardScreen` 로컬 React state — 영구 저장 금지, `APP_SETTING` 키 미추가, (3) **미래 날짜 진행률 표시**(P-52, D-19)는 `isFutureDate(referenceDate, todayStart)` 순수 표시 조건 — `getSummary` 호출·인자·결과 무변경, (4) **접힘 시 검색어 초기화**(D-18)는 화면 state 조작만. 결론 유지: 마이그레이션 번호 부여 없음 |
 | v1.3 | 2026-09-09 | plan v1.5 대시보드 개선(F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색) 스키마 영향 검토 — **DDL·인덱스·트리거·시드 무변경**. §11 "F-20/F-21/F-22 대시보드 개선 스키마 영향 검토" 추가. 사유: (1) 기준 날짜(`referenceDate`)·인라인 검색어는 `DashboardScreen` 로컬 React state — 영구 저장 안 함(P-45/P-50), `APP_SETTING` 키 미추가, (2) 요약·개수 카드는 기존 `DashboardService.getSummary(dateTs)` 를 `referenceDate` 인자로 재사용(집계 규칙·쿼리 무변경, P-47), (3) 기준 날짜 목록은 기존 `ScheduleService.findInRange(dayStart, dayEnd, …)` 재사용 — `IDX_SCHEDULE_START` 가 임의-일 범위 쿼리 지원(D-13 무제한 이동 포함), (4) 인라인 검색은 이미 로드된 행 배열의 표시 계층 순수 필터 — FTS·신규 쿼리 없음(SCHEDULE_FTS 무관) |
 | v1.2 | 2026-09-08 | plan v1.4 F-19(애플워치 워치 타깃 착수) 스키마 영향 검토 — **DDL·인덱스·트리거·시드 무변경**. §10 "F-19 워치 타깃 스키마 영향 검토" 추가. 사유: (1) LWW(E-19-3/P-38)는 기존 `SCHEDULE.UPDATED_AT` + 워치 스냅샷 `baseUpdatedAt` 비교로 충족, (2) 워치 완료 토글 op 중복 적용 방지 원장은 `APP_SETTING` k/v(`watch.appliedOps`)로 충족, (3) 워치 로컬 스냅샷·보류 큐는 **공유 SQLite 가 아니라 워치 앱 컨테이너 파일**, (4) 폰 측 outbound 상태 영속화 불필요(스냅샷은 온디맨드 파생) |
@@ -383,6 +385,8 @@ VALUES ('notif.showTitle', 'true', 1756944000000);
 
 **결론**: 마이그레이션 번호 부여 없음. F-19 는 `migrations/001_init.sql` + `APP_SETTING` k/v 로 충족한다. 워치 로컬 영속화(스냅샷·보류 큐)는 watchOS 앱의 파일 저장이며 본 문서(공유 SQLite 스키마)의 대상이 아니다 — 형태·보호 규약은 `logic.md` §17.5 / §13.9.
 
+**v1.6 구현 착수 확인 (overview v1.14 / logic v1.14 / nfr v1.12)**: watchOS 네이티브 앱 타깃 `TodayWhatWatch` 를 실제로 추가·구현하는 이번 델타에서도 위 표의 결론은 그대로다. 워치 앱은 `src/core` 를 링크하지 않고 폰이 보낸 `WatchSnapshot`(JSON)만 소비하며, 워치 로컬의 마지막 스냅샷 파일 1개 + 보류 큐 파일 1개(둘 다 `FileProtectionType.complete`, `logic.md` §13.9)로 오프라인 조회·완료 토글을 지속한다. 폰 측 저장 경로(`SCHEDULE`·`APP_SETTING watch.appliedOps`)는 `WatchSyncService.applyIncomingToggle` 이 이미 사용 중인 것과 동일 — 새 스키마 요소·마이그레이션 없음.
+
 ---
 
 ## 11. F-20 / F-21 / F-22 대시보드 개선 스키마 영향 검토 (스키마 무변경) — v1.3 / v1.4 재확정 방향
@@ -405,3 +409,25 @@ VALUES ('notif.showTitle', 'true', 1756944000000);
 | OI-19 과거/미래 기준일에서 FAB 추가 시 시작 일시 프리필 | 네비게이션 파라미터 | `routes.ts` `ScheduleEditor { presetDate?: number }` (라우트 타입, DB 아님). `SCHEDULE.START_AT` 저장 형식 무변경 | 없음 |
 
 **결론**: 마이그레이션 번호 부여 없음. F-20/F-21/F-22(v1.6 재확정 방향 포함)는 `migrations/001_init.sql` 스키마와 기존 `IDX_SCHEDULE_START` / `IDX_SCHEDULE_DONE_START` 인덱스로 충족한다. 기준 날짜·검색어·`searchExpanded` 는 영속 데이터가 아니다(화면 로컬 state, P-45/P-50/P-53). 신규 `APP_SETTING` 키도 없다. 진행률 한 줄·미래 날짜 분기는 기존 `getSummary` 결과의 UI 표현일 뿐이다.
+
+---
+
+## 12. F-23 통계 화면 스키마 영향 검토 (스키마 무변경) — v1.5
+
+`plan.md` v1.7 의 세 번째 탭 "검색" → "통계" 교체 + 통계 화면(F-23) — 상단 총/완료 건수 카드 2장(전체 기간 누적, 삭제분 제외 — D-21(a)/P-55) + 하단 선택 연도의 유형별 월별 건수 그래프(x축 1~12월, 월 버킷 = `start_at` 로컬 달 — D-23(a)/P-56) — 에 대해 로컬 저장소 변경 필요성을 검토한 결과 **DDL·인덱스·트리거·초기 데이터 모두 변경 없음**. 집계는 `src/app/screens/statisticsViewModel.ts` 순수 함수가 기존 조회 결과를 **인메모리**로 수행한다(`logic.md` §7.2 / §16.3.8). 근거:
+
+| 요구 (plan v1.7) | 필요 저장/조회 요소 | 기존 스키마 충족 방식 | 변경 |
+| --- | --- | --- | --- |
+| P-55 상단 카드 "총 할 일 건수" (전체 기간 누적, 완료·미완료 무관, 삭제분 제외) | 전건 count | `ScheduleService.findInRange(0, Number.MAX_SAFE_INTEGER, undefined, 'startAt', STATISTICS_PAGE_SIZE, cursor)` 를 `nextCursor` 소진까지 루프 → 행 수. `IDX_SCHEDULE_START ON schedule(start_at) WHERE deleted_at IS NULL`(4장) 부분 인덱스가 전건 스캔 + keyset cursor 지원. `deleted_at IS NULL` 조건이 인덱스에 내장되어 삭제분 자동 제외(P-55). **새 count 쿼리·집계 컬럼 없음** | 없음 |
+| P-55 상단 카드 "완료된 건수" (완료 상태 P-04) | 완료 count | 위 동일 결과를 뷰모델이 `rows.filter(r => r.isDone).length`. `SCHEDULE.IS_DONE`(기존 컬럼) 재사용. `IDX_SCHEDULE_DONE_START` 도 활용 가능하나 인메모리 필터로 충분 | 없음 |
+| P-56 / D-23(a) 하단 그래프 선택 연도의 월별·유형별 건수 (월 버킷 = `start_at`) | 연 범위 스캔 + 월·유형 그룹 | `ScheduleService.findInRange(yearStartTs, yearEndTs, undefined, 'startAt', STATISTICS_PAGE_SIZE, cursor)` 루프 — `yearStartTs`/`yearEndTs` 는 뷰모델이 순수 `localWallToEpoch(year, m, 1, 0, 0, clock.timeZone())`(`src/core/domain/time.ts`, 기존 공개)로 산출. `IDX_SCHEDULE_START` 범위 스캔(CalendarScreen 월 조회와 동형). 월 버킷·`category_id` 그룹은 **인메모리**(`SCHEDULE.CATEGORY_ID` 기존 컬럼). **GROUP BY SQL·집계 뷰·연·월 파생 컬럼 없음** | 없음 |
+| P-58 / D-22(a) 반복 일정 카운트 단위 = 개별 인스턴스, 대시보드/캘린더와 동일 | — | 통계는 F-10 대시보드·F-02 캘린더와 **동일한 `ScheduleService.findInRange` 저장 행**을 센다 → 카운트 단위 자동 일치. 현 구현은 범위 조회가 반복 회차를 확장하지 않음(`RECURRENCE_*` 컬럼은 마스터 1행에만) | 없음 |
+| P-57 / E-23-5 삭제된 유형에 속했던 일정 → "기타" 집계 | — | F-06 E-06-2 가 이미 트랜잭션 내에서 `SCHEDULE.CATEGORY_ID` 를 system default("기타") id 로 UPDATE 후 유형 DELETE. 뷰모델은 행의 **현재 `category_id`** 만 사용 → "기타" 계열로 합산. 삭제 유형 이름 스냅샷 보존 안 함(OI-25 후속) | 없음 |
+| R-23-4 유형 이름변경 → 그래프 계열 라벨 새 이름 | — | 계열 키 = `category_id`(FK 참조 유지), 라벨 = `CATEGORY.NAME` 현재값을 `CategoryService.list()` 로 조회. `CATEGORY.NAME` UPDATE(rename)만으로 반영(DDL 무변경) | 없음 |
+| 선택 연도 상태 (기본 올해, 영구 저장 금지) | — | `StatisticsScreen` 로컬 React state(`selectedYear: number`). `APP_SETTING`·파일·Zustand 어디에도 쓰지 않음(`logic.md` §16.3.8). 탭 이탈·재시작 시 올해로 리셋 | 없음 |
+| D-20(a) F-11 전역 검색 진입점을 캘린더 헤더로 이전 | — | `SearchScreen`(Tab → Stack 라우트 이동) + `CalendarScreen` 헤더 아이콘 → 네비게이션 배선(`routes.ts`). `SCHEDULE_FTS` 가상 테이블·FTS 트리거·검색 쿼리 무변경(P-54) | 없음 |
+| E-23-4 통계 로드/집계 실패 | — | 화면 재시도 UI(E-02-2 준용). 저장 요소 없음 | 없음 |
+
+**인덱스 추가 검토**: 하단 그래프의 월·유형 그룹핑을 SQL 로 옮기면 `(start_at, category_id)` 복합 커버링 인덱스가 행 조회를 줄일 수 있으나, (1) 집계는 인메모리 뷰모델에서 수행하므로 조회는 기존 keyset 경로 그대로이고, (2) 대상 규모가 단일 사용자·연 ~2,000건(§2)·화면 진입 시 1회이며, (3) 인덱스 추가는 모든 `schedule` insert/update 에 쓰기 비용을 더한다. → **추가하지 않는다.** 기존 `IDX_SCHEDULE_START` 로 충분.
+
+**결론**: 마이그레이션 번호 부여 없음. F-23 은 `migrations/001_init.sql` 스키마와 기존 `IDX_SCHEDULE_START` / `IDX_SCHEDULE_DONE_START` 인덱스로 충족한다. 상단 카드·하단 그래프 모두 기존 `ScheduleService.findInRange` + `CategoryService.list()` 결과의 인메모리 집계(순수 뷰모델)이며, 신규 테이블·컬럼·인덱스·트리거·`APP_SETTING` 키가 없다. 선택 연도는 영속 데이터가 아니다.

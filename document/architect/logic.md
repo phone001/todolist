@@ -3,14 +3,17 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 비즈니스 로직 설계 (Logic) |
-| 버전 | v1.11 |
+| 버전 | v1.14 |
 | 상태 | 작성 완료 |
-| 근거 | `document/planner/plan.md` v1.6, `document/architect/overview.md` v1.11, `document/architect/database.md` v1.4 |
+| 근거 | `document/planner/plan.md` v1.7, `document/architect/overview.md` v1.14, `document/architect/database.md` v1.6 |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
+| v1.14 | 2026-09-10 | **설계 델타 — F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수** (사용자 요청: "앱 내용을 Apple Watch(watchOS)에서도 표시 + 시뮬레이터로 워치 화면 확인"). 기획 재검증 **PASS** — F-19·R-19-1~7·E-19-1~7·P-36~P-44·AC-47~AC-56·D-09~D-11 이 plan v1.7 에 확정되어 있고, plan §F-19 "비범위 — 기술 선택: 워치 타깃 구성 방식·RN watchOS 지원 여부·브리지/WCSession 전송 방식·번들링 = 전부 Architect 설계 범위"로 명시 → 워치 앱 자체를 구현 수준으로 설계 가능(신규 제품 요구사항 없음). 폰 측(`src/core/watchSync/**` + `WatchSyncService` + `src/app/adapters/watch/**` + `composeNative` 배선)과 페이로드 계약(§17.3/§17.4)은 v1.9 에서 이미 설계·구현·검증 완료 — 이번 델타는 **누락된 watchOS 앱 본체**(Xcode 타깃 + SwiftUI UI + `WCSessionDelegate` + 워치 로컬 영속 + Swift LWW 재구현)에 한정. 변경점: (1) **신규 §17.11 "watchOS 앱 타깃 구성 — 구현 착수"** — 타깃 이름 `TodayWhatWatch`, **단일 타깃 watchOS 앱**(SwiftUI `App` 라이프사이클 + `WKApplicationDelegateAdaptor`; 레거시 WatchKit App+Extension 폐기), 번들 ID `kr.purpledog.todaywhat.watchkitapp` + `WKCompanionAppBundleIdentifier=kr.purpledog.todaywhat`, 배포 타깃 **watchOS 10.0**, Info.plist 키, iOS 앱에 "Embed Watch Content" 임베드, 시뮬레이터 코드사이닝(자동/none), `xcodebuild` 용 공유 스킴 `TodayWhatWatch`. **pbxproj 편집 방식** — 손편집 금지, `xcodeproj` Ruby gem 스크립트(`ios/scripts/add_watch_target.rb`, 멱등) 또는 Xcode GUI 1회 후 커밋. **CocoaPods 상호작용** — 워치 타깃은 Podfile 에 넣지 않음 = RN Pods(hermes/React-Core/RNSVG/op-sqlite…) 미링크, 시스템 프레임워크(`WatchConnectivity`/`SwiftUI`/`Foundation`, D-10 시 `WidgetKit`)만. 워크스페이스는 기존 `TodayWhat.xcworkspace` 공유. (2) **Swift 파일 레이아웃**(`ios/TodayWhatWatch/**`) — `TodayWhatWatchApp`(엔트리), `WatchConnectivityService`(`WCSessionDelegate`+`ObservableObject`), `Models`(`Codable` — `src/core/watchSync/types.ts` 미러), `SnapshotStore`/`PendingQueue`(JSON 파일 2개, `FileProtectionType.complete` — §13.9), `LWW`(§17.6 `resolveToggleLWW` Swift 미러 — 낙관적 로컬 판정용), 뷰(`TodayView`/`ScheduleRow`/`NotConfiguredView` — 오늘 목록·요약 헤더·다음 예정 1건·빈 상태 E-19-5·"최신 아님" E-19-1·"동기화 대기" D-11 배지·pull-to-refresh). (3) **페이로드 계약 바인딩** — 단일 출처 = `src/core/watchSync/types.ts`(`WatchSnapshot`/`WatchScheduleItem`/`WatchToggleOp`, 상수 `WATCH_SNAPSHOT_MAX_ITEMS=200` 등) + 직렬화/봉투 = `src/app/adapters/watch/watchMessage.ts`(`parseToggleOp`/`classifyInboundMessage`/`WATCH_UUID_RE`) + `WatchConnectivityGateway.native.ts`(`toPlistSafe` null 키 제거, 봉투 `{type:'snapshot'|'toggle'|'requestSnapshot'|'ack', payload}`). Swift `CodingKeys` 는 TS 필드명과 1:1, 시각은 **정수 epoch ms**(초 아님) + IANA `timeZone`(P-39), null 가능 키(`nextUpcoming`/`doneAt`)는 `decodeIfPresent`, `opId` = `UUID().uuidString.lowercased()`(RFC-4122), P-40 필드만 송신. (4) **검증 절차(이번 릴리스 범위)** — `xcodebuild -scheme TodayWhatWatch -destination 'platform=watchOS Simulator,…'` 빌드, 페어드 iPhone+Watch 시뮬레이터 부팅·설치·실행, `xcrun simctl io … screenshot` 으로 워치의 오늘 목록 캡처. Metro cwd-patch 는 iOS JS 번들 전용 — 순수 네이티브 워치 앱과 무관. 시뮬레이터 페어에서 `updateApplicationContext`/`sendMessage`/`transferUserInfo` 실왕복 동작 → 실제 라운드트립 스크린샷 가능(디버그 시딩 불필요, 다만 오늘 일정 0건이면 빈 상태만 보이므로 iOS 앱 UI 로 오늘자 일정 1건 생성 후 관찰). (5) **§13.9 워치 보안 델타** — 워치 로컬 파일 데이터 보호 클래스(`FileProtectionType.complete`), 시뮬레이터 빌드 코드사이닝(`CODE_SIGNING_ALLOWED=NO` 또는 자동·팀 없음), 워치 타깃 의존성 = 시스템 프레임워크만(신규 서드파티 0), `react-native-watch-connectivity` 는 iOS 앱 타깃에만. (6) **§17.1 표**·§14 일관성 표·§15 미결정(N-11 축소: 앱 타깃 빌드+시뮬레이터 설치/실행/라운드트립 = 이번 릴리스 검증, 실기기 WCSession 엣지·BOOT·배터리만 후속) 갱신. **`src/core/**`·`src/app/**`(TS)·공유 페이로드 계약·DB DDL·포트·`bindings.ts`·기존 폰 화면 전부 무변경** — 이번 델타의 산출물은 `ios/` 네이티브 타깃 + Swift 소스뿐. 「API 설계」 섹션 미신설(WCSession 은 OS IPC — 외부 제공/호출 API 아님) |
+| v1.13 | 2026-09-10 | **설계 델타 — 통계 화면(F-23) 하단 "유형별 월별 할 일 건수" 그래프 시각화를 막대(bar) → 선(line) 그래프로 교체** (사용자 요청, plan v1.7 §F-23 line 604/784 이 "그래프의 구체 형태(막대/누적/그룹/꺾은선 등)"를 Architect 설계 위임으로 규정 — plan 델타 없음, 기획 재검증 **PASS**). **집계 계약 전면 불변** — `statisticsViewModel.ts` 의 `aggregateTotals`/`aggregateYear`/`monthBoundaries`(13 경계)/`monthIndexOf`/`currentYear`/`yearRangeEpochs`/`hasMeaningfulCategories`/`statisticsEmptyState` 시그니처·`YearAggregate` 반환 형태(`months[12]`·`seriesCategoryIds`·`maxBucketTotal`·`placedRowCount`) 무변경. §7.2 데이터 소스·`start_at` 월 버킷·삭제 유형→"기타"(E-23-5)·rename ID 참조(R-23-4)·빈 상태 판정(E-23-1~4) 전부 불변. **변경 범위 = 프레젠테이션 한정**: §16.3.8 하단 그래프 렌더를 "순수 `<View>` 높이 비율 막대"에서 "`react-native-svg` 15.x(F-17 기보유) `Polyline`(유형 계열당 1개) + 비영 데이터 포인트 `Circle` 마커 + `<Line>` 축/그리드"로 교체. 유형 N개 → 선 N개, 색 매핑(`CategoryService.list()` `color`)·범례(텍스트+스와치)·x축 1~12월·y축 스케일은 화면 파생값(`YearAggregate` 로부터 순수 계산, 뷰모델 무변경). 0건 월은 baseline(y=0) 실점으로 연결(결측 아님 — 집계상 실제 0). 애니메이션·인터랙션 없음 유지(OI-23). **신규 npm 의존성 0**. §7.2.2/§7.2.7 에 y축 스케일 파생값 주석, §16.3.8 하단 그래프 렌더 서브섹션 재작성, 접근성 서브섹션(데이터 요약 `<Text>` 가 주 스크린리더 경로 — 문구·값 불변) 갱신, §13.3/§13.8 보안(SVG 도형은 수치 좌표에서 코드 생성 — 마크업 주입 표면 없음, react-native-svg 는 F-17 로 이미 신뢰 경계 내) 갱신, §14 정합성 표 항목 추가. **코어·DB DDL·포트·`bindings.ts`·네비게이션·`statisticsViewModel.ts`·기존 단위 테스트(`tests/app/statisticsViewModel.test.ts`) 무변경**. `database.md` 무변경(v1.5 유지 — 쿼리·인덱스 동일). 「API 설계」 섹션 미신설 |
+| v1.12 | 2026-09-10 | 설계 델타(overview v1.12, plan v1.7 — 세 번째 탭 "검색"→"통계" 교체 + 통계 화면 F-23). 기획 검증 **PASS**(D-20~D-23 은 plan §8 이 가정값 설계 진행을 규정한 비차단 게이트: D-20(a) 캘린더 헤더 검색 아이콘 / D-21(a) 카드=전체 기간 누적·연도 비연동 / D-22(a) 반복 카운트=개별 인스턴스(대시보드·캘린더 동일 조회 경로) / D-23(a) 월 버킷=`start_at` 로컬 달). **UI 계층 한정 델타** — 코어 도메인/서비스/포트/DB DDL 무변경, `ScheduleService.findInRange`·`CategoryService.list`·`src/core/domain/time.ts`(공개 함수) 재사용. 변경점: (1) **신규 §7.2 "통계 화면 집계 (F-23)"** — 데이터 소스(상단 카드 = `findInRange(0, Number.MAX_SAFE_INTEGER)` cursor 루프 전건/완료 count; 하단 그래프 = `findInRange(yearStartTs, yearEndTs)` cursor 루프 + `start_at` 로컬 월 버킷(순수 `localWallToEpoch` 13개 경계) + `categoryId` 그룹, 유형 라벨·색 = `CategoryService.list()`), 반복 카운트 일치(P-58), 삭제 유형→"기타"(E-23-5, E-06-2 준용), rename ID 참조 전파(R-23-4), 빈 상태 E-23-1~4, 예외·AC 매핑, **순수 뷰모델 방침**(`statisticsViewModel.ts`, `dashboardViewModel.ts` 패턴). (2) **§8 SearchService** — "v1.7 진입점 이전" 항 추가(검색 탭 제거 → `CalendarScreen` 헤더 검색 아이콘에서 진입, 검색 로직·필터·정렬·E-11-1/2·P-11/P-12·AC-13/14 무변경 — P-54). (3) **§16.2** — Bottom Tab `SearchTab`→`StatisticsTab`(라벨 "통계", 아이콘 `statistics.png` 유지 — F-16/AC-26), `SearchScreen` = Stack 화면 신설(`STACK_ROUTES.Search`), `CalendarScreen` `headerRight` 검색 아이콘 엣지 추가(D-20(a)). 탭 아이콘 표 3행 "검색"→"통계". (4) **§16.3 바인딩 표** — Search 행(Stack 화면 표기) + `StatisticsScreen` 행(reads: `schedules.findInRange`+`categories.list`, writes 없음, invalidates 없음). (5) **신규 §16.3.8 "통계 화면 레이아웃 및 상태 (F-23)"** — 화면 로컬 state `selectedYear`(기본 올해, 비영속), `useFocusEffect` 재조회(R-23-3), 연도 선택 컨트롤, 차트 = 순수 RN `<View>` 높이 비율(신규 의존성 없음), 빈 상태·삭제 유형·로드 실패 분기, F-17 인라인 인디케이터(§16.9.8 #6). (6) **§13.3 / §13.8 보안** — F-23 읽기 전용·기존 `findInRange` 바인딩 재사용·카운트만 표시(제목/메모 미표시)·연도는 정수 컨트롤·비영속 → 새 신뢰 경계·주입·저장 표면 없음(표면 축소). (7) **§16.9.8** — 소비 지점 표에 #6 `StatisticsScreen` 인라인 추가(OI-26). §14 일관성 표·§15 미결정(D-20~D-23·OI-22·OI-26) 갱신. **`DashboardScreen`/`ReminderScheduler`/`DashboardService`/`SearchService`/`SCHEDULE_FTS`·DB·포트·`bindings.ts` 기존 항목 무변경** — 신규 화면 1개 + 순수 뷰모델 1개 + 네비게이션 배선. 「API 설계」 섹션 미신설(신규/외부 API 없음) |
 | v1.11 | 2026-09-09 | 설계 델타(overview v1.11, plan v1.6 — 대시보드 개선 **재확정 방향**: F-20 날짜 네비게이션 컴팩트 / **F-21 진행률 한 줄**(개수 카드 2장 폐기) / **F-22 접이식 검색**(상시 입력창 폐기)). 기획 검증 **PASS**(D-18(접힘 시 검색어 처리)·D-19(미래 날짜 진행률)는 기획이 가정값을 규정한 비차단 게이트 — D-18(a) 초기화+필터 해제 / D-19(a) 총 개수만 으로 진행. D-14(개수 카드 구성)는 plan v1.6에서 "진행률 한 줄"로 **CLOSED**). **UI 계층 한정 델타** — 코어 도메인/서비스/포트/DB DDL/`ReminderScheduler`/`DashboardService.getSummary`/`ScheduleService.findInRange` 무변경. 변경점: (1) **§7.1 / §16.3.7 재작성** — 계획된 순수 컴포넌트 `CountCards.tsx`(개수 카드 2장) → **`ProgressLine.tsx`**("M / N 완료" 텍스트 + 얇은 progress bar 1개, 채움 비율 = 완료율 P-07). `getSummary(referenceDate)` 의 `total`/`done` 재사용 유지(새 집계 없음). (2) **화면 로컬 state 에 `searchExpanded`(boolean, 기본 false, P-53) 추가** — 검색 아이콘 토글, 진행률 한 줄과 리스트 사이 고정 위치(AC-67). 접으면 `inlineQuery` 초기화 + 필터 해제(D-18(a) / E-22-6). "오늘로" 복귀·탭 blur·앱 재시작 시 `searchExpanded=false` + 검색어 초기화(P-50/P-53 / E-22-7). 탭 blur·앱 재시작 리셋. (3) **미래 날짜 분기** — `isFutureDate(referenceDate, todayStart)`(순수, `referenceDate > todayStart` 로컬 자정 비교, P-17) → 진행률 한 줄이 progress bar·완료 수를 숨기고 "일정 N건"만 표시(P-52 / E-21-4 / AC-68). 집계 경로(`getSummary`) 무변경 — 순수 표시 조건. (4) **§16.3.3 레이아웃 표** — `브랜드→날짜 네비게이션(컴팩트)→진행률 한 줄→접이식 검색(아이콘 토글)→요약 상세→리스트→FAB`. "날짜 탐색"→"날짜 네비게이션(컴팩트)", "개수 카드"→"진행률 한 줄" 명칭. (5) **DASH-01 문서 정정(직전 Tester 캐리오버, Low)** — §16.3.7 날짜 스텝 예시식 `startOfLocalDay(refTs + dir*DAY_MS + dir*HALF_DAY, tz)` 는 `dir=-1` 에서 목표일을 하루 더 지나침(그저께로 이동) → **방향 무관 `+ HALF_DAY`** 로 정정. 예시가 `clock.startOfLocalDay()` 를 부르던 서술을 `Clock` 포트(now/timeZone만)에 맞춰 "순수 `src/core/domain/time.ts` 의 `startOfLocalDay` 직접 사용"으로 정정(구현·4개 tz·봄/가을 DST 왕복 테스트와 일치). (6) **§13.3 / §13.8 보안 노트** — "인라인 검색"→"접이식 검색" 문구, `searchExpanded` 도 화면 로컬 비영속 상태 명시(표면 변화 없음). §14 일관성 표·§15 미결정(D-14 CLOSED / D-18·D-19 신규 / D-12~D-17 근거 v1.5→v1.6) 갱신. **`DashboardScreen.tsx` + `ProgressLine.tsx`(구 `CountCards.tsx` 대체) + `dashboardViewModel.ts` 순수 헬퍼(`isFutureDate`) + `bindings.ts` 무변경 + `routes.ts` `presetDate?` 유지**. 「API 설계」 섹션 미신설(신규 API 없음). **DASH-02**(AC-46 브랜드/유형분포/다음예정 잔여 — F-17 별도 트랙)·**DASH-03**(`findInRange` cursor 루프 미적용 — 기존부터 존재)은 이번 범위 밖 캐리오버로 §15 에 명시만 |
 | v1.10 | 2026-09-09 | 설계 델타(overview v1.10, plan v1.5 — 대시보드 개선 F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색). **신규 §7.1 "대시보드 기준 날짜·개수 카드·인라인 검색(F-20/F-21/F-22)"** — 기준 날짜(`referenceDate`) 파라미터화(`DashboardService.getSummary(dateTs?)`·`ScheduleService.findInRange` 재사용, **시그니처 무변경**), 개수 카드 = `getSummary` `total`/`done` 재사용(P-47), 인라인 검색 = 표시 계층 순수 필터(제목+메모, 트림+소문자, D-15) — 개수 카드/요약 미적용(P-49/D-16), F-11 과 독립(P-51). **신규 §16.3.7 "대시보드 날짜 탐색·개수 카드·인라인 검색 레이아웃 및 상태"** — 화면 로컬 state 소유(`referenceDate`/`inlineQuery`, 저장 없음 P-45/P-50), 자정/DST-안전 날짜 스텝 공식, "오늘로" 복귀, 자정 롤오버 판별(P-46, E-10-2 통합), 탭 이탈 리셋(D-12), 연속 탭 stale 처리(E-20-4), 빈 상태 vs 검색 무결과 문구 분기(E-10-1/E-22-1), OI-19 프리필. **§16.3.3 레이아웃 표** 에 날짜 탐색·개수 카드·인라인 검색 3영역 삽입(브랜드→날짜 탐색→개수 카드→인라인 검색→요약 상세→목록→FAB). **§16.3 바인딩 표** Dashboard 행 갱신(`getSummary(referenceDate)` + `findInRange(dayStart,dayEnd)`). **§13.3** 인라인 검색 보안 노트(로드된 배열 대상 순수 필터 — SQL·주입 표면 없음; `referenceDate`/`inlineQuery` 비영속). §14 일관성 표·§15 미결정(D-12~D-17) 갱신. **DB 스키마·코어 도메인/서비스/포트 계약·`ReminderScheduler`·기존 셸 화면(Dashboard 외)·Zustand 슬라이스 무변경** — `DashboardScreen.tsx` + 신규 순수 `CountCards.tsx` + `bindings.ts` `reads` 1행 + `routes.ts` `presetDate?` 1필드만 추가. 「API 설계」 섹션 미신설(신규 API 없음) |
 | v1.9 | 2026-09-08 | 설계 델타(overview v1.9, plan v1.4 — F-19 애플워치(watchOS) 워치 타깃 착수, NFR-10 승격). **신규 §17 "애플워치 워치 동기화(F-19)"** — 17.1 타깃 구성·경계(네이티브 WatchKit + 공유 *계약*), 17.2 WatchConnectivity 어댑터 계약(전송 메커니즘 선택 근거: applicationContext/transferUserInfo/sendMessage / activation·reachability), 17.3 페이로드 빌더(`buildWatchSnapshot` 순수, 오늘 + 다음 1건, 필드 최소화 P-40, epoch ms + IANA tz P-39), 17.4 완료 토글 역전파(op 스키마·`WatchSyncService.applyIncomingToggle`·dedup 원장), 17.5 보류 큐·재시도(E-19-1, "동기화 대기" 배지 D-11), 17.6 LWW 충돌 해소(E-19-3/P-38 — `UPDATED_AT` 기준·잔여 부정확), 17.7 전역 알림 게이트와 워치 관계(P-41 — `ReminderScheduler` 접점, 워치 무예약), 17.8 컴플리케이션(D-10 **조건부 설계 섹션**), 17.9 예외 매핑(E-19-1~7), 17.10 AC 매핑(AC-23·47~56). **신규 §13.9 "워치 동기화(WatchConnectivity) 보안"** + §13.1 신뢰 경계·§13.7 감사 로그·§13.8 위협표 행 추가. **§0.1 포트 목록**에 `WatchSyncGateway` 추가. §0.2 오류 코드에 `GATEWAY_WATCH_UNAVAILABLE`. §14 일관성 표·§15 미결정(D-09/D-10/D-11/N-11/N-12) 갱신. **DB 스키마·`ScheduleService`/`DashboardService`/`ReminderScheduler`/`CategoryService`/`SettingService` 로직·기존 셸 화면·`bindings.ts` `SCREEN_BINDINGS` 무변경** — 신규 순수 모듈(`src/core/watchSync/**`) + `WatchSyncService` + iOS 어댑터만 추가. 「API 설계」 섹션 미신설(WatchConnectivity 는 OS 프레임워크 IPC, 외부 API 아님) |
@@ -397,6 +400,77 @@ sync():
 
 ---
 
+## 7.2 통계 화면 집계 (F-23, P-54~P-58, R-23-1~R-23-4, E-23-1~E-23-5, AC-69~AC-76, D-20~D-23) — v1.12 신설
+
+세 번째 탭이 "검색"에서 "통계"로 교체되면서 신설되는 화면(F-23)의 집계 로직. **코어 무변경** — 기존 `ScheduleService.findInRange`(저장 행, soft-deleted 제외)와 `CategoryService.list()` 만 호출하고, 순수 함수 뷰모델(`src/app/screens/statisticsViewModel.ts`, `dashboardViewModel.ts` 패턴)이 인메모리 집계한다. 신규 서비스·포트·DB·API 없음.
+
+### 7.2.1 데이터 소스와 집계 규칙
+
+| 표시 요소 | 소스 | 집계 |
+| --- | --- | --- |
+| 상단 카드 "총 할 일 건수" (D-21(a), P-55) | `ScheduleService.findInRange(0, Number.MAX_SAFE_INTEGER, undefined, 'startAt', STATISTICS_PAGE_SIZE, cursor)` — `nextCursor` 소진까지 루프 | 반환 행 수(soft-deleted 제외는 `findInRange` 계약이 보장 — 삭제분 제외, P-55). **하단 그래프 연도 선택과 비연동** |
+| 상단 카드 "완료된 건수" (D-21(a), P-55) | 위와 동일 호출 결과 | `rows.filter(r => r.isDone).length` (완료 상태 = P-04) |
+| 하단 그래프 (선택 연도 1개 × 1~12월 × 유형별 건수) (D-23(a), P-56) | `ScheduleService.findInRange(yearStartTs, yearEndTs, undefined, 'startAt', STATISTICS_PAGE_SIZE, cursor)` — `nextCursor` 소진까지 루프 | 아래 §7.2.2 |
+| 유형(계열) 라벨·색 | `CategoryService.list()` | 계열 = `categoryId`. 라벨 = 현재 `name`, 색 = 현재 `color`(P-34 색상 체계 재사용, P-57) |
+
+- `STATISTICS_PAGE_SIZE` = 200 (설계 상수, 위치는 Developer 재량 — `src/app/config` 등). `CALENDAR_MONTH_PAGE_SIZE` 와 동급. cursor = keyset `(start_at, id)` — `database.md` 4장 `IDX_SCHEDULE_START` 가 지원.
+- **반복 일정 카운트 단위(P-58 / D-22(a))**: 통계는 F-10 대시보드·F-02 캘린더와 **동일한 `ScheduleService.findInRange` 저장 행**을 센다 → 카운트 단위가 자동으로 일치한다. 현재 구현은 범위 조회가 반복 회차를 확장하지 않으므로 반복 마스터 1행 = 1건이다. 향후 범위 조회에 회차 확장이 도입되면 통계도 같은 경로로 자동 승계된다(별도 규칙을 만들지 않는다).
+- **삭제분 제외**: `findInRange` 는 `deleted_at IS NULL` 만 반환하므로 상단 카드·하단 그래프 모두 삭제된 일정을 세지 않는다(P-55). soft-deleted 후 Undo 만료 전 행도 `deleted_at` 이 설정되어 있어 제외된다.
+
+### 7.2.2 월 버킷 판정 (D-23(a), P-56)
+
+- 선택 연도 `year`(정수)에 대해 뷰모델이 **13개 로컬 월 경계 epoch** 를 계산한다:
+  `boundary[m] = localWallToEpoch(year, m, 1, 0, 0, clock.timeZone())` (m = 1..12), `boundary[13] = localWallToEpoch(year + 1, 1, 1, 0, 0, clock.timeZone())`.
+  `localWallToEpoch` 는 `src/core/domain/time.ts` 의 기존 공개 순수 함수(DST 보정 포함, `dashboardViewModel.ts` 도 `time.ts` 를 import). **코어에 함수를 추가하지 않는다.**
+- `yearStartTs = boundary[1]`, `yearEndTs = boundary[13]`.
+- 각 행의 월 인덱스: `monthIndexOf(row.startAt)` = `boundary[m] <= row.startAt < boundary[m+1]` 인 `m`(1..12). 범위 밖(예: `findInRange` 의 overlap 반환분 중 `startAt < yearStartTs`)이면 그래프에서 제외한다 — **월 버킷 기준은 `start_at` 이며 생성일·완료 시각이 아니다**(P-56).
+- 각 (월, 유형) 버킷 값 = 그 월에 `start_at` 이 속하고 그 `categoryId` 를 참조하는 행 수. **완료 여부와 무관하게 전건**을 센다(완료분 별도 계열은 범위 밖 — OI-23).
+- 결과 구조(개념): `months: Array<{ month: 1..12; byCategory: Map<categoryId, count>; total: number }>`, `seriesCategoryIds: number[]`(그 연도에 1건 이상 등장한 유형 id, `CategoryService.list()` 순서), `maxBucketTotal: number`(월 total 최댓값), `placedRowCount: number`.
+- **이 반환 형태는 시각화(막대/선)와 무관하게 고정**이다(v1.13). 선 그래프의 y축 스케일에 쓰는 "한 (월,유형) 셀의 최대 건수"(`seriesPointMax`)는 `YearAggregate` 로부터 화면이 순수 파생하는 값이며(아래 §16.3.8) 뷰모델에 필드를 추가하지 않는다.
+
+### 7.2.3 연도 선택 (P-56)
+
+- 기본값 = **올해** = `currentYear(clock.now(), clock.timeZone())` — 뷰모델 순수 함수. `Intl.DateTimeFormat(locale, { timeZone, year: 'numeric' })` 로 산출(포맷 전용 `new Date(ts)`, §16.11 허용). 무인자 `new Date()` / `Date.now()` 미사용.
+- 연도 변경 = 하단 그래프만 재조회(`findInRange(yearStartTs, yearEndTs, …)` + §7.2.2 재집계). **상단 카드는 재조회하지 않는다**(R-23-2 / AC-70 / AC-72 — D-21(a)).
+- 이동 범위 제한 없음(D-13 대시보드와 동일 방침 — 원거리 연도도 `start_at` 인덱스 범위 쿼리). 구체 컨트롤(prev/next 화살표 또는 목록)은 §16.3.8 / Developer.
+
+### 7.2.4 갱신 시점 (R-23-3)
+
+- `StatisticsScreen` 은 `useFocusEffect` 로 화면 진입·복귀 시 `load()`(상단 + 하단 재조회)를 수행하고 pull-to-refresh 를 제공한다. 실시간 스토어 구독은 하지 않는다(신규 슬라이스 없음).
+- 일정 추가·삭제·완료 토글·유형 변경/이름변경/삭제 후 통계 탭으로 (재)진입하면 최신 데이터가 반영된다(R-23-3). Developer 는 필요 시 기존 `stale` 플래그(`list`/`categories`)를 참조해 불필요한 재조회를 생략할 수 있다(선택).
+
+### 7.2.5 예외 매핑 (E-23-1 ~ E-23-5)
+
+| 예외 | 처리 | 위치 |
+| --- | --- | --- |
+| E-23-1 저장된 일정 0건 | 상단 카드 "0" / "0", 하단 그래프 영역에 "표시할 데이터가 없습니다" 취지 빈 상태 | §16.3.8 `statisticsEmptyState='no-data'` |
+| E-23-2 분류할 유형이 없음(사실상 "기타"만) | 그래프 영역에 "분류할 유형이 없습니다" 취지 안내. E-23-1 / E-23-3 과 통합 표시 가능(문구 구분은 §16.3.8) | §16.3.8 `='no-categories'` |
+| E-23-3 선택 연도에 `start_at` 이 속한 일정 0건 | **상단 카드 수치는 유지**(전체 기간 누적 — D-21(a)), 하단 그래프 영역에만 "해당 연도에 일정이 없습니다" 취지 안내. 다른 연도로 이동 가능 | §16.3.8 `='no-year-data'` |
+| E-23-4 로드/집계 실패 | 카드·그래프 영역에 재시도 안내(F-02 E-02-2 준용). 통계 탭 자체·다른 탭 이동은 정상. F-17 인디케이터 `endReason='error'` 로 즉시 제거 후 에러 UI | §16.3.8 `='load-error'` / §16.9.8 #6 |
+| E-23-5 삭제된 유형에 속했던 일정 | F-06 E-06-2 로 이미 기본 유형 "기타"(`categoryId` = system default)로 재지정되어 있으므로 통계에서도 "기타" 계열로 집계. **삭제된 유형 이름을 별도 계열/라벨로 복원하지 않는다**(P-57). 뷰모델은 행의 **현재 `categoryId`** 만 사용 | §7.2.1 |
+
+### 7.2.6 R / AC 매핑
+
+| R / AC | 충족 지점 |
+| --- | --- |
+| R-23-1 / AC-71 진입 시 카드 2장 + 올해 유형별 월별 그래프 | §7.2.1~§7.2.3, §16.3.8 |
+| R-23-2 / AC-70 / AC-72 연도 전환 시 그래프만 갱신·카드 불변 | §7.2.3 (상단 카드 재조회 안 함, D-21(a)) |
+| R-23-3 일정/유형 변경 후 재진입 시 최신 반영 | §7.2.4 `useFocusEffect` 재조회 |
+| R-23-4 / AC-75 유형 이름변경 → 계열 라벨 새 이름, 참조 유지 | §7.2.1 (계열 = `categoryId`, 라벨 = `CategoryService.list()` 현재 `name` — ID 참조 P-34) |
+| AC-69 3번째 탭 "통계" 라벨·아이콘, "검색" 탭 부재 | §16.2 |
+| AC-73 빈 상태 / 선택 연도 데이터 없음 문구 구분 | §7.2.5 (E-23-1 vs E-23-3) |
+| AC-74 삭제 유형 → "기타" 합산, "운동" 계열 없음 | §7.2.5 E-23-5 |
+| AC-76 캘린더 헤더 검색 아이콘 → F-11 진입(D-20(a)) | §8, §16.2 (F-11 검색·필터 동작 AC-13/AC-14 무변경) |
+
+### 7.2.7 순수 뷰모델 방침
+
+- 순수 함수로 표현 가능한 모든 집계(연/월 경계 계산, 월 버킷팅, 유형별 카운트, 총계/완료 카운트, 빈 상태 판정)는 `src/app/screens/statisticsViewModel.ts` 에 둔다 — `react`/`react-native` 를 import 하지 않으며 `src/core/domain/time.ts` 의 기존 공개 순수 함수만 사용한다(`dashboardViewModel.ts` 와 동일 규약, §16.11 T-04).
+- `StatisticsScreen.tsx` 는 서비스 호출(`findInRange` cursor 루프 · `categories.list`)·화면 로컬 state(`selectedYear` 등)·렌더만 담당하고, 수치 계산은 위 뷰모델에 위임한다.
+- 코어(`src/core/**`)에 `StatisticsService`·집계 쿼리·포트 메서드를 **추가하지 않는다**. (전체 기간 카드가 대량 행 마샬링 비용 문제가 되면 코어 `count` 집계 메서드 도입이 후속 경로 — 이번 사이클 범위 밖, §15 참고.)
+- **v1.13(막대→선)**: 시각화 교체는 이 방침을 바꾸지 않는다. 선 그래프가 쓰는 y축 스케일값 `seriesPointMax`(한 (월,유형) 셀의 최대 건수)는 `aggregateYear` 가 돌려준 `YearAggregate` 로부터 **순수 파생**하는 값이며, `StatisticsScreen` 의 `useMemo` 또는 `statisticsViewModel.ts` 의 **신규** 순수 함수(기존 export·`YearAggregate` 형태 불변)로 둔다. 렌더 수단(`react-native-svg` `Polyline`)은 `StatisticsScreen`(또는 분리된 순수 프레젠테이션 컴포넌트)에만 존재하고 뷰모델은 여전히 `react`/`react-native`/`react-native-svg` 를 import 하지 않는다.
+
+---
+
 ## 8. SearchService (F-11, AC-13, AC-14, P-11, P-12)
 
 - **입력**: `{ query: string, filter?: { categoryId?, priority?, isDone?, fromTs?, toTs? }, limit=50, cursor? }`.
@@ -407,6 +481,13 @@ sync():
 - 필터는 SQL WHERE로만 적용(P-12): 완료/우선순위/기간은 검색어와 AND 결합(AC-14).
 - 대상 필드: title, memo, category name (P-12).
 - 정렬: FTS는 `rank`, 폴백은 `start_at DESC`.
+
+### v1.7 진입점 이전 (P-54, D-20(a)) — 검색 로직 무변경
+
+- plan v1.7 에서 하단 탭의 세 번째 항목이 "검색" → "통계"(F-23)로 교체되어 **전역 검색 전용 탭이 사라진다**. `SearchService` 의 검색 대상 필드·FTS/LIKE 분기·필터·정렬·예외(E-11-1 / E-11-2)·정책(P-11 / P-12) 및 AC-13 / AC-14 는 **이번 개정에서 변경하지 않는다**(P-54).
+- **진입점만 이전**: `SearchScreen` 을 Bottom Tab 에서 **Native Stack 화면**으로 옮기고(`STACK_ROUTES.Search`, §16.2), `CalendarScreen`(F-02) 헤더의 검색 아이콘에서 `navigate('Search')` 로 진입한다(D-20(a) 가정). 최종 진입점 위치·형태는 D-20 으로 이해관계자 결정에 위임(비차단, §15).
+- D-20 이 **(d) "완전 제거"** 로 확정되면 `SearchScreen` 의 Stack 등록·캘린더 헤더 아이콘을 제거하고, 이번 릴리스에서 F-11 은 비활성 처리되며 AC-13 / AC-14 / AC-76 은 이번 릴리스 검증 대상에서 제외된다.
+- 통계 화면(F-23)은 전역 검색을 재구현하지 않는다(F-23 비범위) — 통계 집계는 §7.2 참조.
 
 ---
 
@@ -557,6 +638,8 @@ sync():
 - **외부 캘린더 데이터**: title ≤ 200, notes ≤ 5000 트렁케이트, 제어문자 제거 후 저장. RN `<Text>` 렌더이므로 HTML/JS 실행 표면 없음(웹뷰 미사용). 딥링크/URL은 스킴 화이트리스트.
 - **알림 payload 위조(Tampering)**: `data`에 `scheduleId`(정수)만. 수신 시 반드시 `ScheduleRepository.findById`로 재조회, 실패 시 무시.
 - **정수 파싱**: 모든 `*_at`는 `Number.isInteger` 확인, NaN/Infinity 거부.
+- **통계 화면 집계(F-23, v1.12)**: 읽기 전용. 사용자 자유 입력이 쿼리에 들어가지 않는다 — 연도는 prev/next 컨트롤이 생성하는 정수(`Number.isInteger` 방어)이며, 집계는 기존 파라미터 바인딩 `ScheduleService.findInRange` 만 사용한다(신규 SQL·FTS·동적 식별자 없음). 월 경계 계산은 순수 `localWallToEpoch`. 출력은 유형명·건수 텍스트(`<Text>`, XSS 표면 없음 — 유형명 길이는 코어가 검증). 선택 연도는 화면 로컬 state 로 저장소·로그에 기록하지 않는다. 통계는 **건수만 표시**하고 일정 제목·메모를 노출하지 않아 목록·대시보드보다 정보 노출면이 작다. F-11 진입점 이전(§8)은 네비게이션 엣지 변경일 뿐 `SearchService` 입력 검증(§13.3 FTS/LIKE)에 영향이 없다.
+- **통계 하단 선 그래프 렌더(F-23, v1.13 — 막대→선)**: `react-native-svg` 15.x 의 `Polyline`/`Circle`/`Line` 는 **수치 집계값에서 코드로 계산한 좌표**만 받는다 — 마크업/문자열 파싱·`dangerouslySetInnerHTML` 류 없음, 사용자 제어 문자열이 도형 속성에 들어가지 않는다(유형명은 별도 `<Text>` 렌더). react-native-svg 는 F-17(§16.7)로 이미 신뢰 경계 내 도입된 네이티브 모듈이며 신규 의존성·신규 네이티브 표면이 없다. 시각화 교체는 집계 경로·입력 검증·저장·로그 정책에 영향이 없다(위협 모델 변화 없음).
 
 ### 13.4 민감정보 식별과 보호 (Cryptographic Failures, Information Disclosure)
 
@@ -600,6 +683,9 @@ sync():
 | 검색어/제목으로 SQL·FTS 주입 | Tampering / Injection | 바인딩, FTS phrase 이스케이프, LIKE escape | 없음(설계상 제거) |
 | 대시보드 접이식 검색(F-22) 입력 처리 (v1.10 / v1.11) | Tampering / Injection | 접이식 검색은 **이미 로드된 `items` 배열의 표시 계층 순수 필터**(`String.includes`) — SQL·FTS·`SearchService` 미경유, 동적 쿼리 표면 없음. 필터 결과는 `<Text>` 렌더(XSS 표면 없음). `referenceDate`/`inlineQuery`/`searchExpanded` 는 화면 로컬 state 로 저장소·로그에 기록하지 않음(P-45/P-50/P-53). v1.11 의 `searchExpanded` 토글은 UI 표시 상태일 뿐 새 입력·저장 표면을 만들지 않음 | 없음 |
 | 대시보드 원거리 기준 날짜 조회(F-20, D-13 무제한) (v1.10) | DoS | `findInRange(dayStart, dayEnd)` 는 `idx_schedule_start` 인덱스 범위 쿼리(하루 폭 고정) — CalendarScreen 월 조회와 동형. 단일 사용자 로컬 DB 라 폭주 불가. `DASHBOARD_PAGE_SIZE` cursor 상한 | 낮음 |
+| 통계 화면(F-23) 집계 입력/출력 (v1.12) | Tampering / Injection / Info Disclosure | 읽기 전용. 연도는 정수 컨트롤(자유 입력 아님, `Number.isInteger`), 집계는 기존 파라미터 바인딩 `ScheduleService.findInRange` 재사용(신규 SQL/FTS/동적 식별자 없음). 출력은 유형명·건수 `<Text>`(XSS 표면 없음), **제목·메모 미표시**(노출면 축소). 선택 연도는 화면 로컬·비영속. F-11 진입점 이전은 네비게이션 엣지만 변경(검색 입력 검증 무영향) | 없음(표면 축소) |
+| 통계 전체 기간 카드 조회 부하(F-23, `findInRange(0, MAX)`) (v1.12) | DoS | `idx_schedule_start` 부분 인덱스 전건 스캔 + `STATISTICS_PAGE_SIZE` cursor 루프. 단일 사용자·§2 용량(≤ 1만 행) 범위라 유한·경계. 화면 진입 시 1회(+pull-to-refresh) | 낮음 |
+| 통계 하단 선 그래프 SVG 렌더(F-23, v1.13 — 막대→선) | Tampering / Injection | `react-native-svg` `Polyline`/`Circle`/`Line` 은 집계 수치에서 코드 계산한 좌표만 받음(마크업/문자열 파싱 없음, 사용자 제어 문자열이 도형 속성에 미유입). react-native-svg 는 F-17(§16.7)로 이미 신뢰 경계 내 — 신규 의존성·네이티브 표면 없음. 집계·검증·저장·로그 경로 무영향 | 없음 |
 | 위조된 알림/딥링크로 잘못된 화면 유도 | Tampering | payload 정수 ID + 재조회 검증, 스킴 화이트리스트 | 낮음 |
 | 외부 캘린더 오염 데이터 저장 | Data Integrity | 길이·타입·제어문자 검증, 로컬 편집 우선 병합 | 사용자 혼동(중복 표시) → 수동 병합 UI |
 | 취약 서드파티 | Vulnerable Components | 버전 고정 + 주기 audit | 신규 CVE 대응 지연 |
@@ -619,7 +705,8 @@ sync():
 - **민감정보**: 폰→워치 페이로드에 **메모·전체 이력·검색 인덱스·유형 전체 정의·계정 식별자·토큰·알림 내부 상태 미포함**(P-40). 제목·시작시각·유형 라벨/색·완료상태만. 워치 로컬 스냅샷/보류 큐 파일은 워치 데이터 보호(파일 보호 클래스)로 저장. 비밀정보(OAuth 토큰, DB 암호화 키)는 **워치로 전송하지 않는다**.
 - **알림 제목 마스킹 토글(P-10-1)과 관계**: P-10-1 은 *알림 본문* 노출 여부 정책이며, 워치 **앱 화면**의 제목 표시는 폰 앱 화면과 동일하게 원제목을 보인다(별개 관심사). 워치 앱은 알림을 표시·예약하지 않으므로 P-10-1 의 적용 대상이 아니다.
 - **비밀정보 취급**: 해당 없음 — 워치 채널로 오가는 값에 키/토큰/자격증명이 없다.
-- **의존성**: `react-native-watch-connectivity` 1.x major 고정 + 주기 `npm audit`(§13.6 정책 동일 적용). watchOS 앱(Swift)은 시스템 프레임워크(`WatchConnectivity`, `SwiftUI`, 선택 `WidgetKit`)만 사용.
+- **의존성**: `react-native-watch-connectivity` 1.x major 고정 + 주기 `npm audit`(§13.6 정책 동일 적용). watchOS 앱(Swift)은 시스템 프레임워크(`WatchConnectivity`, `SwiftUI`, `Foundation`, 선택 `WidgetKit`)만 사용 — **서드파티 0**, CocoaPods 미링크(§17.11.2).
+- **v1.14 구현 착수 보완 (§17.11.6)**: 워치 로컬 JSON 파일 2개(마지막 스냅샷·보류 큐)는 `Data` 쓰기 시 `.completeFileProtection`(`NSFileProtectionComplete`)로 저장 — App Group·공유 컨테이너 밖. 워치 타깃 시뮬레이터 빌드는 `CODE_SIGNING_ALLOWED = NO`(자격증명·프로파일 저장소 미포함), 실기기 서명은 후속(N-11). 워치가 Swift 로 재구현돼도 폰 측 수신 검증(`parseToggleOp` 정수·UUID 계약 → `WatchSyncService` 재조회·dedup·LWW)은 불변 — 워치는 신뢰 경계 밖.
 - **감사 로그**: §13.7 워치 항목(마스킹).
 - **위협→대응→잔여 위험**:
 
@@ -709,8 +796,32 @@ sync():
 | (v1.11) 보안 위협 모델 영향 | 없음(표면 축소 유지) — 접이식 검색도 인메모리 순수 필터, `searchExpanded` 는 UI 표시 상태(새 입력·저장 표면 없음). §13.8 위협표 행 문구를 "인라인"→"접이식"으로 정정, 판정 "없음" 유지 |
 | (v1.11) 「API 설계」 섹션 | 미신설 — F-20~F-22 재확정 방향도 로컬 상태 + 기존 조회 재사용. 신규/변경 API 없음. 자체 백엔드 없음 유지(§9) |
 | (v1.11) 캐리오버 DASH-02 / DASH-03 | 이번 범위 밖 — DASH-02(AC-46 브랜드·유형별 분포·다음 예정 렌더 잔여 정합, F-17 별도 트랙), DASH-03(`findInRange` cursor 루프 미적용 — v1.10 이전부터 존재) 는 §15 에 미결/후속으로만 명시. 이번 델타는 진행률 한 줄·접이식 토글·미래 분기·DASH-01 정정에 한정 |
+| (v1.12) §7.2 통계 집계가 코어 서비스 시그니처와 일치 | OK — `ScheduleService.findInRange(fromTs, toTs, filter?, sort?, limit?, cursor?)` 는 이미 임의 범위·keyset 페이지네이션을 받는다(코어 구현 확인). `CategoryService.list()` 그대로. 신규 서비스·포트·DB 없음. 월 경계는 `src/core/domain/time.ts` 의 **기존 공개** `localWallToEpoch`(추가 없음, `dashboardViewModel` 도 import) |
+| (v1.12) §7.2 반복 카운트 단위가 D-22(a)/P-58·대시보드/캘린더와 일치 | OK — 통계는 F-10 `getSummary`/F-02 `findInRange` 와 동일 저장 행을 센다 → 카운트 단위 자동 일치. 현 구현은 범위 조회가 회차를 확장하지 않아 반복 마스터 1행=1건, 향후 확장 도입 시 동일 경로로 승계(별도 규칙 없음) |
+| (v1.12) §7.2 삭제분/삭제 유형 처리가 P-55/P-57·E-06-2 와 일치 | OK — `findInRange` 가 `deleted_at IS NULL` 만 반환(삭제분 제외, P-55). 삭제 유형의 일정은 E-06-2 로 이미 system default("기타") `categoryId` 로 재지정 → 뷰모델이 현재 `categoryId` 만 사용 → "기타" 합산(E-23-5), 삭제 유형 라벨 복원 없음(P-57). rename 은 `categoryId` 참조 유지 + `list()` 현재 name(R-23-4) |
+| (v1.12) §7.2 상단 카드 비연동이 D-21(a)/R-23-2/AC-70 과 일치 | OK — 카드 = `findInRange(0, MAX_SAFE_INTEGER)` 결과, 연도 변경 시 재조회하지 않음. 하단 그래프만 `findInRange(yearStartTs, yearEndTs)` 재조회 |
+| (v1.12) §16.2 탭/스택 개편이 F-16/AC-26·D-20(a)·P-54 와 일치 | OK — `SearchTab`→`StatisticsTab`(아이콘 `statistics.png` 매핑 유지 — F-16/AC-26), `SearchScreen` 은 `STACK_ROUTES.Search` 로 이전(내부 로직·`SearchService`·FTS·AC-13/14 무변경 — P-54), `CalendarScreen` 헤더 검색 아이콘 엣지 추가(D-20(a)). D-20=(d) 확정 시 등록·엣지 제거 경로 명시 |
+| (v1.12) §16.3.8 상태 비영속이 P-45 유사·`bindings.ts` 와 일치 | OK — `selectedYear` = 화면 로컬 `useState`(기본 올해), `APP_SETTING`/Zustand/파일 미기록. `SETTING_KEYS` 무변경. `SCREEN_BINDINGS` 에 `StatisticsScreen`(reads 2개, writes/invalidates 없음) 추가, `SearchScreen` 유지 |
+| (v1.12) 차트 수단 신규 의존성 판정이 overview 기술 스택 표와 일치 | OK — 신규 npm 0. 순수 RN `<View>` 높이 비율 + 필요 시 기존 `react-native-svg` 15.x 재사용. 차트 라이브러리 도입 안 함(overview 「주요 기술 결정」 #9) |
+| (v1.12) DB 스키마 영향 | 없음 — `database.md` v1.5(§12 신설, DDL·인덱스·트리거·시드 무변경). 상단 카드 = `IDX_SCHEDULE_START` 부분 인덱스 전건 스캔, 하단 그래프 = `start_at` 연 범위 스캔(캘린더 월 조회와 동형). 신규 `APP_SETTING` 키 없음 |
+| (v1.12) 보안 위협 모델 영향 | 없음(표면 축소) — 통계는 읽기 전용·정수 컨트롤·기존 바인딩 재사용·건수만 표시(제목/메모 미표시). §13.3 항목 + §13.8 위협표 3행 추가(모두 "없음/낮음"). F-11 진입점 이전은 네비게이션 엣지만 변경 |
+| (v1.12) 「API 설계」 섹션 | 미신설 — F-23 는 로컬 SQLite 집계, F-11 진입점 이전은 네비게이션 변경. 신규/변경/외부 API 없음. 자체 백엔드 없음 유지(§9) |
+| (v1.13) §16.3.8 막대→선 교체가 §7.2 집계 계약과 일치 | OK — `statisticsViewModel` 의 export 함수 시그니처·`YearAggregate` 반환 형태(`months[12]`·`seriesCategoryIds`·`maxBucketTotal`·`placedRowCount`) 무변경. 선 그래프는 `aggregateYear` 결과만 소비. y축 스케일 `seriesPointMax` 는 `YearAggregate` 로부터 화면이 순수 파생(뷰모델 필드 추가 없음). `tests/app/statisticsViewModel.test.ts` 무영향 |
+| (v1.13) §16.3.8 선 그래프가 plan §F-23 불변 3요건과 일치 | OK — ① 유형별 구분(계열당 `Polyline` + 색 + 범례), ② x축 1~12월(12눈금 고정), ③ 선택 1개 연도(`selectedYear` 기준 `aggregateYear`). plan line 604/784 이 "꺾은선" 형태를 Architect 위임으로 명시 → plan 델타 없음 |
+| (v1.13) 선 그래프 렌더 수단이 overview 기술 스택 표·「주요 기술 결정」 #9 와 일치 | OK — 신규 npm 0. 기보유 `react-native-svg` 15.x(F-17 도입분) `Polyline`/`Circle`/`Line` 재사용. 차트 라이브러리(victory/chart-kit/gifted-charts) 미도입. overview #9(막대 → **선**), nfr §16.2 동반 갱신 |
+| (v1.13) 빈 상태·삭제 유형·rename 분기 | 무변경 — `statisticsEmptyState` 우선순위(load-error→no-data→no-categories→no-year-data→ok), E-23-1~E-23-5, R-23-4 모두 §7.2.5/§16.3.8 표 그대로. `'ok'` 분기 내부 렌더만 막대→선 |
+| (v1.13) DB 스키마 영향 | 없음 — `database.md` v1.5 유지. 쿼리·인덱스(`IDX_SCHEDULE_START` 범위/전건 스캔) 동일. 시각화는 프레젠테이션 한정 → DDL/트리거/시드/`APP_SETTING` 무관 |
+| (v1.13) 보안 위협 모델 영향 | 없음 — §13.3 항목 + §13.8 위협표 1행 추가(모두 "없음"). SVG 도형은 수치 좌표에서 코드 생성(마크업 주입 없음), react-native-svg 는 F-17 로 이미 신뢰 경계 내 |
+| (v1.14) §17.11 watchOS 앱 타깃이 §17.1~§17.10 워치 설계와 일치 | OK — §17.11 은 §17.1 "워치 앱 구현" 행을 구현 수준으로 구체화만. 상호작용 4종(§17.1)·전송 메커니즘(§17.2)·페이로드 빌더(§17.3)·역전파(§17.4)·보류 큐(§17.5)·LWW(§17.6)·알림 무관(§17.7)·컴플리케이션 조건부(§17.8) 전부 불변. 워치 앱은 소비자, 폰이 권위 |
+| (v1.14) §17.11.4 Swift 계약이 `src/core/watchSync/types.ts`·`watchMessage.ts`·`WatchConnectivityGateway.native.ts` 와 일치 | OK — Swift `CodingKeys` = TS 필드명 1:1(§17.11.4 표). 시각 = 정수 epoch ms + IANA tz(P-39, `types.ts` 주석과 동일). null 가능 키(`doneAt`/`nextUpcoming`)는 폰 `toPlistSafe` 가 제거 → Swift `decodeIfPresent`. `opId` = 소문자 RFC-4122(`WATCH_UUID_RE`), `watchChangedAt`/`baseUpdatedAt` 정수(`parseToggleOp` `Number.isInteger` 강제). 봉투 `{type,payload}` = 어댑터가 사용하는 형태 |
+| (v1.14) §17.11 이 공유 페이로드 계약·`src/core`·`src/app`(TS)·DB·포트에 영향 없음 | OK — 이번 델타 산출물은 `ios/` 네이티브 타깃 + `ios/TodayWhatWatch/**` Swift 뿐. `WatchSyncGateway` 포트·`WatchSyncService`·`buildWatchSnapshot`·`resolveToggleLWW`·`bindings.ts`·`composeNative` 배선 무변경. `database.md` v1.6(스키마 무변경 재확인) |
+| (v1.14) §17.11.2 CocoaPods 상호작용이 iOS 빌드 설계와 일관 | OK — 워치 타깃은 Podfile 밖 → RN Pod(hermes/React-Core/RNSVG/op-sqlite/…) 미링크(watchOS 링크 불가). 시스템 프레임워크만. 기존 `TodayWhat.xcworkspace` 공유. `react-native-watch-connectivity` 는 iOS 앱 타깃에만(§16.5 어댑터 매핑 표와 일치) |
+| (v1.14) §17.11.6 워치 보안이 §13.9 와 일관 | OK — §13.9 신뢰 경계·수신 op 검증·페이로드 최소화·비밀정보 미전송 불변. 추가분 = 워치 로컬 파일 `.completeFileProtection`, 시뮬레이터 코드사이닝 생략, 워치 타깃 서드파티 0. 신규 위협 없음 |
+| (v1.14) §17.11.5 검증 절차가 `nfr.md` §11.1/§11.2 와 일관 | OK — `xcodebuild -scheme TodayWhatWatch` 빌드 + 페어드 시뮬레이터 설치/실행/라운드트립/스크린샷 = 이번 릴리스 검증(§11.1 로 이동). 실기기 WCSession 엣지·BOOT·배터리·(D-10)컴플리케이션 실기기 = §11.2 잔여. Metro cwd-patch 는 순수 네이티브 워치 앱과 무관(§11 셸 전략과 모순 없음) |
+| (v1.14) 「API 설계」 섹션 | 미신설 — WCSession 은 OS IPC(외부 제공/호출 API 아님). 자체 백엔드 없음 유지(§9). v1.9 판정과 동일 |
+| (v1.14) DB 스키마 영향 | 없음 — `database.md` v1.6(§10 말미 "v1.6 구현 착수 확인" 추가, DDL·인덱스·트리거·시드·`APP_SETTING` 키 무변경). LWW=`SCHEDULE.UPDATED_AT`, dedup=`APP_SETTING watch.appliedOps`. 워치 로컬 영속은 공유 SQLite 아님 |
 
-발견된 불일치: 없음. (DASH-01 은 v1.11 에서 문서 정정 완료. DASH-02/DASH-03 은 이번 델타 범위 밖 캐리오버로 §15 에 명시.)
+발견된 불일치: 없음. (DASH-01 은 v1.11 에서 문서 정정 완료. DASH-02/DASH-03 은 이번 델타 범위 밖 캐리오버로 §15 에 명시. v1.13 은 F-23 시각화 프레젠테이션 한정 델타. v1.14 는 F-19 watchOS 앱 타깃 구현 착수 — 공유 계약·집계·DB·보안 위협 모델·폰 코드 무변경, `ios/` 네이티브 타깃 + Swift 소스만 추가.)
 
 ---
 
@@ -731,7 +842,7 @@ sync():
 | D-09 | 워치 갱신 트리거 (F-19) — **(b)** 채택(plan v1.4). `updateApplicationContext` + 도달 시 `sendMessage`(§17.2). 주기 폴링 미도입(OI-13). 게이트 형식상 OPEN, 비차단 |
 | D-10 | 워치 컴플리케이션 이번 범위 포함 (F-19) — "1종 포함" 가정으로 §17.8 **조건부 설계 섹션** 작성. 미결 시 워치 타깃에서 확장 제외(코드 없음), AC-56 검증 제외. 산출물 범위 영향 → 착수 초기 이해관계자 확인 권장. 비차단 |
 | D-11 | 워치 역전파 지연/실패 노출 수준 (F-19) — **(b) "동기화 대기" 배지** 채택(plan v1.4). 보류 큐 비어있지 않은 동안 워치 목록 배지(§17.5). 폰 배지·안내 미도입. 비차단 |
-| N-11 | watchOS 앱 타깃 온디바이스 검증 (F-19) — 워치 시뮬레이터/기기 부재. `src/core/watchSync/**` + `WatchSyncService` + `WatchConnectivityGateway` 계약만 `npm test`/`typecheck`. WCSession 실왕복·컴플리케이션 타임라인은 후속(`nfr.md` §11.2) |
+| N-11 | watchOS 앱 타깃 검증 (F-19) — **v1.14 에서 축소.** 환경에 watchOS 26.2 시뮬레이터(Apple Watch Series 11 / SE 3 / Ultra 3) + Xcode 확보 → **이번 릴리스 검증 대상**: `xcodebuild -scheme TodayWhatWatch` 빌드(BUILD SUCCEEDED), 페어드 iPhone+Watch 시뮬레이터에 설치·실행, 실제 WCSession(`applicationContext`/`sendMessage`) 라운드트립으로 워치 오늘 목록 렌더 + `xcrun simctl io … screenshot` 캡처, 완료 토글 낙관적 갱신·"동기화 대기" 배지(§17.11.5, `nfr.md` §11.1). **잔여 후속(실기기 한정)**: 물리 Apple Watch, 기기 `BOOT` 후 파일 영속, 배터리/지연, 백그라운드 `transferUserInfo` 실기기 타이밍, (D-10 시) 컴플리케이션 실기기 타임라인 (`nfr.md` §11.2). `src/core/watchSync/**` + `WatchSyncService` + `WatchConnectivityGateway` 계약은 계속 `npm test`/`typecheck` |
 | N-12 | 워치 LWW 정밀도 (F-19) — `SCHEDULE.UPDATED_AT` 기반 근사(스키마 무변경). 완료 무관 폰 편집이 워치 토글보다 나중일 때 워치 토글 드롭 가능(§17.6 residual). 필드 수준 정밀 LWW(전용 `DONE_CHANGED_AT`)는 스키마 변경 수반 → 후속 |
 | D-12 | 대시보드 기준 날짜 상태 지속 범위 (F-20) — **(a) 탭 이탈·앱 재시작 시 오늘로 리셋** 채택(plan v1.6). `referenceDate`/`inlineQuery`/`searchExpanded` = `DashboardScreen` 로컬 state(§16.3.7), 영구 저장 없음(P-45/P-53). Stack push(Detail/Editor)·복귀는 리셋 아님. 게이트 형식상 OPEN(추인 대기), 비차단 — (b)/(c) 확정 시 리셋 트리거만 조정(서비스·스키마 무영향) |
 | D-13 | 날짜 네비게이션 이동 범위 제한 (F-20) — **무제한** 채택(plan v1.6). 원거리 날짜 = `findInRange` 인덱스 범위 쿼리(`nfr.md` §15). 제한 도입 시 경계 화살표 비활성(E-20-1). 비차단 |
@@ -744,6 +855,12 @@ sync():
 | DASH-02 | (직전 Tester 캐리오버, Low, 범위 밖) 재설계 코드의 브랜드·유형별 분포·다음 예정 렌더 잔여 정합(AC-46) — F-17 별도 트랙에서 처리. 이번 v1.11 델타(진행률 한 줄·접이식 토글·미래 분기·DASH-01 정정)에 포함하지 않음. §16.3.3 표 1행 비고에 명시만 |
 | DASH-03 | (캐리오버, 범위 밖) `DashboardScreen` 이 `findInRange` 를 단일 페이지로 호출(현 구현 `DASHBOARD_LIST_LIMIT=200`, cursor 루프 미적용) — v1.10 이전부터 존재. 당일 범위라 실무상 미영향이나 §16.3.5 설계값(`DASHBOARD_PAGE_SIZE=100` + cursor 루프)과 불일치. 별도 후속으로 정합화 권장. 이번 델타 범위 밖 |
 | N-13 | 요약 상세 "다음 예정 일정"의 기준일 스코프 — 이번 사이클은 코어 `getSummary` 무변경으로 `nextScheduleId` 는 `clock.now()` 기준 실제 다음 예정을 반환(기준일이 과거/미래여도). 기준일 스코프 "다음 예정"이 필요하면 코어 `getSummary` 확장(스키마 무변경) 후속. 비차단, AC 회귀 없음 |
+| D-20 | 세 번째 탭 교체 후 전역 검색(F-11) 진입점 위치 (F-23, plan v1.7) — **(a) 캘린더 화면 헤더 검색 아이콘** 채택(가정값). `SearchScreen` = Tab → Stack 이전, F-11 로직·필터·AC-13/14 무변경(P-54, §8/§16.2). (d)"완전 제거" 확정 시 Stack 등록·캘린더 아이콘 제거 + AC-13/14/76 이번 릴리스 검증 제외. **네비게이션 구조·AC 검증 대상에 직접 영향 → 착수 초기 이해관계자 확인 권장.** 게이트 형식상 OPEN, 비차단 |
+| D-21 | 통계 상단 요약 카드 집계 범위 (F-23, plan v1.7) — **(a) 전체 기간 누적·하단 그래프 연도와 비연동(삭제분 제외)** 채택(가정값, P-55). 카드 = `findInRange(0, MAX)` 전건/완료 count(§7.2.1). (b)"선택 연도 필터" 확정 시 카드도 연도 범위 `findInRange` 로(뷰모델 인자만). 지표 의미에 영향 → 착수 초기 확인 권장. 게이트 형식상 OPEN, 비차단 |
+| D-22 | 통계 건수의 반복 일정 카운트 단위 (F-23, plan v1.7) — **(a) 개별 인스턴스, 대시보드/캘린더와 동일** 채택(가정값, P-58). 통계는 F-10·F-02 와 동일한 `findInRange` 저장 행을 센다 → 자동 일치(§7.2.1). 현 구현은 반복 마스터 1행=1건. 게이트 형식상 OPEN, 비차단 |
+| D-23 | 하단 그래프 월 버킷 판정 기준일 (F-23, plan v1.7) — **(a) 일정 시작 일시(`start_at`), 로컬 자정 경계** 채택(가정값, P-56). 뷰모델이 13개 월 경계 epoch 를 순수 `localWallToEpoch(year, m, 1, 0, 0, clock.timeZone())` 로 계산 후 버킷팅(§7.2.2). 생성일·완료 시각 아님. (b)/(c) 확정 시 버킷 키만 `createdAt`/`doneAt` 로 교체(뷰모델 국소). 수치 의미에 영향 → 착수 초기 확인 권장. 게이트 형식상 OPEN, 비차단 |
+| OI-22 | 통계 상단 카드에 완료율(%)·미완료 수 등 추가 지표 병기 — **설계 결정: 이번 범위는 카드 2장("총"/"완료")만**(F-23 상단 요약 카드 "확정" 범위). 완료율 병기는 후속. 비차단 |
+| OI-26 | 통계 화면 로딩 시 F-17 인디케이터 노출 위치 — **설계 결정: `StatisticsScreen` 콘텐츠 영역 인라인·소형 1개**(§16.9.8 #6). F-17 「노출 위치」 표 "Search 결과 로딩"(#4)은 `SearchScreen` Stack 잔존으로 유지, 통계는 #6 추가. F-17 규칙 무변경. 비차단 |
 
 ---
 
@@ -777,17 +894,19 @@ buildApp(options):
 
 ### 16.2 네비게이션 그래프 · 딥링크
 
-- **구조**: Root = Bottom Tab 4개 + 상단 Native Stack.
+- **구조**: Root = Bottom Tab 4개 + 상단 Native Stack. **v1.12**: 3번째 탭이 `SearchTab`(검색) → `StatisticsTab`(통계, F-23)로 교체되고, 검색은 Stack 화면(`Search`)으로 이전한다(D-20(a)).
 
 ```text
 RootStack
 ├── Tabs
-│   ├── DashboardTab   → DashboardScreen
-│   ├── CalendarTab    → CalendarScreen (일/주/월 토글) ─┐
-│   ├── SearchTab      → SearchScreen                    │ 공통: 항목 탭 → ScheduleDetail
-│   └── SettingsTab    → SettingsScreen                  ┘
+│   ├── DashboardTab    → DashboardScreen
+│   ├── CalendarTab     → CalendarScreen (일/주/월 토글) ─┐
+│   ├── StatisticsTab   → StatisticsScreen (F-23, v1.12) │ 공통: 항목 탭 → ScheduleDetail
+│   └── SettingsTab     → SettingsScreen                 ┘
 ├── ScheduleDetail   { scheduleId: number }
-├── ScheduleEditor   { scheduleId?: number }        # 없으면 신규
+├── ScheduleEditor   { scheduleId?: number; presetDate?: number }   # 없으면 신규
+├── Search           { initialQuery?: string } | undefined          # v1.12: Tab → Stack (F-11, D-20(a))
+├── CategoryManager
 └── Onboarding/Permissions   (최초 실행 또는 설정에서 진입)
 ```
 
@@ -796,6 +915,10 @@ RootStack
   - `CalendarScreen` `headerRight`「+」 → `navigate('ScheduleEditor', {})` (신규 작성, 7.2)
   - `ScheduleDetailScreen` `headerRight`「편집」 → `navigate('ScheduleEditor', { scheduleId })` (수정, F-03 · 7.3)
   - `ScheduleEditorScreen` 저장 성공 → `navigation.goBack()` (기존 유지)
+- **전역 검색 진입 엣지 (F-11, v1.12, D-20(a))**:
+  - `CalendarScreen` `headerRight` 에 검색 아이콘 버튼 추가 → `navigate('Search')` (전역 검색, §7.3 / §8). `initialQuery` 파라미터는 선택.
+  - `SearchScreen` 은 내부 로직 무변경 — Tab 이 아니라 Stack 에 등록되는 것만 달라진다. `search` Zustand 슬라이스 계속 사용. 결과 항목 탭 → `ScheduleDetail`.
+  - D-20 이 "완전 제거"로 확정되면 이 엣지와 `Search` Stack 등록을 제거한다.
   - 진입점은 서비스를 호출하지 않는다(순수 네비게이션). `ScheduleEditor` 는 이미 `RootStack` 에 `Stack.Screen` 으로 등록되어 있고 `routes.ts` 의 `ScheduleEditor { scheduleId? }` 도 정의됨 — 누락된 것은 호출부(진입 버튼)뿐이다.
 - **라우트 파라미터**는 `routes.ts`에 타입으로 고정. `scheduleId`는 항상 `number`.
 - **딥링크 config (`linking.ts`)**: URL 스킴 화이트리스트(`todaywhat://`)만 허용. 경로 `todaywhat://schedule/:id` → `ScheduleDetail`. `:id`는 `Number.isInteger` 검증 실패 시 무시하고 대시보드로.
@@ -810,7 +933,7 @@ RootStack
 | --- | --- | --- |
 | 오늘 (DashboardTab) | `todo.png` | `../../assets/icons/todo.png` |
 | 캘린더 (CalendarTab) | `goal.png` | `../../assets/icons/goal.png` |
-| 검색 (SearchTab) | `statistics.png` | `../../assets/icons/statistics.png` |
+| 통계 (StatisticsTab) — v1.12: "검색" 탭 교체, 아이콘 파일 매핑 유지 (F-16, AC-26) | `statistics.png` | `../../assets/icons/statistics.png` |
 | 설정 (SettingsTab) | `settings.png` | `../../assets/icons/settings.png` |
 
 - **렌더 방식**: `Tab.Navigator`의 `screenOptions` 또는 각 `Tab.Screen`의 `options.tabBarIcon` 콜백에서 `<Image source={icon} style={{ width: 24, height: 24, opacity: focused ? 1 : 0.4 }} />` 렌더 (P-19: 단일 파일, 투명도 기반 활성/비활성 구분).
@@ -842,7 +965,8 @@ RootStack
 | ScheduleDetailScreen | 진입 | `ScheduleService.getById(scheduleId)` (위조 방지 재조회) | — | `NOT_FOUND_SCHEDULE`/null → 목록으로 |
 | ScheduleDetailScreen | `headerRight`「편집」 | 없음 — `navigate('ScheduleEditor', { scheduleId })` | — | — (F-03) |
 | ScheduleDetailScreen | 삭제 / 되돌리기 | `softDelete(id)` → 스낵바 "실행취소"(N-3 제안 5분/세션) → `restore(id)` | `list`·`dashboard` invalidate(AC-10) | — |
-| SearchScreen | 검색어(디바운스 250ms), 필터 | `SearchService.search({query, filter, limit:50, cursor})` | `search` 슬라이스; `q.length<2`면 "짧은 검색어" 배지(P-11, E-11-2) | 빈 결과 안내(E-11-1) |
+| SearchScreen (v1.12: Stack 화면, `CalendarScreen` 헤더 검색 아이콘에서 진입 — D-20(a)) | 검색어(디바운스 250ms), 필터 | `SearchService.search({query, filter, limit:50, cursor})` | `search` 슬라이스; `q.length<2`면 "짧은 검색어" 배지(P-11, E-11-2) | 빈 결과 안내(E-11-1) |
+| **StatisticsScreen** (신규 v1.12, F-23, 읽기 전용) | 포커스/재진입(`useFocusEffect`), pull-to-refresh, 연도 선택 변경(하단 그래프만) | **상단 카드**: `ScheduleService.findInRange(0, Number.MAX_SAFE_INTEGER, undefined, 'startAt', STATISTICS_PAGE_SIZE, cursor)` cursor 루프 → 전건/`isDone` count (§7.2.1). **하단 그래프**: `ScheduleService.findInRange(yearStartTs, yearEndTs, undefined, 'startAt', STATISTICS_PAGE_SIZE, cursor)` cursor 루프 + `CategoryService.list()` → `statisticsViewModel` 인메모리 월·유형 집계(§7.2.2). 연도 변경 시 상단 카드 재조회 안 함(D-21(a)) | 화면 로컬 state(신규 슬라이스 없음). 무효화 대상 없음(쓰기 없음) | 로드/집계 실패 → 카드·그래프 재시도(E-23-4, E-02-2 준용), F-17 인디케이터 `endReason='error'`. 빈 상태 E-23-1~3 문구 분기(§16.3.8) |
 | SettingsScreen | 토글/선택 | `SettingService.set(key, json)` — `theme.*`, `notif.showTitle`(P-10-1), `calendar.*`(D-02/P-08-2), `schedule.defaultPriority`/`schedule.defaultCategoryId`(P-33) | 즉시 `settings` 반영 + 테마 적용(AC-17) | 저장 실패 → 이전 값(E-18-3) |
 | SettingsScreen | "알림 사용" 토글 | `SettingService.set('notif.enabled', v)` → **`ReminderScheduler.applyGlobalNotificationsToggle(v)`** (§6, §16.3.6) | `settings` 반영. off = 기존 예약 일괄 취소(AC-42) | 저장 실패 → 롤백, 토글 미적용. 권한 거부 + on → 안내(E-18-1) |
 | SettingsScreen | "유형 관리" 행 | 없음 — `navigate('CategoryManager')` | — | — (F-06) |
@@ -1154,6 +1278,80 @@ const inlineNorm = (s: string) => s.trim().toLowerCase();
 
 - `DashboardScreen.reads` 에 `{ service: 'dashboard', method: 'getSummary' }` 추가(현재 `findInRange` 만 존재 — logic v1.8 §7 지시가 코드에 미반영된 상태. §14 일관성). `writes`·`invalidates` 변경 없음. `referenceDate`·`inlineQuery`·`searchExpanded` 는 서비스 바인딩이 아닌 화면 로컬 state 이므로 `SCREEN_BINDINGS`·`SETTING_KEYS` 무변경(P-45/P-50/P-53).
 
+### 16.3.8 통계 화면 레이아웃 및 상태 (F-23, P-54~P-58, R-23-1~R-23-4, E-23-1~E-23-5, AC-69~AC-76) — v1.12 신설
+
+§7.2 의 집계 규칙을 `StatisticsScreen` 에서 실체화한다. **읽기 전용 화면** — 쓰기·무효화 없음. 모든 신규 상태는 화면 로컬, 코어·DB·포트·`bindings.ts`(기존 항목) 무변경.
+
+#### 레이아웃 (위 → 아래)
+
+| # | 영역 | 내용 | 소스 |
+| --- | --- | --- | --- |
+| 1 | 상단 요약 카드 2장 | "총 할 일 건수" / "완료된 건수" 를 큰 숫자로 나란히 표시. 전체 기간 누적(D-21(a), P-55). 완료율(%) 병기는 **하지 않는다**(이번 범위 = 카드 2장, OI-22) | `statisticsViewModel.aggregateTotals(allRows)` — `findInRange(0, MAX_SAFE_INTEGER)` cursor 루프 결과 |
+| 2 | 연도 선택 컨트롤 | 좌/우 화살표(이전/다음 해) + 현재 선택 연도 라벨. 기본값 = 올해(§7.2.3). 이동 범위 제한 없음 | 화면 로컬 state `selectedYear` |
+| 3 | 하단 유형별 월별 그래프 | x축 = 1~12월 고정 12눈금. 유형(계열) N개 → **선(polyline) N개**. 계열 `cid` 의 m월 점 = `months[m-1].byCategory[cid] ?? 0` (m = 1..12). 유형별 색 = `CategoryService.list()` 의 `color`. 범례 = 그 연도에 등장한 유형 이름 목록(텍스트 라벨 + 색 스와치) | `statisticsViewModel.aggregateYear(yearRows, categories, monthBoundaries)` — `findInRange(yearStartTs, yearEndTs)` cursor 루프 결과 (**v1.13: 반환 형태 불변, 시각화만 교체**) |
+
+#### 하단 그래프 렌더 — 선(line) 그래프 (v1.13, 막대 → 선 교체)
+
+plan v1.7 §F-23(line 604/784)이 그래프의 구체 형태를 Architect 위임으로 규정했고, 요구 불변 3요건(① 유형별 구분 ② x축 1~12월 ③ 선택 1개 연도)은 선 그래프로 그대로 충족한다. **집계는 §7.2 그대로** — `aggregateYear` 결과(`YearAggregate`)만 소비하고 뷰모델 시그니처·반환 형태를 바꾸지 않는다.
+
+- **렌더 수단 = `react-native-svg` 15.x 재사용(신규 npm 의존성 0)**. F-17 브랜드 인디케이터가 이미 도입·pod 설치한 라이브러리(overview 「주요 기술 결정」 #9, 기술 스택 표). 근거: 다중 계열 꺾은선은 월 사이를 잇는 **대각 선분**이 필요한데 순수 `<View>` 로는 계열당 11개 회전 `<View>` 세그먼트(서브픽셀 이음새·조인 캡 불가·유형 수만큼 배증)로만 흉내낼 수 있어 가독성·정확도가 떨어진다. `Svg > Polyline`(계열당 1개) 은 정적 1회 레이아웃으로 깔끔하게 그려진다. 폐기안: 순수 `<View>` 세그먼트(위 사유), 신규 차트 라이브러리(`victory-native`/`react-native-chart-kit`/`gifted-charts` — 정적 12점에 과함·신규 네이티브 표면, plan §F-23 비범위·overview #9 와 배치).
+- **SVG 구성 요소**: 계열당 `<Polyline points=... stroke={colorOf(cid)} strokeWidth≈2 fill="none" strokeLinejoin="round" strokeLinecap="round" />`. 건수 > 0 인 점마다 `<Circle r≈3 fill={colorOf(cid)} />` 마커(0 인 점은 마커 생략 — baseline 군집 시 잡음 축소). 축·눈금·베이스라인·수평 그리드는 `<Line>`, y축 눈금 숫자·월 숫자 레이블은 화면 하단 RN `<Text>` 행(현행 `colLabel` 유지) 또는 `<Text>`(svg). 축/그리드/눈금은 **필요 시**(plan 은 3요건만 요구) — 최소 구현은 12월 x레이블 + 0/최댓값 y레이블로 충분.
+- **좌표 매핑(화면 파생, 순수)**:
+  - x: `x(m) = padLeft + (m - 1) / 11 * plotWidth` (m = 1..12).
+  - y: `yMax = Math.max(1, seriesPointMax)`, `y(v) = padTop + (1 - v / yMax) * plotHeight`.
+  - `seriesPointMax` = `YearAggregate` 로부터 화면이 계산: `max over m in 1..12, cid in seriesCategoryIds of (months[m-1].byCategory[cid] ?? 0)`. **뷰모델에 필드를 추가하지 않는다** — `StatisticsScreen` 내 `useMemo` 또는 (원하면) `statisticsViewModel.ts` 에 **기존 export 를 건드리지 않는 신규 순수 함수** 로만 둘 수 있다. 선 그래프는 계열별 건수를 그리므로 스택 합(`maxBucketTotal`)이 아닌 `seriesPointMax` 를 분모로 써야 세로 공간을 활용한다. `maxBucketTotal` 은 타입에 그대로 남으며(불변), 선 그래프 필수 사용은 아니다.
+- **다중 계열 / 색 / 범례**: 계열 = `seriesCategoryIds`(그 연도 등장 유형, `CategoryService.list()` 순서 — 미상 id 는 뒤; §7.2.2 그대로). 색 = `colorOf(cid) = catMap.get(cid)?.color ?? UNKNOWN_CATEGORY_COLOR`(현행 유지). 범례 = 계열별 텍스트 라벨(`labelOf(cid)`) + 색 스와치(현행 유지, 색만으로 구분하지 않음).
+- **0개·1개 데이터 포인트 처리**:
+  - `aggregateYear` 는 12개월 버킷을 항상 초기화하므로 **모든 계열은 12개 점을 갖는다**(결측 없음). 특정 월의 건수 0 은 "결측"이 아니라 "그 달 그 유형 0건"이라는 실제 값 → baseline(y=0)의 실점으로 두고 선을 끊지 않고 연결한다.
+  - 어떤 계열이 딱 한 달만 비영(예: 3월만 2건)이면 baseline → 정점 → baseline 스파이크로 그려지고, 비영 점의 `<Circle>` 마커로 단독 값이 시각적으로 드러난다.
+  - `seriesCategoryIds` 가 비면(그 연도 배정 행 0) `statisticsEmptyState='no-year-data'` 분기가 먼저 잡아 그래프 자체를 그리지 않는다(아래 빈 상태 표 — 불변).
+- **선 겹침 / 가독성**: 유형별 고유 색 + 비영 점 마커 + 범례로 구분한다. 범례 토글·계열 하이라이트·툴팁은 범위 밖(OI-23) — 다수 계열이 baseline 부근에서 겹치는 것은 알려진 한계로 수용(스크린리더 경로는 데이터 요약 `<Text>` 가 값을 정확히 전달 — 아래 접근성).
+- **애니메이션·인터랙션 없음**(OI-23): 진입/변경 트랜지션, 범례 토글, 월·유형 탭 시 목록 이동, 스크롤/줌 모두 없음. 정적 1회 렌더.
+- **유형 색상**: `CATEGORY.COLOR`(P-34) 재사용. 사용자 색상 편집 UI 없음(D-08).
+
+#### 상태 소유
+
+- `selectedYear: number` — 화면 로컬 `useState`. 마운트 시 `currentYear(clock.now(), clock.timeZone())`. **영구 저장 안 함** — `APP_SETTING`·Zustand·파일 어디에도 쓰지 않음(P-45 유사, `bindings.ts` `SETTING_KEYS` 무변경). 탭 이탈·앱 재시작 시 올해로 리셋.
+- 집계 결과(카드 수치, 월 버킷 배열, 유형 목록)도 화면 로컬 state. 신규 store 슬라이스 없음.
+
+#### 데이터 로딩
+
+- `useFocusEffect` 로 화면 진입·복귀마다 `load()`:
+  1. `loadTotals()` — `findInRange(0, Number.MAX_SAFE_INTEGER, undefined, 'startAt', STATISTICS_PAGE_SIZE, cursor)` 를 `nextCursor` 소진까지 루프해 전건 수집 → `aggregateTotals`.
+  2. `loadYear(selectedYear)` — `monthBoundaries(selectedYear, tz)` 계산 → `findInRange(boundary[1], boundary[13], …)` 루프 → `aggregateYear`.
+- 연도 화살표 조작 → `setSelectedYear` → `loadYear(next)` 만 재실행(상단 카드 유지 — D-21(a) / R-23-2 / AC-70 / AC-72). 연속 조작은 `loadSeq` 토큰으로 stale 응답 폐기(§7.1 `isFreshLoadSequence` 재사용 가능).
+- pull-to-refresh → `load()` 전체.
+
+#### 빈 상태 / 예외 분기 (E-23-1 ~ E-23-5)
+
+`statisticsViewModel.statisticsEmptyState(allRowsLen, categoriesMeaningful, yearRowsLen, loadError)` →
+
+| 반환 | 화면 |
+| --- | --- |
+| `'load-error'` | 카드·그래프 영역에 재시도 버튼(E-23-4). F-17 인디케이터 `endReason='error'` 로 제거 후 에러 UI. 탭 이동은 정상 |
+| `'no-data'` (전건 0) | 카드 "0" / "0", 그래프 영역 "표시할 데이터가 없습니다"(E-23-1) |
+| `'no-categories'` ("기타"만 · 분류 의미 없음) | 그래프 영역 "분류할 유형이 없습니다"(E-23-2). E-23-1/E-23-3 과 통합 표시 가능 |
+| `'no-year-data'` (전건 > 0, 선택 연도 행 0) | **카드 수치 유지**(D-21(a)), 그래프 영역만 "해당 연도에 일정이 없습니다"(E-23-3). 화살표로 다른 연도 이동 가능 |
+| `'ok'` | 카드 + 그래프 정상 렌더 |
+
+- **삭제된 유형(E-23-5)**: 뷰모델은 행의 **현재 `categoryId`** 만 사용. F-06 E-06-2 로 삭제 유형의 일정은 이미 system default("기타")로 재지정되어 있으므로 "기타" 계열로 합산되고, 삭제된 유형 이름은 계열/범례에 나타나지 않는다(P-57 / AC-74).
+- **이름변경(R-23-4 / AC-75)**: 계열 키 = `categoryId`, 라벨 = `CategoryService.list()` 의 현재 `name` → 재진입·pull-to-refresh 시 새 이름으로 표시. 일정-유형 참조는 그대로.
+
+#### F-17 로딩 인디케이터 (§16.9.8 #6, OI-26)
+
+- `load()` 진행 중 콘텐츠(카드·그래프) 영역에 `<BrandLoadingIndicator variant="inline" />` 1개만 마운트(E-17-8). 탭 헤더·연도 컨트롤은 유지. 실패 시 `endReason='error'` → 즉시 제거 + 재시도 UI(E-23-4).
+
+#### 접근성 (NFR-08, `nfr.md` §16)
+
+- **주 스크린리더 경로 = 그래프 영역의 데이터 요약 `<Text>`**(예: "2026년 · 3월 업무 2건, 취미 1건 · 7월 업무 1건")로 색·시각에 비의존적으로 전 값을 전달한다. 이 요약 텍스트의 생성 로직·문구·값은 v1.13(막대→선)에서 **불변**이다 — 월/유형/건수 정보 그대로. RN 에서 `react-native-svg` 하위 요소의 접근성 노출은 제한적이므로, 비영 데이터 포인트(`<Circle>`)의 `accessibilityLabel`("{month}월 {유형명} {n}건")은 best-effort 보조로만 둔다(요약 `<Text>` 가 보장 경로).
+- 카드에 `accessibilityLabel`("총 할 일 42건" / "완료된 건수 30건"). 범례 항목은 텍스트 라벨 + 색 스와치.
+- 선 그래프는 정적 렌더(진입/변경 애니메이션 없음, OI-23) → Reduce Motion 영향 없음. 향후 애니메이션을 넣는다면 `AccessibilityInfo.isReduceMotionEnabled()` 시 최종 상태 즉시 렌더(F-17 §13 / §15.6 정책과 동일).
+
+#### bindings.ts
+
+- `SCREEN_BINDINGS` 에 `StatisticsScreen` 추가 — `reads: [{ service: 'schedules', method: 'findInRange' }, { service: 'categories', method: 'list' }]`, `writes: []`, `invalidates: []`. `SearchScreen` 항목은 유지(Stack 화면으로도 유효). `SETTING_KEYS` 무변경(선택 연도 비영속).
+- `routes.ts`: `TAB_ROUTES.Search`(`'SearchTab'`) → `Statistics`(`'StatisticsTab'`); `STACK_ROUTES` 에 `Search`; `TabParamList` `SearchTab` → `StatisticsTab: undefined`; `RootStackParamList` 에 `Search: { initialQuery?: string } | undefined`.
+
 ### 16.4 앱 라이프사이클 → 부트스트랩 (logic §12의 RN 실체화)
 
 ```text
@@ -1379,6 +1577,7 @@ mode='spinner'    : <ActivityIndicator/>  (OS 표준)
 | 3 | Calendar 월/기간 전환 로딩 | `CalendarScreen.tsx` | `inline` | `loadingMonth` 신규 state (`load()` 래핑) | 그리드 영역 오버레이. 월 헤더·이동 컨트롤·피커는 계속 조작 가능(F-17 위치 #3) |
 | 4 | Search 결과 로딩 | `SearchScreen.tsx` | `inline` | `searching` 신규 state (`search.search()` 래핑) | `startActivity="search"`. 디바운스(250ms) + 지연 게이트(200ms)로 빠른 질의 깜빡임 방지(E-17-3, AC-32) |
 | 5 | 대량 캘린더 동기화 | `SettingsScreen.tsx` | — | — | **사용 안 함**(F-17 위치 #5). 기존 진행률 표시 유지 — 본 인디케이터로 진행률 대체 금지 |
+| 6 | 통계 화면 집계 로딩 (v1.12, OI-26) | `StatisticsScreen.tsx` | `inline` | `loading` 신규 state (`load()`/`loadYear()` 래핑) | 콘텐츠(카드·그래프) 영역만 대체. 탭 헤더·연도 선택 컨트롤 유지. `endReason='error'` 시 즉시 제거 + 재시도 UI(E-23-4). 화면당 1개(E-17-8). plan OI-26 = F-17 「노출 위치」 표 "Search 결과 로딩"(#4)은 `SearchScreen` 잔존으로 유지, 통계는 #6 로 추가 |
 
 - 화면은 `try/finally` 로 loading 플래그를 내리고, 실패 시 `endReason="error"` 전달 → 인디케이터 즉시 제거 후 해당 화면의 에러/재시도 UI 표시(E-17-7, AC-38, 기존 E-02-2 규칙과 결합).
 - `onRetry` = 해당 화면 `load()`/`runSearch()` 재호출. `onCancel` = 대기 중단하고 마지막 캐시/빈 상태 표시.
@@ -1459,7 +1658,7 @@ mode='spinner'    : <ActivityIndicator/>  (OS 표준)
 | RN 의 watchOS 지원 | RN 은 watchOS UI 를 렌더하지 않음. `react-native-watch-connectivity` 는 **iOS 쪽 `WCSession` 브리지만** 제공(워치에 JS 런타임 없음) | 커뮤니티 현황. Hermes-on-watchOS 임베드는 비표준·중량 → 폐기 |
 | `src/core` 재사용 | watchOS 확장에서 순수 TS 실행 불가 → **코드 공유 아님**. 워치 앱은 Swift 로 축소 읽기 모델 재구현 | watchOS 런타임 제약 |
 | 공유 자산 | (1) 페이로드 스키마(§17.3), (2) 시각 표현 `epoch ms + IANA tz`(P-39), (3) 상태 표시 규칙(§7.6 — 지남/미완료 구분) | NFR-10 "스키마·동기화 규약을 코어 계층에서 공유" = 계약 수준으로 충족 |
-| 워치 앱 구현 | `ios/TodayWhatWatch` (WatchKit App, SwiftUI, watchOS 10+): 오늘 목록·완료 토글·요약 헤더·다음 예정 1건·빈 상태(E-19-5)·"최신 아님"(E-19-1)·"동기화 대기"(D-11) 배지 / `WCSessionDelegate` / 로컬 스냅샷·보류 큐 파일 / LWW(§17.6) | F-19 표시 요소·상호작용 |
+| 워치 앱 구현 | `ios/TodayWhatWatch` — **단일 타깃 watchOS 앱**(SwiftUI `App` 라이프사이클, watchOS 10.0+): 오늘 목록·완료 토글·요약 헤더·다음 예정 1건·빈 상태(E-19-5)·"최신 아님"(E-19-1)·"동기화 대기"(D-11) 배지 / `WCSessionDelegate` / 로컬 스냅샷·보류 큐 파일 / LWW(§17.6). **v1.14 에서 구현 착수** — 타깃·Info.plist·임베드·스킴·Swift 파일 레이아웃은 §17.11 | F-19 표시 요소·상호작용 |
 | 워치 상호작용 범위 | (a) 오늘 목록 조회, (b) 개별 최소 상세, (c) 완료/미완료 토글, (d) 수동 새로고침 **4종만**(P-43). 생성·수정·삭제·스누즈·검색·유형 관리·설정/테마/캘린더 변경 진입점 없음 — 있으면 "폰에서 계속" 안내만(§17.9 E-19-2) | P-43, AC-51 |
 | 번들링/브리지 경계 | 폰: `src/core/watchSync/**`(순수) + `WatchSyncService`(폰측 조정) + `WatchSyncGateway` 포트 ↔ `WatchConnectivityGateway`(iOS 어댑터) ↔ **WCSession** ↔ 워치 Swift 앱. `src/core/watchSync` 는 `react-native` 미import(테스트는 `node:test`) | §16.9.2 계층 규칙과 동일 원칙 |
 
@@ -1629,3 +1828,131 @@ function resolveToggleLWW(op: WatchToggleOp, schedule: Schedule):
 | AC-54 워치 빈 상태 | §17.9 E-19-5 — 안내만, 추가 버튼 없음 |
 | AC-55 Wear OS 제외 | Android 어댑터 no-op, Wear 모듈 미생성(P-44). overview 영향 범위 |
 | AC-56 워치 컴플리케이션(D-10 결정 시) | §17.8 조건부 섹션 — "포함" 시 "오늘 남은 일정 수" 1종, 탭 시 앱 실행 |
+
+---
+
+### 17.11 watchOS 앱 타깃 구성 — 구현 착수 (N-11 해소 방향) — v1.14
+
+§17.1~§17.10 이 정의한 워치 앱을 **Xcode 프로젝트에 실제로 추가하고 Swift 로 구현**하기 위한 구체 설계다. 폰 측(TS)은 v1.9 에서 이미 완성 — 이 절의 산출물은 전부 `ios/` 네이티브 타깃과 `ios/TodayWhatWatch/**` Swift 소스뿐이며 **공유 페이로드 계약(§17.3/§17.4)·`src/core/**`·`src/app/**`·DB·포트는 무변경**이다.
+
+#### 17.11.1 Xcode 타깃 구성
+
+| 항목 | 결정 | 근거 |
+| --- | --- | --- |
+| 타깃 이름 / product name | `TodayWhatWatch` | 기존 설계 문서·`nfr.md` §11.2·어댑터 주석의 `-scheme TodayWhatWatch` 참조와 일치 |
+| 타깃 형태 | **단일 타깃 watchOS 앱** — SwiftUI `App` 라이프사이클(`@main struct TodayWhatWatchApp: App`) + `@WKApplicationDelegateAdaptor`. 레거시 "WatchKit App + WatchKit Extension" 2-타깃 구조는 **채택하지 않음** | Xcode 14+ 는 단일 watchOS 앱 타깃이 표준(2-타깃 템플릿 제거·`WKExtension` 디프리케이트). 빌드 산출물 1개, 익스텐션 프로세스 경계 없음, `WCSessionDelegate` 를 앱 델리게이트에서 직접 구현 |
+| 배포 타깃 | **watchOS 10.0** | 설치된 시뮬레이터(Apple Watch Series 11 / SE 3 / Ultra 3, watchOS 26.2)가 전부 초과. 기존 문서 표기 "watchOS 10+"·§17.8 WidgetKit 컴플리케이션(watchOS 9+)과 정합. SwiftUI `App` 라이프사이클·`ScrollView`·`.refreshable` 모두 10.0 에서 가용 |
+| Swift 버전 | 5.9+ (`SWIFT_VERSION = 5.0` 이상, repo iOS 타깃과 동일 계열) | 기존 iOS 타깃 계승 |
+| 번들 식별자 | 워치 앱 = `kr.purpledog.todaywhat.watchkitapp` (iOS 앱 `kr.purpledog.todaywhat` 의 하위) | companion 앱 관례. iOS 앱 번들 ID 를 접두로 가져야 OS 가 페어링을 인식 |
+| Info.plist 키 (워치 앱) | `WKApplication = <true/>`(단일 타깃 마커), `WKCompanionAppBundleIdentifier = kr.purpledog.todaywhat`, `CFBundleDisplayName = 오늘뭐해`, `CFBundleIdentifier = $(PRODUCT_BUNDLE_IDENTIFIER)`, `CFBundleShortVersionString`/`CFBundleVersion` = iOS 앱과 동기, `WKRunsIndependentlyOfCompanionApp = <false/>`(데이터가 폰에서 옴). 네트워크 미사용 → `NSAppTransportSecurity` 불요, 권한 설명(NS*UsageDescription) 불요 | WCSession companion 요구, 최소 표면 |
+| 코드 서명 (시뮬레이터) | `CODE_SIGN_STYLE = Automatic`, `DEVELOPMENT_TEAM` 미설정(기존 iOS 타깃과 동일), 시뮬레이터 빌드는 `CODE_SIGNING_ALLOWED = NO` 로 서명 생략. 실기기 서명은 후속(N-11 잔여) | 시뮬레이터는 서명 불필요. 기존 iOS 타깃도 팀 없이 시뮬레이터 빌드 중 |
+| iOS 앱에 임베드 | iOS 앱(`TodayWhat`) 타깃에 **"Embed Watch Content"** `PBXCopyFilesBuildPhase`(dstSubfolderSpec = `Watch`, 대상 = `TodayWhatWatch.app`) + `PBXTargetDependency`(iOS→워치) 추가. `TARGETED_DEVICE_FAMILY = 4`(워치 타깃) | 표준 임베드. iOS 앱 설치 시 페어드 워치에 워치 앱 자동 배포 |
+| 스킴 | 공유 스킴 `TodayWhatWatch`(`xcshareddata/xcschemes/TodayWhatWatch.xcscheme`) — Build 에 워치 타깃, Run/Test 액션은 워치 앱. `xcodebuild -scheme TodayWhatWatch` 로 워치 앱(+컨테이너 iOS 앱)을 빌드 | `nfr.md` §11.2 / 어댑터 주석의 명령과 일치. 공유 플래그로 CI·타 개발자 재현 |
+| 컴플리케이션(D-10) | **이번 델타 범위 아님(선택)** — §17.8 조건부 설계 유지. 포함 확정 시 별도 `TodayWhatWatchComplication` WidgetKit 확장 타깃. 스크린샷 검증(오늘 목록)에는 불필요 | D-10 게이트 OPEN 유지 |
+
+#### 17.11.2 pbxproj 편집 방식 · CocoaPods 상호작용
+
+- **pbxproj 편집** — `project.pbxproj` 를 손으로 편집하지 않는다(UUID·빌드 페이즈 순서·`PBXContainerItemProxy` 취약). 두 방식 중 택1:
+  1. **`xcodeproj` Ruby gem 스크립트**(권장) — `ios/scripts/add_watch_target.rb`. `Xcodeproj` 로 워치 네이티브 타깃 생성, Sources/Resources/Frameworks 빌드 페이즈, iOS 타깃의 Embed Watch Content 페이즈 + 의존성, 빌드 설정, 공유 스킴을 **멱등**으로 추가. `xcodeproj` gem 은 CocoaPods 의존으로 이미 설치되어 있음(`Podfile.lock` 참조).
+  2. **Xcode GUI 1회**(File ▸ New ▸ Target ▸ Watch App) 후 결과 `project.pbxproj` + 스킴을 커밋. 이후 재현은 커밋된 파일로.
+  - 이 파일 변경은 Xcode 프로젝트 정의이며 CI/CD 파이프라인·IaC 가 아니다 — Developer 작업 범위.
+- **CocoaPods** — 워치 타깃을 `ios/Podfile` 에 **추가하지 않는다**. RN 관련 Pod(`hermes-engine`, `React-Core`, `RNSVG`, `op-sqlite`, `RNCalendarEvents`, `AppAuth`, `RNKeychain`, `react-native-watch-connectivity` 의 iOS 브리지 등)은 전부 iOS 전용이며 watchOS 링크 시 빌드 불가. 워치 타깃은 **시스템 프레임워크만** 링크: `WatchConnectivity`, `SwiftUI`, `Foundation`, (D-10 시) `WidgetKit`. `Pods-TodayWhat*` xcconfig 를 워치 타깃 빌드 설정에 상속시키지 않는다.
+- **워크스페이스** — 기존 `ios/TodayWhat.xcworkspace` 를 그대로 사용(별도 `.xcworkspace` 신설 없음). 워치 타깃은 `TodayWhat.xcodeproj` 안에 생성되고, 이 프로젝트는 이미 워크스페이스에 포함되어 있다.
+- `react-native-watch-connectivity` 는 **iOS 앱 타깃에만** autolink 되어 `WCSession` 브리지(폰 측)를 제공한다. 워치 앱은 이 패키지를 쓰지 않고 순수 Swift `WCSession` 을 직접 다룬다.
+
+#### 17.11.3 Swift 모듈 / 파일 레이아웃 (`ios/TodayWhatWatch/`)
+
+| 파일 | 책임 |
+| --- | --- |
+| `TodayWhatWatchApp.swift` | `@main` 엔트리. `@WKApplicationDelegateAdaptor(AppDelegate.self)`, 루트 `TodayView`. `@StateObject var connectivity = WatchConnectivityService()` 를 환경에 주입 |
+| `WatchConnectivityService.swift` | `NSObject, WCSessionDelegate, ObservableObject`. `WCSession.default.delegate = self; activate()`. 수신: `didReceiveApplicationContext` / `didReceive message` / `didReceiveUserInfo` → 봉투 `type` 분기(`snapshot` → 디코드·저장·`@Published snapshot` 갱신·`ackedOpIds` 로 보류 큐 정리 / `ack` → `opId` 로 보류 큐 제거). 송신: `requestSnapshot`(pull-to-refresh·포그라운드 진입), `toggle` op(`isReachable` ? `sendMessage` : `transferUserInfo`). `@Published isStale`(activation 미완 or 마지막 `applicationContext` 수신이 오래됨), `@Published pendingCount` |
+| `Models.swift` | `Codable` 구조체 — `WatchScheduleItem`, `WatchSnapshot`, `WatchToggleOp`, 봉투 `WatchEnvelope`(`type: String`, 페이로드). **`src/core/watchSync/types.ts` 를 필드명·타입까지 1:1 미러**(§17.11.4). `UpcomingRef`(= `nextUpcoming`) 별도 구조체 |
+| `SnapshotStore.swift` | 마지막 `WatchSnapshot` 을 앱 컨테이너(`FileManager` `Application Support`) JSON 파일 1개로 저장/로드. 쓰기 시 `try data.write(to:, options: [.atomic, .completeFileProtection])`. 앱 실행 시 로드 → 오프라인 초기 렌더(E-19-1) |
+| `PendingQueue.swift` | `WatchToggleOp` FIFO 큐를 JSON 파일 1개로 영속(`.completeFileProtection`). `enqueue(op)`(낙관적 토글 시), `remove(opId:)`(ack 수신 시), `all()`(재전송·배지 카운트). 앱 재시작에도 유지(E-19-1) |
+| `LWW.swift` | `resolveToggleLWW(op:schedule:)` 의 **Swift 미러**(§17.6, 3줄 로직). 용도 = 새 스냅샷 수신 시 아직 ack 안 된 보류 op 에 대해 "스냅샷이 이미 반영/추월했는지" 낙관적 판정(폰이 최종 권위 — 워치는 표시 일관성용). `schedule.updatedAt <= op.baseUpdatedAt` → 유지, 그 외 `op.watchChangedAt > schedule.updatedAt` 비교 |
+| `TodayView.swift` | 루트 화면. 요약 헤더(완료/미완료 카운트 = `snapshot.summary`), 다음 예정 1건 행(`snapshot.nextUpcoming`), 오늘 목록(`snapshot.today`, 시작시각 오름차순 = 이미 정렬됨), 빈 상태(`today.isEmpty` → "오늘 일정이 없습니다", **추가 버튼 없음** E-19-5), `isStale` → 목록 흐리게 + "최신 아님" 배지(E-19-1), `pendingCount > 0` → 상단 "동기화 대기" 배지(D-11). `.refreshable { connectivity.requestSnapshot() }`(수동 새로고침 P-43(d)). `snapshot == nil && 페어링만 됨` → `NotConfiguredView`(E-19-2) |
+| `ScheduleRow.swift` | 1행: 제목, 시작 시각(= `Date(timeIntervalSince1970: startAt/1000)` 를 `TimeZone(identifier: item.timeZone)` 로 로컬 포맷 — P-39 "표시 시점에만 변환"), 유형 색 점 + 라벨, `isHighPriority` 표식, 완료 토글 버튼. 탭 시 **낙관적** 로컬 토글(`item.isDone` 반전) + `PendingQueue.enqueue` + `connectivity.sendToggle(op)`. §7.6 지남/미완료 표시 규칙 재현(시작 경과 & 미완료 → 구분 스타일) |
+| `NotConfiguredView.swift` | E-19-2 — "폰 앱에서 설정을 완료해 주세요" 안내만. 목록·토글 UI 미표시 |
+| `Assets.xcassets` | 워치 앱 아이콘 세트 + AccentColor. 브랜드 오리 로딩 애니메이션 **미포함**(E-17-6 — 워치 표준 로딩) |
+| `AppDelegate.swift` | `WKApplicationDelegate` — `applicationDidBecomeActive` 에서 `connectivity.requestSnapshot()`(D-09 (b) 포그라운드 진입) |
+
+- **완료 토글 op 생성**: `WatchToggleOp(opId: UUID().uuidString.lowercased(), scheduleId: item.id, done: !item.isDone, watchChangedAt: nowEpochMs(), baseUpdatedAt: item.updatedAt)`. `nowEpochMs()` = `Int64((Date().timeIntervalSince1970 * 1000).rounded())` — **정수**(§17.11.4).
+- **전송 폴백**: `session.isReachable` → `session.sendMessage(envelope, replyHandler:)`(즉시·수신확인), 실패/`!isReachable` → `session.transferUserInfo(envelope)`(FIFO 보장). op 은 ack 수신 전까지 `PendingQueue` 에 잔류(E-19-1).
+- **ack 처리**: (a) `didReceiveUserInfo` 의 `{type:'ack', opId, result}`, (b) 다음 `WatchSnapshot.ackedOpIds` 배열 — 둘 중 먼저 오는 것으로 `PendingQueue.remove(opId:)`.
+
+#### 17.11.4 페이로드 계약 바인딩 (단일 출처 → Swift)
+
+- **단일 출처(Source of Truth)**:
+  - 타입·상수: `src/core/watchSync/types.ts` — `WatchSnapshot`, `WatchScheduleItem`, `WatchToggleOp`, `WATCH_SNAPSHOT_MAX_ITEMS = 200`, `WATCH_APPLIED_OPS_KEY`, `WATCH_APPLIED_OPS_MAX`.
+  - 파싱·검증·봉투: `src/app/adapters/watch/watchMessage.ts` — `parseToggleOp`, `classifyInboundMessage`, `WATCH_UUID_RE`(소문자 RFC-4122).
+  - 직렬화 특이사항: `src/app/adapters/watch/WatchConnectivityGateway.native.ts` — `toPlistSafe()` 가 **null/undefined 키를 재귀 제거**(WCSession plist 는 NSNull 불가) 후 `{ type: 'snapshot', payload }` 봉투로 `updateApplicationContext` + (도달 시) `sendMessage`. ack 는 `{ type: 'ack', opId, result }` `transferUserInfo` + 다음 스냅샷 `ackedOpIds`.
+- **필드 1:1 매핑 의무** (Swift `CodingKeys` = TS 필드명 그대로, camelCase):
+
+  | TS (`WatchScheduleItem`) | Swift | 주의 |
+  | --- | --- | --- |
+  | `id: number` | `id: Int` | 양의 정수 |
+  | `title: string` | `title: String` | 원제목(§13.9 — 알림 마스킹 P-10-1 과 무관) |
+  | `startAt: number` | `startAt: Int64` | **epoch milliseconds(UTC)**, 초 아님 (P-39). 표시 시 `/1000` |
+  | `timeZone: string` | `timeZone: String` | IANA(예: `Asia/Seoul`). 표시 시점에만 로컬 변환 |
+  | `categoryLabel` / `categoryColor` | `String` / `String` | 삭제·미존재 유형 → 폰이 이미 "기타"·시스템 색으로 매핑(E-19-4). 워치는 받은 값 그대로 표시 |
+  | `isHighPriority: boolean` | `isHighPriority: Bool` | "높음"만 표식 |
+  | `isDone: boolean` | `isDone: Bool` | |
+  | `doneAt: number \| null` | `doneAt: Int64?` | **null 가능 → 폰이 키 제거** → `decodeIfPresent`(키 부재 = `nil`) |
+  | `updatedAt: number` | `updatedAt: Int64` | `SCHEDULE.UPDATED_AT`. 토글 op 의 `baseUpdatedAt` 로 되돌려 보냄(§17.6) |
+
+  | TS (`WatchSnapshot`) | Swift | 주의 |
+  | --- | --- | --- |
+  | `builtAt`, `dayStart`, `dayEnd` | `Int64` | epoch ms |
+  | `today: WatchScheduleItem[]` | `[WatchScheduleItem]` | 이미 시작시각 오름차순·최대 200건(폰이 절단) |
+  | `truncated: boolean` | `Bool` | true 면 "일부만 표시" 안내 가능(선택) |
+  | `nextUpcoming: {...} \| null` | `UpcomingRef?` | **null 가능 → 키 제거** → `decodeIfPresent`. 필드 = `id`,`title`,`startAt`,`timeZone` |
+  | `summary: { done, notDone }` | `Summary`(`done: Int`, `notDone: Int`) | 헤더 카운트·(D-10) 컴플리케이션 |
+  | `ackedOpIds: string[]` | `[String]` | 보류 큐 정리 키. 빈 배열 가능 |
+
+  | TS (`WatchToggleOp`) | Swift | 주의 |
+  | --- | --- | --- |
+  | `opId: string` | `opId: String` | `UUID().uuidString.lowercased()` — `WATCH_UUID_RE` 통과해야 폰이 수용(§13.9) |
+  | `scheduleId: number` | `scheduleId: Int` | `Number.isInteger`, > 0 |
+  | `done: boolean` | `done: Bool` | 엄격 boolean |
+  | `watchChangedAt: number` | `watchChangedAt: Int64` | **정수** epoch ms(`Number.isInteger` 강제 — `.rounded()` 필수) |
+  | `baseUpdatedAt: number` | `baseUpdatedAt: Int64` | 워치가 받은 스냅샷 항목의 `updatedAt` 그대로 |
+
+- **봉투(envelope)**: 송/수신 모두 `{ "type": <String>, "payload": <Object> }` 형태. 워치 → 폰 타입 = `"toggle"`(payload = op), `"requestSnapshot"`(payload 없음). 폰 → 워치 타입 = `"snapshot"`(payload = `WatchSnapshot`), `"ack"`(평탄 — `opId`,`result` 가 최상위, §17.2 어댑터 `transferUserInfo({ type:'ack', opId, result })`). `classifyInboundMessage` 는 `type==='toggle'` 이 아닌 미지 타입을 조용히 무시하므로, 워치도 미지 `type` 은 무시한다.
+- **범위 준수(P-40)**: 워치는 위 표 필드 **외에는 아무 것도 보내지 않는다**. 메모·이력·유형 전체정의·계정·토큰·알림 상태는 송수신 양방향 모두 계약에 없음.
+- **버전 스큐 방어**: Swift 디코딩은 알 수 없는 키 무시(기본), 필수 키 누락 시 그 항목만 drop + 로그(전체 스냅샷 폐기 금지). `WATCH_SNAPSHOT_MAX_ITEMS`·`WATCH_APPLIED_OPS_*` 상수는 폰이 강제 — 워치는 신뢰만 하고 재검증 안 함.
+
+#### 17.11.5 빌드 · 실행 · 스크린샷 검증 절차 (이번 릴리스 범위 — N-11 해소)
+
+> Metro 의 cwd 패치는 **iOS 앱의 JS 번들 dev 서버 전용**이다. `TodayWhatWatch` 는 JS/Metro 를 쓰지 않는 순수 네이티브 Swift 앱이므로 영향받지 않는다. iOS 호스트 앱은 여전히 Metro 로 JS 를 로드하지만, 워치 앱은 오직 WCSession 스냅샷으로만 렌더한다.
+
+1. **Pod 설치**(워치 타깃은 Podfile 밖 — 변화 없음):
+   `cd ios && pod install`
+2. **워치 시뮬레이터 확인**:
+   `xcrun simctl list devices | grep -i watch` → Apple Watch Series 11 / SE 3 / Ultra 3 (watchOS 26.2)
+3. **워치 앱 빌드**(컨테이너 iOS 앱 포함):
+   `xcodebuild -workspace ios/TodayWhat.xcworkspace -scheme TodayWhatWatch -configuration Debug -destination 'platform=watchOS Simulator,name=Apple Watch Series 11 (46mm)' -derivedDataPath ios/build build`
+   → `** BUILD SUCCEEDED **`, `Debug-watchsimulator/TodayWhatWatch.app` 산출.
+4. **페어드 시뮬레이터 부팅**(Xcode 가 iPhone+Watch 페어를 자동 생성; 없으면 `xcrun simctl pair`):
+   `xcrun simctl list pairs` 로 페어 확인 → `xcrun simctl boot "iPhone 16 Pro"` + `xcrun simctl boot "Apple Watch Series 11 (46mm)"` → `open -a Simulator`
+5. **iOS 앱 설치·실행**(임베드된 워치 앱이 페어드 워치에 자동 배포):
+   `xcrun simctl install "iPhone 16 Pro" ios/build/Build/Products/Debug-iphonesimulator/TodayWhat.app`
+   `xcrun simctl launch "iPhone 16 Pro" kr.purpledog.todaywhat`
+   (자동 배포가 안 되면 `xcrun simctl install "Apple Watch Series 11 (46mm)" ios/build/Build/Products/Debug-watchsimulator/TodayWhatWatch.app`)
+   `xcrun simctl launch "Apple Watch Series 11 (46mm)" kr.purpledog.todaywhat.watchkitapp`
+6. **오늘 일정 준비**: iOS 앱 UI 에서 오늘자 일정 1건 이상 생성(대시보드에 표시 확인). 폰이 `dashboard` store 무효화 시점에 `WatchSyncService.pushSnapshot()` → `updateApplicationContext` 전송. 워치 앱 포그라운드에서 pull-to-refresh 하면 `requestSnapshot` → `sendMessage` reply 로 마지막 스냅샷 즉시 수신(전달 지연 회피).
+7. **워치 화면 캡처**:
+   `xcrun simctl io "Apple Watch Series 11 (46mm)" screenshot watch-today.png`
+   → 오늘 목록·요약 카운트가 워치 화면에 렌더됨을 확인(AC-47). 완료 토글 탭 → 낙관적 갱신 + "동기화 대기" 배지 → 폰 대시보드 집계 반영(AC-23/AC-48) 확인.
+
+- **시뮬레이터에서의 WCSession 전달**: 최신 페어드 iPhone+Watch 시뮬레이터는 `updateApplicationContext`/`sendMessage`/`transferUserInfo` 실왕복을 지원한다. 따라서 **실제 라운드트립으로 스크린샷 검증이 가능**하며 별도 디버그 시딩 경로는 필수가 아니다. 단, `updateApplicationContext` 는 상대 앱이 아직 포그라운드에 오지 않았으면 전달이 지연될 수 있으므로, 스크린샷 재현성을 위해 (6)의 pull-to-refresh(`requestSnapshot` → `sendMessage` 동기 reply) 경로를 사용한다. 원하면 Developer 가 `#if DEBUG` 반복 스크린샷용 시드 헬퍼(폰 UI 로 일정 생성)를 둘 수 있으나 **배포물 아님**.
+- **실기기 전용 잔여(후속, `nfr.md` §11.2 / N-11)**: 물리 Apple Watch, 기기 재부팅(`BOOT`) 후 보류 큐·스냅샷 파일 영속, 배터리/지연 특성, 백그라운드 `transferUserInfo` 실기기 전달 타이밍, (D-10 시) 컴플리케이션 타임라인 실기기 갱신.
+
+#### 17.11.6 보안 델타 (§13.9 보완)
+
+§13.9 에 이번 구현 착수분을 반영한다:
+
+- **워치 로컬 파일 보호**: `SnapshotStore` / `PendingQueue` 의 JSON 파일 2개는 `Data.WritingOptions.completeFileProtection`(`NSFileProtectionComplete` 대응)로 저장 — 워치 잠금 시 복호화 불가. 앱 컨테이너 밖(공유·App Group)에 두지 않는다.
+- **코드 서명(시뮬레이터)**: 워치 타깃 시뮬레이터 빌드는 `CODE_SIGNING_ALLOWED = NO`(또는 자동 서명·팀 없음). 서명 자격증명·프로비저닝 프로파일을 저장소에 넣지 않는다. 실기기 서명은 후속.
+- **의존성 표면**: 워치 타깃은 **서드파티 0** — 시스템 프레임워크만. `npm audit`(§13.6) 대상에 워치 추가분 없음. `react-native-watch-connectivity` 1.x 는 iOS 앱 타깃에만(기존).
+- **신뢰 경계 불변**: 워치→폰 op 은 여전히 `parseToggleOp`(§13.9 정수·UUID 계약) + `WatchSyncService` 재조회·dedup·LWW 를 통과. 워치 앱이 Swift 로 재구현되어도 폰 측 검증 지점은 그대로 — 워치를 신뢰하지 않는다.
+- **잔여 위험**: §13.9 표 그대로(잠금 미설정 워치에서 오늘 제목 열람, LWW 근사 유실 N-12). 신규 위협 없음 — 페이로드 범위·전송 채널·검증 지점 모두 v1.9 와 동일.
