@@ -1,7 +1,7 @@
 /**
  * 캘린더 — 금일 기준 월 달력. 연/월 이동 및 피커로 연도·월 검색 (F-02/05, AC-11/12).
  * 날짜 탭 → 그 날짜 일정 목록을 아래에 표시. 항목: 체크박스 + 제목(탭 → 상세).
- * 헤더 우측「+」→ ScheduleEditor 신규 작성 진입 (F-01, logic §16.2).
+ * 헤더 우측: 🔍 → 전역 검색(F-11, v1.12 진입점 이전 D-20(a)/P-54) · 「+」→ ScheduleEditor 신규 작성 (F-01, logic §16.2).
  * 월/기간 전환 로딩 중에는 브랜드 로딩 인디케이터(인라인) 를 그리드 영역에 오버레이 (F-17, logic §16.9.8 #3).
  *   월 헤더·이동 컨트롤·피커는 계속 조작 가능(오버레이 pointerEvents='none').
  * 바인딩: ScheduleService.findInRange / toggleDone → list·dashboard 무효화.
@@ -52,17 +52,27 @@ export function CalendarScreen() {
   const [loadingMonth, setLoadingMonth] = useState(true);
   const [monthError, setMonthError] = useState(false);
 
-  // 헤더 우측「+」— ScheduleEditor 신규 작성 진입 (F-01, logic §16.2, §16.3)
+  // 헤더 우측: 🔍 전역 검색(F-11, v1.12 D-20(a)/P-54) + 「+」ScheduleEditor 신규 작성 (F-01, logic §16.2, §16.3)
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Pressable
-          onPress={() => navigation.navigate(STACK_ROUTES.ScheduleEditor, {})}
-          accessibilityLabel="일정 추가"
-          style={{ paddingHorizontal: 12 }}
-        >
-          <Text style={{ fontSize: 24 }}>+</Text>
-        </Pressable>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Pressable
+            onPress={() => navigation.navigate(STACK_ROUTES.Search)}
+            accessibilityLabel="일정 검색"
+            accessibilityRole="button"
+            style={{ paddingHorizontal: 12 }}
+          >
+            <Text style={{ fontSize: 20 }}>🔍</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => navigation.navigate(STACK_ROUTES.ScheduleEditor, {})}
+            accessibilityLabel="일정 추가"
+            style={{ paddingHorizontal: 12 }}
+          >
+            <Text style={{ fontSize: 24 }}>+</Text>
+          </Pressable>
+        </View>
       ),
     });
   }, [navigation]);

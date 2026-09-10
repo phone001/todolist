@@ -1,7 +1,8 @@
 /**
- * 루트 네비게이터 — Tab(대시보드/캘린더/검색/설정) + Stack(상세/편집/권한).
+ * 루트 네비게이터 — Tab(대시보드/캘린더/통계/설정) + Stack(상세/편집/검색/권한).
  * 알림 탭 → payload 재조회 검증 후 상세 이동(logic v1.1 §16.2, §6, 13.3).
  * 탭 아이콘: todo/goal/statistics/settings.png, opacity 활성1/비활성0.4, onError 폴백(logic v1.5 §16.2).
+ * v1.12: 세 번째 탭 "검색" → "통계"(F-23) 교체. 전역 검색(F-11)은 Stack 화면으로 이전(D-20(a), P-54).
  * 환경 제약: react-navigation / react 의존 → 파이프라인 미실행(정적 리뷰).
  */
 import React, { useEffect, useRef, useState } from 'react';
@@ -15,6 +16,7 @@ import { LINKING_PREFIXES, notificationTarget, parseDeepLink } from './linking.t
 import { useServices } from '../bootstrap/AppContext.tsx';
 import { DashboardScreen } from '../screens/DashboardScreen.tsx';
 import { CalendarScreen } from '../screens/CalendarScreen.tsx';
+import { StatisticsScreen } from '../screens/StatisticsScreen.tsx';
 import { SearchScreen } from '../screens/SearchScreen.tsx';
 import { SettingsScreen } from '../screens/SettingsScreen.tsx';
 import { ScheduleDetailScreen } from '../screens/ScheduleDetailScreen.tsx';
@@ -23,10 +25,11 @@ import { CategoryManagerScreen } from '../screens/CategoryManagerScreen.tsx';
 import { PermissionsScreen } from '../screens/PermissionsScreen.tsx';
 
 // 탭 아이콘 에셋 (logic v1.5 §16.2, P-21: 빌드 타임 번들 포함, 런타임 경로 주입 없음)
+// v1.12: 세 번째 탭 키가 Search → Statistics 로 바뀌었을 뿐, 아이콘 파일 매핑(statistics.png)은 유지(F-16, AC-26).
 const TAB_ICONS = {
   [TAB_ROUTES.Dashboard]: require('../../assets/icons/todo.png') as number,
   [TAB_ROUTES.Calendar]: require('../../assets/icons/goal.png') as number,
-  [TAB_ROUTES.Search]: require('../../assets/icons/statistics.png') as number,
+  [TAB_ROUTES.Statistics]: require('../../assets/icons/statistics.png') as number,
   [TAB_ROUTES.Settings]: require('../../assets/icons/settings.png') as number,
 } as const;
 
@@ -34,7 +37,7 @@ const TAB_ICONS = {
 const TAB_FALLBACK_LABELS: Record<string, string> = {
   [TAB_ROUTES.Dashboard]: '오늘',
   [TAB_ROUTES.Calendar]: '캘린더',
-  [TAB_ROUTES.Search]: '검색',
+  [TAB_ROUTES.Statistics]: '통계',
   [TAB_ROUTES.Settings]: '설정',
 };
 
@@ -86,7 +89,7 @@ function Tabs() {
     >
       <Tab.Screen name={TAB_ROUTES.Dashboard} component={DashboardScreen} options={{ title: '오늘' }} />
       <Tab.Screen name={TAB_ROUTES.Calendar} component={CalendarScreen} options={{ title: '캘린더' }} />
-      <Tab.Screen name={TAB_ROUTES.Search} component={SearchScreen} options={{ title: '검색' }} />
+      <Tab.Screen name={TAB_ROUTES.Statistics} component={StatisticsScreen} options={{ title: '통계' }} />
       <Tab.Screen name={TAB_ROUTES.Settings} component={SettingsScreen} options={{ title: '설정' }} />
     </Tab.Navigator>
   );
@@ -136,6 +139,8 @@ export function RootNavigator() {
         <Stack.Screen name={STACK_ROUTES.Tabs} component={Tabs} options={{ headerShown: false }} />
         <Stack.Screen name={STACK_ROUTES.ScheduleDetail} component={ScheduleDetailScreen} options={{ title: '일정' }} />
         <Stack.Screen name={STACK_ROUTES.ScheduleEditor} component={ScheduleEditorScreen} options={{ title: '일정 편집' }} />
+        {/* v1.12: 전역 검색(F-11) — Tab → Stack 이전(D-20(a), P-54). 내부 로직 무변경. */}
+        <Stack.Screen name={STACK_ROUTES.Search} component={SearchScreen} options={{ title: '검색' }} />
         <Stack.Screen name={STACK_ROUTES.CategoryManager} component={CategoryManagerScreen} options={{ title: '유형 관리' }} />
         <Stack.Screen name={STACK_ROUTES.Permissions} component={PermissionsScreen} options={{ title: '권한' }} />
       </Stack.Navigator>

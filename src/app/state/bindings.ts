@@ -84,8 +84,21 @@ export const SCREEN_BINDINGS: readonly ScreenBinding[] = [
     invalidates: ['list', 'dashboard', 'search'],
   },
   {
+    // v1.12: 전역 검색(F-11)은 Bottom Tab → Native Stack 화면으로 이전했으나(D-20(a), P-54)
+    // 내부 로직·바인딩은 무변경. Stack 화면으로도 이 바인딩이 그대로 유효하다.
     screen: 'SearchScreen',
     reads: [{ service: 'search', method: 'search' }],
+    writes: [],
+    invalidates: [],
+  },
+  {
+    // v1.12 신규: 통계 화면(F-23) — 읽기 전용. 상단 카드·하단 그래프 모두 findInRange 재사용 +
+    // 유형 라벨·색은 categories.list. 쓰기·무효화 없음(logic §7.2 / §16.3.8). 선택 연도는 화면 로컬(비영속).
+    screen: 'StatisticsScreen',
+    reads: [
+      { service: 'schedules', method: 'findInRange' },
+      { service: 'categories', method: 'list' },
+    ],
     writes: [],
     invalidates: [],
   },
