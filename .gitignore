@@ -29,6 +29,10 @@ android/local.properties
 
 # Xcode / CocoaPods
 ios/build/
+ios/build_ios/
+ios/build_ios_verify/
+ios/build_watch/
+ios/build_watch_verify/
 ios/Pods/
 ios/*.xcworkspace
 ios/.xcode.env.local
