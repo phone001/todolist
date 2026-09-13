@@ -4,6 +4,23 @@
  */
 import type { ReminderKind } from './types.ts';
 
+/**
+ * 사전 알림 프리셋(F-08, P-62, D-24, AC-80/AC-81). 자유 오프셋 직접 입력은 범위 밖(D-24).
+ * 정확히 5종 — 전부 선택해도 P-10 사전 알림 최대 5개 상한과 자연히 일치(§0.2 VALIDATION_REMINDER_LIMIT 무변경).
+ */
+export interface ReminderOffsetPreset {
+  minutes: number;
+  label: string;
+}
+
+export const REMINDER_OFFSET_PRESETS: readonly ReminderOffsetPreset[] = [
+  { minutes: 5, label: '5분 전' },
+  { minutes: 10, label: '10분 전' },
+  { minutes: 30, label: '30분 전' },
+  { minutes: 60, label: '1시간 전' },
+  { minutes: 1440, label: '하루 전' },
+];
+
 export interface ReminderDraft {
   kind: ReminderKind;
   offsetMinutes: number;

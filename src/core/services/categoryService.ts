@@ -1,8 +1,10 @@
 /**
  * 카테고리(유형) 관리.
  * 설계 근거: document/architect/logic.md 5. F-06, 예외 E-06-1/E-06-2. V-17.
+ * 5.1: 색상 자동 배정(P-59, E-06-7, AC-77) — v1.15.
  */
 import { AppError, ErrorCodes } from '../domain/errors.ts';
+import { assignCategoryColor, CATEGORY_COLOR_FALLBACK } from '../domain/categoryColor.ts';
 import type { Clock } from '../domain/clock.ts';
 import type { Category } from '../domain/types.ts';
 import type { CategoryRepository, ScheduleRepository, UnitOfWork } from '../ports/repositories.ts';
@@ -25,15 +27,32 @@ export class CategoryService {
     return this.d.categories.list();
   }
 
-  async create(name: string, color = '#8E8E93', icon: string | null = null): Promise<Category> {
+  /**
+   * `color` 가 명시적으로 전달되면 그대로 사용(후방 호환 — 데모/테스트 픽스처).
+   * 생략되면 기존 유형 색상 목록으로 `assignCategoryColor` 를 호출해 자동 배정한다(P-59).
+   * `list()` 조회는 색상 배정에만 필요한 경우에 한해 1회만 수행한다(중복 쿼리 없음).
+   */
+  async create(name: string, color?: string, icon: string | null = null): Promise<Category> {
     const now = this.d.clock.now();
     const trimmed = name.trim();
     if (trimmed.length === 0 || trimmed.length > 30) {
       throw new AppError(ErrorCodes.VALIDATION_TITLE_REQUIRED, '유형 이름은 1~30자여야 합니다.', 'name');
     }
+
+    let assignedColor = color;
+    if (assignedColor === undefined) {
+      const existing = await this.d.categories.list();
+      try {
+        assignedColor = assignCategoryColor(existing.map((c) => c.color));
+      } catch {
+        // E-06-7: 색상 배정 로직 실패 시에도 유형 생성 자체는 막지 않는다.
+        assignedColor = CATEGORY_COLOR_FALLBACK;
+      }
+    }
+
     return this.d.categories.insert({
       name: trimmed,
-      color,
+      color: assignedColor,
       icon,
       isSystem: false,
       sortOrder: 0,

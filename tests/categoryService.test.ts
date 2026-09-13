@@ -62,3 +62,26 @@ test('E-06-1: categoryId 미지정 시 "기타"로 저장', async () => {
   const { id } = await app.schedules.create({ title: 'no-cat', startAt: at(1), notifyAtStart: false });
   assert.equal((await app.db.schedules.find((s) => s.id === id)).categoryId, systemId);
 });
+
+test('F-06/P-59: color 인자를 생략하면 자동 배정된 색으로 생성된다', async () => {
+  const app = buildApp({ clock: new FixedClock(NOW, 'UTC') });
+  const c1 = await app.categories.create('취미');
+  const c2 = await app.categories.create('운동');
+  assert.notEqual(c1.color, c2.color);
+  assert.notEqual(c1.color, '#8E8E93');
+  assert.notEqual(c2.color, '#8E8E93');
+});
+
+test('F-06/P-59: color 인자를 명시하면 그대로 사용된다(후방 호환)', async () => {
+  const app = buildApp({ clock: new FixedClock(NOW, 'UTC') });
+  const c = await app.categories.create('업무', '#0A84FF', 'briefcase');
+  assert.equal(c.color, '#0A84FF');
+  assert.equal(c.icon, 'briefcase');
+});
+
+test('F-06/P-59: 기존에 이미 저장된 카테고리 색상은 소급 변경되지 않는다', async () => {
+  const app = buildApp({ clock: new FixedClock(NOW, 'UTC') });
+  const before = await app.categories.create('취미', '#123456');
+  await app.categories.create('운동'); // 자동 배정 트리거
+  assert.equal((await app.db.categories.find((c) => c.id === before.id)).color, '#123456');
+});

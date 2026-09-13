@@ -13,6 +13,16 @@ export const PRIORITY_RANK: Record<Priority, number> = {
   LOW: 2,
 };
 
+/**
+ * 우선순위 색상 매핑(F-07, P-60, AC-78). WCAG 1.4.11 비-텍스트 대비(>=3:1) 충족(logic.md 5.2).
+ * 대시보드 리스트(§7.3)의 우선순위 점(dot) 등에서 사용.
+ */
+export const PRIORITY_COLORS: Record<Priority, string> = {
+  HIGH: '#D32F2F',
+  NORMAL: '#E65100',
+  LOW: '#689F38',
+};
+
 export type RecurrenceRule = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
 
 export type ScheduleSource = 'LOCAL' | 'CALENDAR';

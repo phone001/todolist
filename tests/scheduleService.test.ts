@@ -179,3 +179,37 @@ test('STORAGE_STALE_WRITE: expectedUpdatedAt 불일치', async () => {
     (err: unknown) => (err as { code?: string }).code === 'STORAGE_STALE_WRITE',
   );
 });
+
+test('F-08 §6.1: getReminderOffsets — PRE 오프셋을 중복 제거·오름차순으로 반환', async () => {
+  const { app } = setup();
+  const { id } = await app.schedules.create({
+    title: '알림 여러개',
+    startAt: future(3),
+    reminderOffsets: [60, 10, 30, 10],
+    notifyAtStart: true,
+  });
+  const offsets = await app.schedules.getReminderOffsets(id);
+  assert.deepEqual(offsets, [10, 30, 60]);
+});
+
+test('F-08 §6.1: getReminderOffsets — CANCELLED 상태는 제외한다', async () => {
+  const { app } = setup();
+  const { id } = await app.schedules.create({
+    title: '취소 포함',
+    startAt: future(3),
+    reminderOffsets: [10, 30],
+    notifyAtStart: false,
+  });
+  const toCancel = app.db.reminders.find((r) => r.scheduleId === id && r.kind === 'PRE' && r.offsetMinutes === 10);
+  assert.ok(toCancel);
+  toCancel!.state = 'CANCELLED';
+
+  const offsets = await app.schedules.getReminderOffsets(id);
+  assert.deepEqual(offsets, [30]);
+});
+
+test('F-08 §6.1: getReminderOffsets — 일정이 없어도 예외 없이 빈 배열', async () => {
+  const { app } = setup();
+  const offsets = await app.schedules.getReminderOffsets(999999);
+  assert.deepEqual(offsets, []);
+});

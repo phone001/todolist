@@ -228,6 +228,25 @@ export class ScheduleService {
     return found && found.deletedAt === null ? found : null;
   }
 
+  /**
+   * F-08 §6.1: 이 일정에 현재 구성된 사전 알림(PRE) 오프셋 목록(읽기 전용).
+   * 수정 화면이 체크박스를 정확한 현재 상태로 프리필하기 위한 조회 전용 헬퍼.
+   * `CANCELLED` 는 전역 알림 off 로 일괄 취소된 상태라 제외.
+   * 조회 실패 시 빈 배열로 저하(화면은 전부 미체크로 표시).
+   */
+  async getReminderOffsets(scheduleId: number): Promise<number[]> {
+    try {
+      const rows = await this.d.reminders.findBySchedule(scheduleId);
+      const offsets = rows
+        .filter((r) => r.kind === 'PRE' && r.state !== 'CANCELLED')
+        .map((r) => r.offsetMinutes);
+      return Array.from(new Set(offsets)).sort((a, b) => a - b);
+    } catch (err) {
+      this.d.logger.log('warn', 'reminder.offsets.read.failed', { scheduleId, error: String(err) });
+      return [];
+    }
+  }
+
   /** F-02. 기간 조회 + 필터 + 정렬 + keyset 페이지네이션. */
   findInRange(
     fromTs: number,
