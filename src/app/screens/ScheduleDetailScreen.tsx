@@ -1,7 +1,9 @@
 /**
  * 일정 상세 — 제목·일시·중요도·유형·알림·내용 표시 + 완료 토글 / 삭제 (F-04/F-05, AC-10, N-3).
  * 헤더 우측「편집」→ ScheduleEditor 수정 진입 (F-03, logic §16.2, §16.3).
- * 바인딩: ScheduleService.getById/toggleDone/softDelete, CategoryService.list.
+ * v1.9(F-24, §18.6): 대상이 반복 회차(recurrenceParentId !== null)면 삭제가 3-옵션
+ * (취소/이 일정만 삭제/이후 모두 삭제)으로 분기한다. 비반복 일정은 기존 2-옵션 그대로.
+ * 바인딩: ScheduleService.getById/toggleDone/softDelete/deleteRecurrenceFollowing, CategoryService.list.
  * 환경 제약: react / react-native 의존 → 파이프라인 미실행(정적 리뷰).
  */
 import React, { useEffect, useLayoutEffect, useState } from 'react';
@@ -74,19 +76,32 @@ export function ScheduleDetailScreen({ route, navigation }: Props) {
   if (!loaded) return <Text style={{ padding: 24, color: '#888' }}>불러오는 중…</Text>;
   if (!item) return <Text style={{ padding: 24 }}>일정을 찾을 수 없습니다</Text>;
 
+  const deleteThisOnly = async () => {
+    await schedules.softDelete(item.id);
+    invalidate('list', 'dashboard', 'search');
+    navigation.goBack();
+    // UI: 스낵바 "실행취소" → schedules.restore(item.id) (N-3: 5분/세션 내)
+  };
+
+  const deleteFollowing = async () => {
+    await schedules.deleteRecurrenceFollowing(item.id);
+    invalidate('list', 'dashboard', 'search');
+    navigation.goBack();
+  };
+
+  /** F-24(v1.9, §18.6): 반복 회차면 3-옵션, 비반복이면 기존 2-옵션. */
   const confirmDelete = () => {
-    Alert.alert('일정 삭제', `"${item.title}" 을(를) 삭제할까요?`, [
+    if (item.recurrenceParentId === null) {
+      Alert.alert('일정 삭제', `"${item.title}" 을(를) 삭제할까요?`, [
+        { text: '취소', style: 'cancel' },
+        { text: '삭제', style: 'destructive', onPress: () => void deleteThisOnly() },
+      ]);
+      return;
+    }
+    Alert.alert('반복 일정 삭제', `"${item.title}" — 이 반복 일정을 어떻게 삭제할까요?`, [
       { text: '취소', style: 'cancel' },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: async () => {
-          await schedules.softDelete(item.id);
-          invalidate('list', 'dashboard', 'search');
-          navigation.goBack();
-          // UI: 스낵바 "실행취소" → schedules.restore(item.id) (N-3: 5분/세션 내)
-        },
-      },
+      { text: '이 일정만 삭제', style: 'destructive', onPress: () => void deleteThisOnly() },
+      { text: '이후 모두 삭제', style: 'destructive', onPress: () => void deleteFollowing() },
     ]);
   };
 

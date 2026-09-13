@@ -1,6 +1,8 @@
 /**
  * 대시보드("오늘" 탭) 날짜 네비게이션 · 진행률 한 줄 · 접이식 검색 순수 로직 (F-20 / F-21 / F-22).
- * 설계 근거: document/architect/logic.md v1.11 §7.1 / §16.3.7, plan v1.6 §5.15 P-45~P-53.
+ * F-10 개정(완료 시 하단 이동, v1.9) / F-25(완료된 일정 숨기기, v1.9) 순수 함수도 이 파일에 둔다
+ * (logic.md v1.16 §7.4 / §7.5 — "표시 계층 전용" 원칙 재사용).
+ * 설계 근거: document/architect/logic.md v1.11 §7.1 / §16.3.7, v1.16 §7.4 / §7.5, plan v1.9 §5.18.
  * v1.11 재확정 방향: 개수 카드 2장 → 진행률 한 줄(`progressFillRatio`), 상시 입력창 → 접이식 검색
  * (`resolveSearchToggle`), 미래 날짜 분기(`isFutureDate`). 델타는 UI 계층 한정 — 코어·서비스·포트 무변경.
  *
@@ -19,8 +21,8 @@ export const DASHBOARD_EMPTY_TEXT = '오늘 일정이 없습니다';
 /** 기준 날짜에 일정은 있으나 검색어와 일치가 없을 때(E-22-1 / AC-63) — 위 문구와 반드시 구분. */
 export const DASHBOARD_SEARCH_EMPTY_TEXT = '검색어에 해당하는 오늘 일정이 없습니다';
 
-/** OI-19: 과거/미래 기준일에서 새 일정 추가 시 기본 시작 일시 = 해당 날짜 09:00 로컬. */
-const EDITOR_PRESET_START_OFFSET_MS = 9 * 3_600_000;
+/** F-25(v1.9, E-25-2). 숨기기 on 이고 기준 날짜의 모든 일정이 완료 상태일 때(logic §7.5). */
+export const DASHBOARD_ALL_HIDDEN_TEXT = '완료된 일정은 숨겨져 있습니다';
 
 /** timeZone 기준 nowTs 가 속한 로컬 날짜의 자정(epoch ms). 기준 날짜 기본값·"오늘로" 대상. */
 export function resolveTodayStart(nowTs: number, timeZone: string): number {
@@ -113,18 +115,47 @@ export function filterByInlineQuery<T extends { title: string; memo: string | nu
   return items.filter((x) => matchesInlineQuery(x, q));
 }
 
-export type DashboardListEmptyState = 'hidden' | 'no-schedules' | 'no-search-results';
+/**
+ * F-25(v1.9 신규, P-66, logic §7.5). 완료된 일정 숨기기 표시 필터.
+ * `hideCompleted` 가 true 면 완료 항목을 제거하고, false 면 그대로 돌려준다(복사본).
+ * 파이프라인 순서(고정): `filterByInlineQuery` → `filterHideCompleted` → `applyCompletionOrder`.
+ */
+export function filterHideCompleted<T extends { isDone: boolean }>(
+  items: readonly T[],
+  hideCompleted: boolean,
+): T[] {
+  return hideCompleted ? items.filter((x) => !x.isDone) : items.slice();
+}
 
 /**
- * 목록 빈 상태 분기(E-10-1 vs E-22-1). "그 날짜에 일정 없음"이 검색 무결과보다 우선한다(E-22-5).
+ * F-10 개정(v1.9 신규, P-64, D-26, logic §7.4). 완료 토글 시 목록 하단 이동.
+ * 안정 파티션(`Array.prototype.filter` 는 순서 보존) — 입력이 이미 `startAt` 오름차순이면
+ * `notDone`/`done` 그룹 각각도 자동으로 시작 시각순을 유지한다(D-26(a)).
+ * 완료 해제 시에는 별도 "복귀 로직" 없이 이 함수를 다시 적용하면 자동으로 미완료 그룹에 복귀한다(AC-86).
+ */
+export function applyCompletionOrder<T extends { isDone: boolean }>(items: readonly T[]): T[] {
+  const notDone = items.filter((x) => !x.isDone);
+  const done = items.filter((x) => x.isDone);
+  return [...notDone, ...done];
+}
+
+export type DashboardListEmptyState = 'hidden' | 'no-schedules' | 'no-search-results' | 'all-hidden';
+
+/**
+ * 목록 빈 상태 분기(E-10-1 vs E-22-1 vs E-25-2). "그 날짜에 일정 없음"이 최우선(E-22-5).
+ * F-25(v1.9): 완료된 일정 숨기기가 켜져 있고 표시할 항목이 하나도 없으면(검색 필터를 거쳤어도) 'all-hidden'
+ * — 기존 'no-schedules'(진짜 0건)와 문구·조건을 다르게 구분한다(`itemsLength > 0 && visibleLength === 0 && hideCompleted`).
+ * `hideCompleted` 를 생략하면 기존(v1.8 이전) 동작과 동일하다(후방 호환).
  * 로딩·에러 표시 여부는 화면이 별도로 판단한다.
  */
 export function dashboardListEmptyState(
   itemsLength: number,
   visibleLength: number,
   rawQuery: string,
+  hideCompleted = false,
 ): DashboardListEmptyState {
   if (itemsLength === 0) return 'no-schedules';
+  if (visibleLength === 0 && hideCompleted) return 'all-hidden';
   if (visibleLength === 0 && inlineNormalize(rawQuery).length > 0) return 'no-search-results';
   return 'hidden';
 }
@@ -167,9 +198,4 @@ export function resolveMidnightRollover(input: MidnightRolloverInput): MidnightR
  */
 export function isFreshLoadSequence(startedSeq: number, currentSeq: number): boolean {
   return startedSeq === currentSeq;
-}
-
-/** OI-19: `presetDate`(로컬 자정) → 신규 편집 화면 기본 시작 일시(해당 날짜 09:00 로컬). */
-export function editorPresetStartAt(presetDate: number): number {
-  return presetDate + EDITOR_PRESET_START_OFFSET_MS;
 }

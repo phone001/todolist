@@ -36,10 +36,18 @@ export const SCREEN_BINDINGS: readonly ScreenBinding[] = [
       { service: 'dashboard', method: 'getSummary' },
       // 기준 날짜 일정 목록 소스. 인라인 검색(F-22)은 이 결과 배열의 표시 계층 순수 필터 — 서비스 미호출.
       { service: 'schedules', method: 'findInRange' },
+      // v1.15: 리스트 아이템 유형 배지(F-10 §7.3) 소스 — 요약/목록과 병렬 조회(logic §7.3).
+      { service: 'categories', method: 'list' },
+      // v1.9(F-25): 완료된 일정 숨기기 공유 상태 — 마운트/포커스 시 재조회(logic §7.5).
+      { service: 'settings', method: 'get' },
     ],
     writes: [
       { service: 'schedules', method: 'toggleDone' },
       { service: 'schedules', method: 'softDelete' },
+      // v1.9(F-24): "이후 모두" 삭제(§18.5) — 대시보드 스와이프 삭제의 반복 회차 분기.
+      { service: 'schedules', method: 'deleteRecurrenceFollowing' },
+      // v1.9(F-25): 완료된 일정 숨기기 토글 — 대시보드·설정 공유 키(logic §7.5).
+      { service: 'settings', method: 'set' },
     ],
     invalidates: ['list', 'dashboard', 'search'],
   },
@@ -60,6 +68,8 @@ export const SCREEN_BINDINGS: readonly ScreenBinding[] = [
     reads: [
       { service: 'categories', method: 'list' },
       { service: 'settings', method: 'get' },
+      // v1.15: 사전 알림 프리셋 프리필(F-08 §6.1). v1.9(F-24): 반복 회차 수정 화면도 동일 조회.
+      { service: 'schedules', method: 'getReminderOffsets' },
     ],
     writes: [
       { service: 'schedules', method: 'create' },
@@ -67,6 +77,8 @@ export const SCREEN_BINDINGS: readonly ScreenBinding[] = [
       { service: 'categories', method: 'create' },
       { service: 'categories', method: 'rename' },
       { service: 'categories', method: 'remove' },
+      // v1.9(F-24): 회차 편집 화면의 "반복 설정 변경" 보조 액션(logic §18.5/§18.6).
+      { service: 'schedules', method: 'updateRecurrenceRule' },
     ],
     invalidates: ['list', 'dashboard', 'search', 'categories'],
   },
@@ -80,6 +92,8 @@ export const SCREEN_BINDINGS: readonly ScreenBinding[] = [
       { service: 'schedules', method: 'toggleDone' },
       { service: 'schedules', method: 'softDelete' },
       { service: 'schedules', method: 'restore' },
+      // v1.9(F-24): 반복 회차 삭제 3-옵션 액션시트의 "이후 모두 삭제"(logic §18.5/§18.6).
+      { service: 'schedules', method: 'deleteRecurrenceFollowing' },
     ],
     invalidates: ['list', 'dashboard', 'search'],
   },
@@ -145,4 +159,6 @@ export const SETTING_KEYS = {
   scheduleDefaultCategoryId: 'schedule.defaultCategoryId',
   calendarPushEnabled: 'calendar.pushEnabled',
   calendarConflictPolicy: 'calendar.conflictPolicy',
+  /** F-25(v1.9 신규, P-66, D-28). 대시보드("오늘할일")·설정 공유 — 완료된 일정 숨기기 토글. 기본 false. */
+  hideCompletedSchedules: 'dashboard.hideCompleted',
 } as const;

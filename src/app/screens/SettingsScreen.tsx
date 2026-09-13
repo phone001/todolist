@@ -1,7 +1,9 @@
 /**
- * 설정 — 알림 / 테마 / 새 일정 기본값(중요도·유형) / 유형 관리 / 계정
- * (F-13, P-10-1, D-02, F-06, F-12, AC-17/21).
+ * 설정 — 알림 / 테마 / 새 일정 기본값(중요도·유형) / 완료된 일정 숨기기 / 유형 관리 / 계정
+ * (F-13, P-10-1, D-02, F-06, F-12, F-25, AC-17/21/88/89).
  * 바인딩: SettingService.get/set, CategoryService.list/create/remove, AuthService.link/unlink.
+ * v1.9(F-25/D-28(a)): 완료된 일정 숨기기(`dashboard.hideCompleted`)는 대시보드와 공유하는 단일 키 —
+ *   이 화면과 대시보드가 각각 마운트/포커스 시 다시 읽으므로 별도 동기화 채널이 필요 없다(logic §7.5).
  * 환경 제약: react / react-native 의존 → 파이프라인 미실행(정적 리뷰).
  */
 import React, { useCallback, useEffect, useState } from 'react';
@@ -99,6 +101,8 @@ export function SettingsScreen() {
   const [themeMode, setThemeMode] = useState<ThemeMode>('system');
   const [defaultPriority, setDefaultPriority] = useState<Priority>('NORMAL');
   const [defaultCategoryId, setDefaultCategoryId] = useState<number | null>(null);
+  // F-25(v1.9, D-28(a)): 대시보드와 공유하는 완료된 일정 숨기기 토글. 기본 false.
+  const [hideCompleted, setHideCompleted] = useState(false);
   const [cats, setCats] = useState<Category[]>([]);
   const [accountState, setAccountState] = useState<'NONE' | 'LINKED' | 'EXPIRED'>('NONE');
 
@@ -112,18 +116,20 @@ export function SettingsScreen() {
   };
 
   const load = useCallback(async () => {
-    const [nEnabled, nTitle, tMode, dPrio, dCat] = await Promise.all([
+    const [nEnabled, nTitle, tMode, dPrio, dCat, hideDone] = await Promise.all([
       settings.get(SETTING_KEYS.notifEnabled),
       settings.get(SETTING_KEYS.notifShowTitle),
       settings.get(SETTING_KEYS.themeMode),
       settings.get(SETTING_KEYS.scheduleDefaultPriority),
       settings.get(SETTING_KEYS.scheduleDefaultCategoryId),
+      settings.get(SETTING_KEYS.hideCompletedSchedules),
     ]);
     setNotifEnabled(parse<boolean>(nEnabled, true));
     setShowTitle(parse<boolean>(nTitle, true));
     setThemeMode(parse<ThemeMode>(tMode, 'system'));
     setDefaultPriority(parse<Priority>(dPrio, 'NORMAL'));
     setDefaultCategoryId(parse<number | null>(dCat, null));
+    setHideCompleted(parse<boolean>(hideDone, false));
     setCats(await categories.list());
     setAccountState((await auth.getStatus()).state);
   }, [settings, categories, auth]);
@@ -173,6 +179,24 @@ export function SettingsScreen() {
             끄면 새로 추가하거나 수정하는 일정에 알림이 걸리지 않습니다.
           </Text>
         ) : null}
+      </Section>
+
+      <Section title="오늘할일 표시">
+        <SwitchRow
+          label="완료된 일정 숨기기"
+          value={hideCompleted}
+          onChange={async (v) => {
+            setHideCompleted(v);
+            try {
+              await save(SETTING_KEYS.hideCompletedSchedules, v);
+            } catch {
+              setHideCompleted(!v); // E-25-4: 저장 실패 시 이전 값으로 롤백
+            }
+          }}
+        />
+        <Text style={{ fontSize: 12, color: '#999' }}>
+          대시보드("오늘할일")의 동일 토글과 값이 공유됩니다(D-28).
+        </Text>
       </Section>
 
       <Section title="테마">

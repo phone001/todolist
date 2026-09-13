@@ -29,6 +29,7 @@ function makeSchedule(over: Partial<Schedule> = {}): Schedule {
     recurrenceEndAt: null,
     recurrenceCount: null,
     recurrenceParentId: null,
+    recurrenceReminderOffsets: null,
     source: 'LOCAL',
     notifyAtStart: true,
     createdAt: NOON,

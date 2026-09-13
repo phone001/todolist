@@ -1,18 +1,20 @@
 /**
  * 대시보드 날짜 네비게이션 · 진행률 한 줄 · 접이식 검색 순수 로직 (F-20 / F-21 / F-22).
+ * F-10 개정(완료 시 하단 이동) / F-25(완료된 일정 숨기기) 순수 함수도 함께 검증(v1.9).
  * 대응: nfr.md v1.9 §9 V-41(기준 날짜 파라미터화·DST 스텝·stale) / V-43(접이식 필터·문구 분기) /
  *       V-44(접이식 토글·D-18 초기화) / V-45(미래 날짜 진행률·P-52),
- *       logic.md v1.11 §7.1.1 / §7.1.2 / §7.1.3 / §16.3.7.
+ *       logic.md v1.16 §7.1.1 / §7.1.2 / §7.1.3 / §7.4 / §7.5.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { startOfLocalDay, DAY_MS } from '../../src/core/domain/time.ts';
 import {
+  applyCompletionOrder,
   DASHBOARD_INLINE_SEARCH_DEBOUNCE_MS,
   dashboardListEmptyState,
-  editorPresetStartAt,
   filterByInlineQuery,
+  filterHideCompleted,
   inlineNormalize,
   isFreshLoadSequence,
   isFutureDate,
@@ -192,7 +194,57 @@ test('V-43: filterByInlineQuery — 빈/공백 검색어는 전체 목록 (E-22-
   assert.notEqual(filterByInlineQuery(items, ''), items);
 });
 
-// ── F-22: 빈 상태 vs 검색 무결과 문구 분기 (E-10-1 vs E-22-1 / AC-63) ────────
+// ── F-25(v1.9): 완료된 일정 숨기기 (P-66, E-25-1~4, AC-88~89) ───────────────
+
+const D = (isDone: boolean, title = 'x') => ({ isDone, title });
+
+test('F-25: filterHideCompleted — on 이면 완료 항목 제거, off 면 그대로(복사본)', () => {
+  const items = [D(false, 'a'), D(true, 'b'), D(false, 'c'), D(true, 'd')];
+  assert.deepEqual(filterHideCompleted(items, true).map((x) => x.title), ['a', 'c']);
+  const passthrough = filterHideCompleted(items, false);
+  assert.deepEqual(passthrough, items);
+  assert.notEqual(passthrough, items); // 복사본
+});
+
+// ── F-10 개정(v1.9): 완료 시 목록 하단 이동 (P-64, D-26, AC-85~86) ──────────
+
+test('F-10: applyCompletionOrder — 완료 항목은 뒤로, 각 그룹 내부 순서(시작 시각순)는 유지', () => {
+  const items = [D(false, 'a'), D(true, 'b'), D(false, 'c'), D(true, 'd'), D(false, 'e')];
+  const ordered = applyCompletionOrder(items);
+  assert.deepEqual(ordered.map((x) => x.title), ['a', 'c', 'e', 'b', 'd']);
+});
+
+test('F-10: applyCompletionOrder — 완료 해제 후 재계산하면 미완료 그룹으로 복귀(AC-86)', () => {
+  // 실제 화면(DashboardScreen)은 원본 items 배열(startAt 오름차순)의 isDone 만 갱신하고
+  // applyCompletionOrder 를 다시 적용한다 — 이전 "표시 결과"에 재적용하는 것이 아니다.
+  const items = [D(false, 'a'), D(true, 'b'), D(false, 'c')];
+  const afterComplete = applyCompletionOrder(items);
+  assert.deepEqual(afterComplete.map((x) => x.title), ['a', 'c', 'b']);
+
+  // 'b' 완료 해제 — 원본 items 배열(순서 불변)에서 isDone 만 갱신
+  const toggledBack = items.map((x) => (x.title === 'b' ? { ...x, isDone: false } : x));
+  const restored = applyCompletionOrder(toggledBack);
+  assert.deepEqual(restored.map((x) => x.title), ['a', 'b', 'c']);
+});
+
+test('F-10: applyCompletionOrder — 전부 미완료/전부 완료여도 순서 불변', () => {
+  const allNotDone = [D(false, 'a'), D(false, 'b')];
+  assert.deepEqual(applyCompletionOrder(allNotDone).map((x) => x.title), ['a', 'b']);
+  const allDone = [D(true, 'a'), D(true, 'b')];
+  assert.deepEqual(applyCompletionOrder(allDone).map((x) => x.title), ['a', 'b']);
+});
+
+test('E-10-8/E-25-1: 파이프라인 순서(검색 → 숨기기 → 완료정렬) — 숨기기 on 이면 완료 토글 시 즉시 사라짐', () => {
+  const items = [D(false, 'a'), D(false, 'b'), D(false, 'c')];
+  // 'b' 완료 처리
+  const toggled = items.map((x) => (x.title === 'b' ? { ...x, isDone: true } : x));
+  const hidden = filterHideCompleted(toggled, true);
+  const visible = applyCompletionOrder(hidden);
+  // 하단 이동이 아니라 목록에서 완전히 제거된다.
+  assert.deepEqual(visible.map((x) => x.title), ['a', 'c']);
+});
+
+// ── F-22/F-25: 빈 상태 문구 분기 (E-10-1 vs E-22-1 vs E-25-2 / AC-63) ───────
 
 test('V-43: dashboardListEmptyState — 기준 날짜 0건이면 검색어가 있어도 no-schedules 우선 (E-22-5)', () => {
   assert.equal(dashboardListEmptyState(0, 0, ''), 'no-schedules');
@@ -209,11 +261,14 @@ test('V-43: dashboardListEmptyState — 표시할 항목이 있으면 hidden', (
   assert.equal(dashboardListEmptyState(5, 5, ''), 'hidden');
 });
 
-// ── OI-19: 프리셋 시작 일시 ─────────────────────────────────────────────────
+test('F-25/E-25-2: dashboardListEmptyState — 숨기기 on + 전부 완료 → all-hidden (no-schedules 와 구분)', () => {
+  assert.equal(dashboardListEmptyState(5, 0, '', true), 'all-hidden');
+  assert.equal(dashboardListEmptyState(0, 0, '', true), 'no-schedules'); // 진짜 0건이 항상 우선
+});
 
-test('OI-19: editorPresetStartAt — presetDate + 9h', () => {
-  const preset = startOfLocalDay(Date.UTC(2026, 8, 20, 0, 0, 0), 'UTC');
-  assert.equal(editorPresetStartAt(preset), preset + 9 * 3_600_000);
+test('F-25: dashboardListEmptyState — hideCompleted 생략 시 기존(v1.8 이전) 동작과 동일(후방 호환)', () => {
+  assert.equal(dashboardListEmptyState(5, 0, '회의'), 'no-search-results');
+  assert.equal(dashboardListEmptyState(5, 3, ''), 'hidden');
 });
 
 // ── 설계 상수 고정 ─────────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import {
   startOfLocalDay,
   endOfLocalDayExclusive,
   advanceByRule,
+  combineDateWithTimeOfDay,
   localWallToEpoch,
   DAY_MS,
 } from '../src/core/domain/time.ts';
@@ -83,4 +84,28 @@ test('V-26: 다른 타임존(America/New_York, UTC-4 EDT)에서 wall-clock 변�
   // 2026-09-06 09:00 EDT(UTC-4) = 2026-09-06 13:00 UTC
   const expected = Date.UTC(2026, 8, 6, 13, 0, 0);
   assert.equal(localWallToEpoch(2026, 9, 6, 9, 0, 'America/New_York'), expected);
+});
+
+// ---------- F-26(v1.9): combineDateWithTimeOfDay ----------
+
+test('F-26: combineDateWithTimeOfDay — 날짜(자정) + 현재 시각(시/분) 결합 (UTC)', () => {
+  const dateTs = Date.UTC(2026, 8, 20, 0, 0, 0); // 9/20 자정
+  const timeOfDayTs = Date.UTC(2026, 8, 4, 14, 37, 22); // 임의의 날, 14:37:22
+  const combined = combineDateWithTimeOfDay(dateTs, timeOfDayTs, 'UTC');
+  assert.equal(combined, Date.UTC(2026, 8, 20, 14, 37, 0));
+});
+
+test('F-26: combineDateWithTimeOfDay — 날짜/시각이 다른 타임존이어도 그 타임존 성분을 조합', () => {
+  // 선택 날짜(로컬 자정, KST) = 2026-09-20 00:00 KST
+  const dateTs = Date.UTC(2026, 8, 19, 15, 0, 0); // 9/20 00:00 KST
+  // 현재 시각(KST) = 2026-09-04 09:05 KST = 2026-09-04 00:05 UTC
+  const timeOfDayTs = Date.UTC(2026, 8, 4, 0, 5, 0);
+  const combined = combineDateWithTimeOfDay(dateTs, timeOfDayTs, 'Asia/Seoul');
+  // 기대: 2026-09-20 09:05 KST = 2026-09-20 00:05 UTC
+  assert.equal(combined, Date.UTC(2026, 8, 20, 0, 5, 0));
+});
+
+test('F-26: combineDateWithTimeOfDay — 동일 시각을 두 인자로 넣으면 그대로 반환', () => {
+  const ts = Date.UTC(2026, 8, 4, 9, 30, 0);
+  assert.equal(combineDateWithTimeOfDay(ts, ts, 'UTC'), Date.UTC(2026, 8, 4, 9, 30, 0));
 });

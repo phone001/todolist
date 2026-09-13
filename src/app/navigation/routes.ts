@@ -1,12 +1,15 @@
 /**
  * 네비게이션 라우트 이름과 파라미터 타입 (순수 데이터, 플랫폼 비의존).
- * 설계 근거: document/architect/logic.md v1.12 §16.2 / §16.3.8. React Navigation 6.x.
+ * 설계 근거: document/architect/logic.md v1.12 §16.2 / §16.3.8, v1.16 §7.6(F-26). React Navigation 6.x.
  *
  * 이 파일은 react-navigation 을 import 하지 않는다 — 라우트 계약만 정의하고,
  * RootNavigator.tsx(네이티브 바인딩)가 이 타입으로 스택/탭을 구성한다.
  *
  * v1.12: 세 번째 탭이 "검색"(`SearchTab`) → "통계"(`StatisticsTab`, F-23)로 교체되고,
  * 전역 검색(F-11)은 Bottom Tab 에서 Native Stack 화면(`Search`)으로 이전한다(D-20(a), P-54).
+ * v1.16(F-26): `ScheduleEditor` 의 `presetDate?`(날짜만, +9h 고정 가산)를 완결된 epoch 값
+ * `presetStartAt?` 로 교체 — 캘린더 "+" 버튼 / 대시보드 FAB(구 OI-19) 양쪽 호출부가 모두
+ * `combineDateWithTimeOfDay`(core/domain/time.ts) 로 계산한 값을 전달한다(logic §7.6).
  */
 
 export const TAB_ROUTES = {
@@ -34,10 +37,11 @@ export interface RootStackParamList {
   ScheduleDetail: { scheduleId: number };
   /**
    * scheduleId 없으면 신규 작성.
-   * presetDate: 대시보드 기준 날짜(F-20)가 오늘이 아닐 때 FAB/빈 상태 버튼으로 진입 시 전달되는
-   * 로컬 자정 epoch ms. 신규 모드 기본 시작 일시 = presetDate + 9h (OI-19, logic §16.3.7).
+   * presetStartAt(v1.16, F-26/P-67/D-29): 완결된 epoch ms 시작 일시. 캘린더 "+" 버튼(선택 날짜 자정 +
+   * 현재 시각) / 대시보드 FAB(기준 날짜가 오늘이 아닐 때, 구 OI-19 — 동일 규칙으로 통일)가 전달한다.
+   * `combineDateWithTimeOfDay(날짜, 시각, tz)`(core/domain/time.ts) 로 계산한다(logic §7.6).
    */
-  ScheduleEditor: { scheduleId?: number; presetDate?: number };
+  ScheduleEditor: { scheduleId?: number; presetStartAt?: number };
   /**
    * 전역 검색(F-11). v1.12: 세 번째 탭 교체로 검색 전용 탭이 사라지고 Stack 화면으로 이전.
    * 진입점은 캘린더 화면 헤더의 검색 아이콘(D-20(a)). `initialQuery` 는 선택.

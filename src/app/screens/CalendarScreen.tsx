@@ -1,7 +1,9 @@
 /**
  * 캘린더 — 금일 기준 월 달력. 연/월 이동 및 피커로 연도·월 검색 (F-02/05, AC-11/12).
  * 날짜 탭 → 그 날짜 일정 목록을 아래에 표시. 항목: 체크박스 + 제목(탭 → 상세).
- * 헤더 우측: 🔍 → 전역 검색(F-11, v1.12 진입점 이전 D-20(a)/P-54) · 「+」→ ScheduleEditor 신규 작성 (F-01, logic §16.2).
+ * 헤더 우측: 🔍 → 전역 검색(F-11, v1.12 진입점 이전 D-20(a)/P-54) · 「+」→ ScheduleEditor 신규 작성
+ *   (F-01, logic §16.2). v1.9(F-26/P-67/D-29): 선택 날짜가 있으면 그 날짜 + 현재 시각으로 시작 일시를
+ *   프리필한다(`combineDateWithTimeOfDay`, presetStartAt).
  * 월/기간 전환 로딩 중에는 브랜드 로딩 인디케이터(인라인) 를 그리드 영역에 오버레이 (F-17, logic §16.9.8 #3).
  *   월 헤더·이동 컨트롤·피커는 계속 조작 가능(오버레이 pointerEvents='none').
  * 바인딩: ScheduleService.findInRange / toggleDone → list·dashboard 무효화.
@@ -15,6 +17,7 @@ import { useServices } from '../bootstrap/AppContext.tsx';
 import { useShellStore } from '../state/stores.native.ts';
 import { STACK_ROUTES, type RootStackParamList } from '../navigation/routes.ts';
 import type { Schedule } from '../../core/domain/types.ts';
+import { combineDateWithTimeOfDay } from '../../core/domain/time.ts';
 import { BrandLoadingIndicator } from '../components/BrandLoadingIndicator.tsx';
 
 type CalendarNavProp = NativeStackNavigationProp<RootStackParamList>;
@@ -31,7 +34,7 @@ function dayKeyOfTs(ts: number): number {
 }
 
 export function CalendarScreen() {
-  const { schedules } = useServices();
+  const { schedules, clock } = useServices();
   const invalidate = useShellStore((s) => s.invalidate);
   const clearStale = useShellStore((s) => s.clearStale);
   const navigation = useNavigation<CalendarNavProp>();
@@ -52,7 +55,25 @@ export function CalendarScreen() {
   const [loadingMonth, setLoadingMonth] = useState(true);
   const [monthError, setMonthError] = useState(false);
 
-  // 헤더 우측: 🔍 전역 검색(F-11, v1.12 D-20(a)/P-54) + 「+」ScheduleEditor 신규 작성 (F-01, logic §16.2, §16.3)
+  /**
+   * F-26(v1.9, D-29(a), logic §7.6): 선택 날짜(연/월/일) + 현재 시각(시/분)을 결합해 프리필 값을 만든다.
+   * `selKey` 는 언제나 pickDay/goToday 로 설정되므로 "미선택" 상태는 존재하지 않는다(E-26-1 — 기본값=오늘).
+   */
+  const selectedDateAtMidnight = useCallback(() => {
+    const y = Math.floor(selKey / 10000);
+    const m = Math.floor((selKey % 10000) / 100);
+    const d = selKey % 100;
+    return new Date(y, m, d, 0, 0, 0, 0).getTime();
+  }, [selKey]);
+
+  const goAddSchedule = useCallback(() => {
+    navigation.navigate(STACK_ROUTES.ScheduleEditor, {
+      presetStartAt: combineDateWithTimeOfDay(selectedDateAtMidnight(), clock.now(), clock.timeZone()),
+    });
+  }, [navigation, selectedDateAtMidnight, clock]);
+
+  // 헤더 우측: 🔍 전역 검색(F-11, v1.12 D-20(a)/P-54) + 「+」ScheduleEditor 신규 작성
+  // (F-01, logic §16.2, §16.3). v1.9(F-26): 선택 날짜 프리필 — selKey 변경 시 클로저 갱신 위해 deps 포함.
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -66,7 +87,7 @@ export function CalendarScreen() {
             <Text style={{ fontSize: 20 }}>🔍</Text>
           </Pressable>
           <Pressable
-            onPress={() => navigation.navigate(STACK_ROUTES.ScheduleEditor, {})}
+            onPress={goAddSchedule}
             accessibilityLabel="일정 추가"
             style={{ paddingHorizontal: 12 }}
           >
@@ -75,7 +96,7 @@ export function CalendarScreen() {
         </View>
       ),
     });
-  }, [navigation]);
+  }, [navigation, goAddSchedule]);
 
   const load = useCallback(async () => {
     setLoadingMonth(true);
