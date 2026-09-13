@@ -3,14 +3,16 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 비기능 요구사항 설계 (NFR) |
-| 버전 | v1.12 |
+| 버전 | v1.14 |
 | 상태 | 작성 완료 |
-| 근거 | `document/planner/plan.md` v1.7 6절/NFR-01~12, `document/architect/overview.md` v1.14, `document/architect/database.md` v1.6, `document/architect/logic.md` v1.14 |
+| 근거 | `document/planner/plan.md` v1.9 6절/NFR-01~12, `document/architect/overview.md` v1.16, `document/architect/database.md` v1.8, `document/architect/logic.md` v1.16 |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
+| v1.14 | 2026-09-12 | 설계 델타(overview v1.16 / logic v1.16 / database v1.8 — F-24 반복 일정 / F-10 완료 시 하단 이동 / F-06 기본 유형 4종 시딩 / F-25 완료된 일정 숨기기 / F-26 캘린더 날짜 프리필, plan v1.9 P-63~P-67). **§1.2 반복 일정 설계 정정** — 기존 문구("저장은 규칙 1행, 조회 시 범위 내 발생만 계산")는 회차별 독립 완료·독립 알림(P-03, F-24 확정 요건)과 양립할 수 없어 폐기, "마스터/회차 분리 실체화 + `RecurrenceScheduler` horizon 60일 [제안] + `expandOccurrences` 상한 366(기존 [제안]값 재사용)"으로 대체(logic §18). **신규 §17 "반복 회차 실체화·완료 정렬·숨기기·시딩·캘린더 프리필 (F-24/F-10/F-25/F-06/F-26 / NFR-04)"** — 회차 실체화 용량·성능 경계, 표시 파이프라인(정렬·숨기기 필터) O(n) 비용, 마이그레이션 시딩 1회성 비용, 프리필 계산 무비용, 검증 관점. **§5.2 메트릭**에 `recurrence.occurrence.materialized` / `.materialize.fail` 추가. **§9 검증표 V-53~V-57** 추가(반복 실체화·삭제 스코프·완료 정렬·숨기기 필터·캘린더 프리필). **§12 미결정**에 D-25~D-29(전부 plan 채택 가정값, 비차단) 추가, D-05/D-22/N-10 갱신 참조. 정량 SLO 신규 신설 없음(제안값만) — 신규 인덱스 없음(§14.2 근거 재확인). 성능·용량·가용성 목표(1~4장, 8장) 그 외 무변경 |
+| v1.13 | 2026-09-11 | 설계 델타(overview v1.15 / logic v1.15 / database v1.7 — F-06 유형 색상 자동 배정 / F-07 우선순위 색상 매핑 / F-10 대시보드 리스트 우선순위·유형 표시 / F-08 사전 알림 프리셋 선택 UI, plan v1.8 P-59~P-62). **§7 접근성 표에 2행 추가** — (1) 우선순위 색상 대비(F-07, P-60): `PRIORITY_COLORS`(HIGH `#D32F2F`/NORMAL `#E65100`/LOW `#689F38`)가 흰 배경·다크 배경(#121212) 양쪽에서 WCAG 1.4.11 비-텍스트 대비(≥3:1) 근사 충족(각각 ≈5.0/3.8/3.2 : 1 그리고 ≈3.8/4.9/5.9 : 1), 색만으로 구분하지 않도록(1.4.1) 대시보드 행 `accessibilityLabel` 에 우선순위·유형 텍스트 병기. (2) 유형 색상 팔레트(F-06, P-59): 12색 팔레트가 우선순위 3색과 색상환 60°+ 이격되어 F-10 동시 노출 시 혼동 최소화, 유형 배지는 텍스트(유형명)를 항상 동반해 색맹 사용자도 식별 가능. **§9 검증표에 V-50(색상 자동 배정 알고리즘)·V-51(우선순위 색상 매핑·대비)·V-52(리마인더 프리셋 UI·프리필·전송)** 추가. 정량 SLO·인덱스·신규 의존성 없음 — 4개 항목 전부 UI/서비스 계층 변경, 성능·용량·가용성 목표(1~6장) 무변경 |
 | v1.12 | 2026-09-10 | 설계 델타(overview v1.14 / logic v1.14 / database v1.6 — F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수). 환경에 **watchOS 26.2 시뮬레이터(Apple Watch Series 11 / SE 3 / Ultra 3) + Xcode 확보** → **§11.2 의 watchOS 항목을 §11.1(이번 릴리스 정식 검증)로 이동**: `xcodebuild -scheme TodayWhatWatch` 빌드(BUILD SUCCEEDED), 페어드 iPhone+Watch 시뮬레이터 설치·실행, 실제 `WCSession`(`applicationContext`/`sendMessage`/`transferUserInfo`) 라운드트립으로 워치 오늘 목록 렌더 + `xcrun simctl io … screenshot`, 완료 토글 낙관적 갱신·"동기화 대기" 배지·pull-to-refresh(`requestSnapshot`). **§11.2 에는 실기기 전용 잔여만** — 물리 Apple Watch, 기기 `BOOT` 후 파일 영속, 배터리/지연, 백그라운드 `transferUserInfo` 실기기 타이밍, (D-10 시) 컴플리케이션 실기기 타임라인. **§12 N-11 축소** 반영. **§14.5** — watchOS 앱 빌드·시뮬레이터 라운드트립을 §11.1 로, 잔여는 §11.2. **§14.4 이식성** — 워치 앱 = SwiftUI 단일 타깃(watchOS 10.0), 시스템 프레임워크만, CocoaPods 미링크. **§6 보안** — 워치 로컬 파일 `FileProtectionType.complete`, 시뮬레이터 코드사이닝 생략. 성능·용량·가용성 정량 목표(1~4장)·V-36~V-40 검증 문구 무변경 — Swift 재구현이 폰 측 계약·순수 로직을 바꾸지 않음(§9 주석 갱신). 신규 정량 SLO·인덱스·의존성 없음 |
 | v1.11 | 2026-09-10 | 설계 델타(overview v1.13 / logic v1.13 — 통계 화면 F-23 하단 "유형별 월별 할 일 건수" 그래프를 **막대(bar) → 선(line)** 으로 교체). **§16.2 "차트 렌더 비용" 재작성** — 정적 RN `<View>` 높이 비율 막대 → `react-native-svg` 15.x(F-17 기보유) `Polyline`(유형 계열당 1개) + 비영 데이터 포인트 `Circle` 마커 + `<Line>` 축/그리드. 여전히 **정적 1회 레이아웃, 애니메이션·인터랙션 없음(OI-23), SVG 래스터 애니메이션·차트 라이브러리·신규 npm 의존성 0**. 렌더 비용 = 계열 N개 × 12점 polyline + 비영 점 마커(온디바이스 후속 측정, [제안] 프레임 예산 무영향 유지). **§16.3 접근성 갱신** — "각 막대/세그먼트 `accessibilityLabel`" → 그래프 영역 **데이터 요약 `<Text>`(월/유형/건수, 문구·값 불변)가 주 스크린리더 경로**, SVG 하위 요소 `accessibilityLabel` 은 best-effort 보조. 범례(텍스트+스와치)·카드 레이블·연도 컨트롤·Reduce Motion(정적 렌더라 무영향) 무변경. **§16.1 집계 쿼리 성능·§16.4 i18n·§16.5 비영속 무변경**(쿼리·집계·상태 동일). **§9 V-46~V-49 무변경** — 전부 `statisticsViewModel` 순수 함수 + 화면 로직 테스트이며 뷰모델 시그니처·`YearAggregate` 반환 형태가 바뀌지 않으므로 기존 검증 그대로 유효(§16.6 에 시각화 교체 주석 추가). 성능·용량·가용성·보안 목표(1~8·13·14장) 무변경 — 신규 정량 요구·인덱스·의존성 없음 |
 | v1.10 | 2026-09-10 | 설계 델타(overview v1.12 / logic v1.12, plan v1.7 — 세 번째 탭 "검색"→"통계" 교체 + 통계 화면 F-23). **신규 §16 "통계 화면 (F-23 / NFR-04 · NFR-08 · NFR-09)"** — (1) 성능: 하단 그래프 = 선택 연도 `start_at` 범위 스캔(`idx_schedule_start`, 캘린더 월 조회와 동급 < 100ms/페이지 [제안]) + 인메모리 12버킷·유형 집계 O(n); 상단 카드 = 전체 기간(`findInRange(0, MAX)`) cursor 루프 ≤ 1만 행(§2) 스캔·count [제안 < 400ms aggregate, 브릿지 마샬링 지배]; (2) 차트 렌더 = 정적 RN `<View>` 높이 비율(애니메이션·SVG 래스터·차트 라이브러리 없음) → 프레임 예산 무영향; (3) 대량 일정 시 전체 기간 카드 = ≤ 1만 행 인메모리 count 허용(§2 용량 범위), 문제 시 코어 `count` 집계가 후속 경로(§12); (4) 접근성(NFR-08) = 막대·범례 텍스트 레이블 + 스크린리더용 데이터 요약 텍스트(색 비의존), 카드 `accessibilityLabel`; (5) Reduce Motion = 차트 무애니메이션 설계, 애니메이션 추가 시 `isReduceMotionEnabled()` → 최종 상태 즉시(F-17 §13 / §15.6 정책); (6) i18n(NFR-09) = 월 라벨·건수·연도 `Intl`(Hermes 내장), 신규 로캘 데이터 없음; (7) 상태 비영속 = `selectedYear` 화면 로컬. **§9 검증표 V-46~V-49 추가**. **§5.2 메트릭**에 `statistics.load.fail` 추가(선택). **§12 미결정**에 D-20~D-23·OI-22·OI-26. 성능·용량·가용성·보안 목표(1~8·13·14장) 무변경 — 신규 정량 요구·인덱스·의존성 없음 |
@@ -49,7 +51,7 @@
 
 - 인덱스: database.md 4장(부분 인덱스로 soft-deleted 제외).
 - 페이지네이션: 모든 목록/검색은 keyset(cursor = `(start_at, id)`), OFFSET 미사용. 화면별 페이지 크기 설계 상수(logic §16.3.5): `DASHBOARD_PAGE_SIZE=100`(오늘 목록, cursor 루프로 당일 전건), `CALENDAR_MONTH_PAGE_SIZE=200`(월 그리드, cursor 루프 + 월당 최대 10페이지=2000행 안전 상한 후 `calendar.month.truncated` 메트릭), `SEARCH_PAGE_SIZE=50`(검색, `onEndReached` 추가 로드). 재설계 코드의 하드코딩 200/500 단일 페이지를 대체 — 대량 데이터 조용한 누락 방지.
-- 반복 일정: 저장은 규칙 1행, 조회 시 범위 내 발생만 `RecurrenceExpander`로 계산(최대 확장 수 상한 [제안] 366).
+- 반복 일정(**v1.14 정정** — logic §18): 마스터 행(반복 규칙 보유, 비표시) + 회차 행(개별 표시·완료·알림 대상)으로 분리해 **경계 내 실체화**한다. `RecurrenceScheduler.sync()`가 `expandOccurrences`(최대 확장 수 상한 [제안] 366, 기존값 재사용)로 horizon(**[제안] 60일**, `ReminderScheduler` 기본 horizon과 동일 정책) 내 기대 회차를 계산해 미생성분만 실체화하고, 그 이후는 다음 `sync()`(부트스트랩/`AppState active`/부팅 완료 시점)에서 도래분을 이어 생성한다. **이전 문구("조회 시 범위 내 발생만 계산", 가상 전개)는 폐기** — 회차별 독립 완료 상태·독립 알림(P-03)을 저장할 수 없어 F-24 확정 요건과 양립 불가했다.
 - 대시보드/목록은 store 캐시 + 변경 시 무효화(전체 재조회 아님).
 - OS 알림 동시 예약 상한 대비 `horizonDays=60`만 실제 예약, 나머지는 지연 예약(logic 6장).
 - FTS 인덱스는 트리거로 증분 갱신(재색인 배치 불필요).
@@ -121,6 +123,7 @@
 | `watch.toggle.received` / `.applied` / `.rejected`(NOT_FOUND) / `.malformed` / `.lww.phoneWins` | F-19 워치→폰 완료 토글 역전파 관찰 (logic §17.4/§17.6) |
 | `watch.session.activated` / `.unreachable` | F-19 채널 상태 (NFR-12 격리 관찰) |
 | `statistics.load.fail` (선택) | F-23 통계 집계 로드 실패 건수 (E-23-4 관찰, logic §7.2.5) |
+| `recurrence.occurrence.materialized` (건수, 마스터별) / `recurrence.occurrence.materialize.fail` | F-24 회차 실체화 관찰 — 시리즈당 실체화 속도·부분 실패 여부 (logic §18.3) |
 | `safeMode.enter` | 저장소 장애 |
 
 ### 5.3 알림(개발/QA 기준)
@@ -150,6 +153,8 @@
 | 스크린리더 | 주요 액션에 접근성 레이블 | 컴포넌트 규약. **SwipeableRow(logic §16.10)**: 팬 제스처의 대체 경로 필수 — 행 `accessibilityActions=[{name:'delete'},{name:'edit'}]` + `onAccessibilityAction`, 또는 상세 화면 삭제 버튼으로 스와이프 없이 삭제 가능 |
 | 국제화 | 최소 한국어. 날짜/시간/요일은 로캘 포맷 | `Intl` + tz 변환(P-16), 저장은 epoch ms. **일정 편집 날짜/시각 입력**: v1.6(N-10 해소)부터 `@react-native-community/datetimepicker` 8.6.0 OS 네이티브 UI 사용 — iOS/Android 모두 단말 로캘을 자동 반영(한국어 기기에서 한국어 달력/시각 포맷 표시). **표시**(목록·대시보드)는 기존 로캘 포맷 유지. 저장은 epoch ms(UTC) 불변 |
 | 대시보드 날짜 네비게이션 라벨(F-20, v1.8 / v1.9) | 기준 날짜를 사람이 읽는 로캘 포맷으로 표시(NFR-09) | `Intl.DateTimeFormat(locale, { month:'long', day:'numeric', weekday:'short' }).format(new Date(referenceDate))` (Hermes 내장 `Intl`, 포맷 전용 `new Date(ts)` — logic §16.11 허용). `referenceDate === todayStart` 시 "오늘 ·" 접두. 진행률 한 줄 "M / N 완료" · "일정 N건"(미래) 문자열도 동일 `Intl` 로 숫자 포맷 위임 가능. 별도 로캘 데이터·라이브러리 추가 없음 |
+| 우선순위 색상 대비(F-07, P-60, v1.13 신설) | 대시보드 리스트의 우선순위 점(비-텍스트 그래픽 요소)이 WCAG 1.4.11 Non-text Contrast(≥3:1) 충족, 색만으로 구분하지 않음(1.4.1) | `PRIORITY_COLORS`(`logic.md` §5.2) = HIGH `#D32F2F`/NORMAL `#E65100`/LOW `#689F38`. 흰 배경(#FFFFFF) 대비 근사 ≈5.0/3.8/3.2 : 1, 다크 배경(#121212) 대비 근사 ≈3.8/4.9/5.9 : 1(상대휘도 계산 — 정밀 실측은 §11 온디바이스 후속). 별도 다크 전용 헥스값은 도입하지 않음(세 값 모두 양쪽 배경에서 3:1 이상 확보, 실제 다크 테마 렌더 배선은 기존 갭으로 이번 범위 밖). 행 `accessibilityLabel` 에 우선순위 텍스트 병기해 색 비의존 정보 제공 |
+| 유형 색상 팔레트 구별성(F-06, P-59, v1.13 신설) | 새로 추가되는 유형마다 기존 유형·우선순위 색과 시각적으로 구별되는 색상(AC-77) | `CATEGORY_COLOR_PALETTE`(`logic.md` §5.1) 12색은 색상환 156°~345° 구간(청록~자홍)+저채도 중성색 2종으로 한정, 우선순위 3색(hue 0°/24°/92°)과 최소 60° 이상 이격. "최초-미사용 탐색" 배정(§5.1)으로 적은 개수에서도 결정적으로 서로 다른 색 보장, 12개 소진 후에만 순환 재사용. 유형 배지는 이름 텍스트를 항상 동반(1.4.1 대응) |
 
 ---
 
@@ -214,6 +219,14 @@
 | V-47 | 통계 월 버킷(D-23(a)/P-56): `monthBoundaries(year, tz)` = 13개 `localWallToEpoch(year, m, 1, 0, 0, tz)`; `monthIndexOf(startAt, boundaries)` 가 `start_at` 기준으로만 1..12 버킷 배정(생성일·완료 시각 아님); tz·DST·연 경계(12월↔1월, 3월/11월 DST) 케이스에서 정확; 범위 밖(`startAt < yearStart`) 행은 그래프 제외; 각 (월,유형) 버킷 = 완료 여부 무관 전건 | `statisticsViewModel` 순수 함수 단위 테스트(고정 tz 4종 + DST 왕복 + 연 경계 합성 타임스탬프) | AC-71, P-56, logic §7.2.2 |
 | V-48 | 통계 유형 계열(P-57 / R-23-4 / E-23-5): 계열 키 = 행의 **현재 `categoryId`**, 라벨·색 = `CategoryService.list()` 현재값; 삭제된 유형 일정(E-06-2 로 이미 "기타" 재지정)은 "기타" 계열로 합산되고 삭제 유형 라벨 미복원; rename 후 재조회 시 새 이름 계열 라벨, 참조 유지 | `statisticsViewModel` + 화면 로직 단위 테스트(`CategoryService`/`ScheduleService` 목, 삭제·rename 시나리오) | AC-74/AC-75, P-57, E-23-5, logic §7.2.1/§7.2.5 |
 | V-49 | 통계 빈 상태·읽기 전용·비영속: `statisticsEmptyState` 가 0건→`no-data`(E-23-1) / "기타"만→`no-categories`(E-23-2) / 선택 연도 0건→`no-year-data`(**카드 수치 유지**, E-23-3) / 로드 실패→`load-error`(E-23-4) 로 분기, 문구 구분; `StatisticsScreen` 은 `writes: []`·`invalidates: []`(정적 grep — `bindings.ts`); `selectedYear` 가 `SettingRepository`·스토어·로그에 기록되지 않음(P-45 유사); F-11 진입점 이전 후에도 `SearchService`·`SCHEDULE_FTS`·AC-13/AC-14 동작 무변경(회귀) | `statisticsViewModel` 순수 함수 + 화면 로직 단위 테스트 + 정적 grep + F-11 회귀 테스트 | AC-69/AC-73/AC-76, E-23-1~4, P-54, logic §7.2.5/§16.3.8/§8 |
+| V-50 | 유형 색상 자동 배정(P-59): `assignCategoryColor(existingColors)` — 기존 색과 겹치지 않는 팔레트 색을 최초로 찾아 반환(3개 연속 생성 시 서로 다른 3색, AC-77); 팔레트 12개가 모두 사용 중이면 `existingCount % 12` 로 순환 재사용(오류 아님); 내부 예외 시 `CATEGORY_COLOR_FALLBACK='#8E8E93'` 반환(E-06-7, 예외를 던지지 않음); `CategoryService.create()` 가 `color` 생략 시에만 자동 배정 호출, 명시 시 그대로 사용(후방 호환) | `src/core/domain/categoryColor.ts` 순수 함수 단위 테스트(합성 기존 색 배열, 12개 초과 케이스, 내부 예외 주입) + `CategoryService.create` 단위 테스트(색 생략/명시 두 경로) | AC-77, E-06-7, P-59, logic §5.1 |
+| V-51 | 우선순위 색상 매핑(P-60): `PRIORITY_COLORS.HIGH/NORMAL/LOW` 가 각각 빨강/오렌지/연두 계열 고정 헥스(`#D32F2F`/`#E65100`/`#689F38`)와 정확히 일치; 대시보드 리스트가 `item.priority` 로 이 상수를 조회해 점 색상을 렌더(정적 리뷰 — 하드코딩 이탈 없음) | 정적 값 단위 테스트(`PRIORITY_COLORS` 상수 스냅샷) + 화면 로직 단위 테스트(서비스 목, 우선순위별 렌더 분기) + 대비값 정적 계산 리뷰(§7 표) | AC-78, P-60, logic §5.2 |
+| V-52 | 사전 알림 프리셋 UI(P-62, D-24): 화면에 정확히 5개 프리셋 칩만 노출되고 자유 입력란이 없음(AC-80); 체크박스 다중 토글이 `reminderOffsets` 배열에 정확히 반영(0~5개); 수정 모드 마운트 시 `getReminderOffsets(id)` 결과로 정확히 프리필(CANCELLED 제외); 저장 시 신규·수정 모두 현재 체크 상태를 **항상 명시적으로** 전송(0개 선택 시 빈 배열, E-08-6); 전역 알림 off 시 칩 비활성 + 전송값 `[]` | `ScheduleService.getReminderOffsets` 단위 테스트(인메모리 REMINDER 행, 상태별 포함/제외) + 화면 로직 단위 테스트(칩 토글 상태 관리, 저장 payload 검증, 프리필) | AC-80/AC-81, E-08-6, P-62, D-24, logic §6.1/§16.3.1 |
+| V-53 | 반복 회차 실체화(F-24): `create({recurrence})` 가 마스터 행(REMINDER 없음) + 회차#1(독립 REMINDER)을 동시 생성하고 목록/대시보드/캘린더 조회에 즉시 나타남(마스터는 제외, AC-82); `RecurrenceScheduler.sync(masterId)` 가 `expandOccurrences` 기대 회차 중 `listOccurrenceStartTimes`(soft-deleted 포함)에 없는 시각만 실체화하고 상한(366)·horizon(60일) 을 초과하지 않음; 신규 회차마다 독립 `REMINDER` 행 + `ReminderScheduler.sync` 위임(P-03) | `ScheduleService.create`/`RecurrenceScheduler.sync` 단위 테스트(인메모리 저장소 + `FixedClock`, DAILY/MONTHLY/YEARLY 각 1건 + 재호출 시 중복 미생성 확인) | AC-82, P-63, E-24-3, logic §18.3/§18.4 |
+| V-54 | 반복 종료 조건·삭제 스코프(F-24): 종료일 < 시작일 저장 거부(`VALIDATION_RECURRENCE_END_BEFORE_START`, AC-83); "이 일정만" 삭제가 대상 회차 1건만 soft-delete하고 마스터·다른 회차 무영향(AC-84 전반); `deleteRecurrenceFollowing`이 그 시점 이후 활성 회차 전부 soft-delete + 마스터 `recurrenceEndAt` 갱신으로 재생성 차단, 과거 회차는 무변경(AC-84 후반) | `ScheduleService` 단위 테스트(인메모리 저장소, 다건 회차 합성 시나리오) | AC-83/AC-84, E-24-2/4/5, logic §18.5/§18.7 |
+| V-55 | 완료 시 목록 하단 이동(F-10): `applyCompletionOrder` 가 안정 파티션으로 미완료(시작시각순 유지)·완료(D-26(a), 시작시각순 유지) 순으로 재배치; 완료 해제 시 미완료 그룹의 원래 시작시각 위치로 복귀 | `dashboardViewModel.applyCompletionOrder` 순수 함수 단위 테스트(합성 배열, 토글 전후 비교) | AC-85/AC-86, P-64, D-26, logic §7.4 |
+| V-56 | 완료된 일정 숨기기(F-25): `filterHideCompleted` 가 `hideCompleted=true` 일 때 완료 항목을 표시에서만 제외하고 `getSummary` 호출·인자·결과는 불변(D-28(a)); 대시보드·설정이 동일 `APP_SETTING` 키(`dashboard.hideCompleted`)를 포커스 시마다 재조회해 상태 공유(AC-89); 파이프라인 순서(검색→숨기기→정렬)로 E-10-8/E-25-1(하단 이동 대신 즉시 제거)이 자동 충족 | `dashboardViewModel.filterHideCompleted` 순수 함수 단위 테스트 + 화면 로직 단위 테스트(서비스 목, 파이프라인 순서 고정 확인) + 정적 grep(`getSummary` 인자 무변경) | AC-88/AC-89, P-66, E-10-8/E-25-1~3, logic §7.5 |
+| V-57 | 캘린더 날짜 프리필(F-26): `combineDateWithTimeOfDay(dateTs, timeOfDayTs, tz)` 가 날짜 성분은 첫 인자, 시각 성분은 둘째 인자에서만 취해 결합(4개 tz + DST 경계 고정 테스트); `CalendarScreen`「+」가 `presetStartAt` 를 정확히 전달하고 미선택 예외 분기(E-26-1)에서는 생략 | `src/core/domain/time.ts` 순수 함수 단위 테스트(합성 타임스탬프, 다중 tz) + 화면 로직 단위 테스트(네비게이션 파라미터 검증) | AC-90, P-67, E-26-1~3, D-29, logic §7.6 |
 
 - 측정값(V-1~V-24) 중 기능 정확성 항목은 PASS 필수. 성능 [제안] 수치(1장)와 온디바이스 항목(§11)은 관찰/후속.
 - V-27~V-30 중 순수 로직(FSM·활동 목록·강등 판정)은 `node:test` 로 PASS 필수. SVG/`Animated` 실제 렌더·프레임 측정은 온디바이스 후속(§11.2).
@@ -222,6 +235,8 @@
 - V-46~V-49(v1.10, F-23): 전부 `statisticsViewModel` 순수 함수 + 화면/파생 로직 단위 테스트 + 정적 grep 로 이 파이프라인 PASS 필수. 신규 코어·DB·인덱스·의존성 없음. 차트 온디바이스 실렌더·프레임·스크린리더 낭독 측정은 §11 셸 후속과 동일 취급(§16.6). D-20 이 "완전 제거"로 확정되면 AC-13/AC-14/AC-76·V-49 의 F-11 회귀 부분은 이번 릴리스 검증 제외.
 - **v1.11(막대→선, F-23)**: V-46~V-49 는 **문구·검증 대상 무변경**. 뷰모델(`aggregateTotals`/`aggregateYear`/`monthBoundaries`/`monthIndexOf`/`statisticsEmptyState` …) 시그니처와 `YearAggregate` 반환 형태가 그대로이므로 `tests/app/statisticsViewModel.test.ts` 도 무변경. 시각화 교체는 `StatisticsScreen` 렌더 계층 한정 — 선택적으로 Developer 가 y축 스케일 파생값(`seriesPointMax`)을 신규 순수 헬퍼로 뽑으면 그 헬퍼 단위 테스트만 추가(기존 export 불변). 선 polyline 좌표 매핑·`Circle` 마커 실렌더는 §11 온디바이스 후속(§16.6)과 동일 취급.
 - V-41~V-45(v1.8 신설 / v1.9 재확정 방향, F-20~F-22): 전부 화면/파생 로직 단위 테스트 + 정적 grep 로 이 파이프라인 PASS 필수. 신규 코어·DB·인덱스·의존성 없음 → 성능 관찰 항목 없음(§15 는 기존 인덱스·소스 재사용 근거만). V-44(접이식 토글 포커스 이동)·V-45(진행률 한 줄 렌더 분기)의 온디바이스 실렌더·SR 포커스 측정은 §11 셸 후속과 동일. DASH-01(날짜 스텝 예시식 정정)은 logic §16.3.7 문서 정정 — 구현·테스트 무변경(이미 방향 무관 `+ HALF_DAY`, 4개 tz + DST 왕복 통과).
+- V-50~V-52(v1.13, F-06/F-07/F-08/F-10, plan v1.8): 전부 순수 함수(`categoryColor.ts`)·서비스(`CategoryService.create`·`ScheduleService.getReminderOffsets`)·화면 로직 단위 테스트로 이 파이프라인 PASS 필수. 신규 코어 포트·DB·인덱스·의존성 없음 → 성능 관찰 항목 없음. V-51 의 대비값(§7 표)은 상대휘도 근사 계산 리뷰이며 실제 렌더 색상의 온디바이스 정밀 측정(색공간 보정 등)은 §11 셸 후속과 동일 취급 — 계산 근사가 PASS 기준이며 실측 미달을 Critical/High 로 올리지 않는다(위 [제안] 취급 원칙과 동일).
+- V-53~V-57(v1.14, F-24/F-10/F-25/F-06/F-26, plan v1.9): 전부 순수 함수(`recurrence.ts`·`dashboardViewModel.ts`·`time.ts`)·서비스(`ScheduleService`·`RecurrenceScheduler`)·화면 로직 단위 테스트로 이 파이프라인 PASS 필수. **V-53**(회차 실체화)·**V-54**(종료조건·삭제 스코프)는 신규 코어 로직이므로 회귀 가드가 특히 중요(비반복 경로 §1 무영향 확인 포함). V-55~V-57 은 신규 코어 포트·DB·인덱스·의존성 없음 → 성능 관찰 항목 없음(§17). 반복 회차의 온디바이스 대량 생성·알림 실제 발송은 §11 셸 후속(iOS 시뮬레이터 실행)과 동일 취급.
 
 ---
 
@@ -280,6 +295,8 @@ overview.md "빌드 환경 제약과 파이프라인 검증 전략" 참조. RN �
 | N-13 | 요약 상세 "다음 예정 일정"의 기준일 스코프 — 이번 사이클 코어 `getSummary` 무변경으로 `nextScheduleId` 는 `clock.now()` 기준 실제 다음 예정 반환. 기준일 스코프가 필요하면 코어 확장(스키마 무변경) 후속. 비차단, AC 회귀 없음(logic §15 N-13) |
 | D-20~D-23 | 세 번째 탭 "검색"→"통계" 교체 + 통계 화면(F-23) 게이트 — 전부 plan v1.7 가정값으로 설계 진행(비차단). **D-20**(a) 캘린더 화면 헤더 검색 아이콘을 F-11 진입점으로(로직·AC-13/14 무변경, P-54) — (d)"완전 제거" 확정 시 AC-13/14/76·V-49 F-11 부분 이번 릴리스 검증 제외, **네비게이션 구조·AC 검증 대상 영향 → 착수 초기 확인 권장**. **D-21**(a) 상단 카드 = 전체 기간 누적·하단 그래프 연도 비연동(삭제분 제외). **D-22**(a) 반복 카운트 = 개별 인스턴스(대시보드·캘린더와 동일 조회 경로 → 자동 일치). **D-23**(a) 월 버킷 기준일 = `start_at` 로컬 달(생성일·완료 시각 아님). 상세: overview.md 미결정 표 / logic §7.2·§15. NFR 영향: 신규 정량 요구·인덱스·의존성 없음(§16). 게이트 형식상 OPEN(이해관계자 추인 대기), 비차단 |
 | OI-22 / OI-26 | (F-23) OI-22(카드에 완료율 병기) = 설계 결정 "미병기, 카드 2장만"(후속). OI-26(F-17 인디케이터 위치) = `StatisticsScreen` 인라인·소형 1개(logic §16.9.8 #6). 둘 다 비차단 |
+| D-25~D-29 | F-24 반복 "매주" 미포함 / F-10 완료 그룹 정렬 / F-06 기본 유형 삭제·이름변경·마이그레이션 시딩 / F-25 대시보드·설정 공유·집계 미반영 / F-26 프리필 시각=현재 시각 (v1.9 신규) — 전부 plan v1.9 가 가정값을 명시한 **비차단** 게이트. 상세: overview.md 미결정 표 / logic §5.3·§7.4~§7.6·§15·§18. NFR 영향: 신규 정량 SLO·인덱스 없음(§17). D-25 만 UI 옵션 수(4종 vs 5종)에 직접 영향 — 착수 초기 확인 권장. 게이트 형식상 OPEN(이해관계자 추인 대기), 비차단 |
+| N-16 | 반복 규칙 사후 변경(E-24-1) UI 세부 — logic §18.5 `updateRecurrenceRule` 로 기능 수준만 지원, 세부 UX(마법사 등)는 후속. 비차단 |
 
 ---
 
@@ -462,3 +479,34 @@ plan v1.7 통계 화면(logic §7.2 / §16.3.8)의 비기능 관점. **신규 �
 
 - V-46~V-49(§9). 화면/뷰모델 순수 로직 단위 테스트 + 정적 grep 로 이 파이프라인 PASS 필수. 온디바이스 실렌더·프레임·스크린리더 낭독 측정은 §11 셸 후속과 동일 취급(N-8).
 - **v1.11(막대→선)**: 시각화 교체는 프레젠테이션 한정 — 집계 계약·쿼리·상태·빈 상태 분기가 불변이므로 V-46~V-49 판정 기준이 바뀌지 않는다. Tester 정적 리뷰 확인 포인트: (1) `statisticsViewModel.ts` export 시그니처·`YearAggregate` 형태 무변경, (2) `StatisticsScreen` 이 `react-native-svg` `Polyline`/`Circle`/`Line` 만 사용하고 신규 npm 의존성이 없을 것(`package.json` diff 0), (3) 그래프 영역 데이터 요약 `<Text>`(월/유형/건수) 유지, (4) 애니메이션·인터랙션(범례 토글·탭 이동·스크롤/줌) 미도입(OI-23).
+
+---
+
+## 17. 반복 회차 실체화 · 완료 시 하단 이동 · 완료된 일정 숨기기 · 기본 유형 시딩 · 캘린더 프리필 (F-24/F-10/F-25/F-06/F-26 / NFR-04) — v1.14 신설
+
+### 17.1 반복 회차 실체화 성능·용량 (F-24, plan v1.9)
+
+- **경계값**: `expandOccurrences`(logic §18.1) 절대 상한 **366**(기존 [제안]값, `recurrence.ts` `MAX_EXPANSION`) + `RecurrenceScheduler` horizon **60일 [제안]**(`ReminderScheduler` 기본 horizon 과 동일 정책, `sync()` 호출당 마스터별 상한). DAILY 반복이라도 한 번의 `sync()` 에서 60개 안팎(호출 주기에 따라 가감)만 생성하고, 초과분은 다음 `sync()`(부트스트랩/`AppState active`/부팅 완료)에서 이어 생성한다.
+- **용량 가정**: §2 기존 용량 가정(5년 1만 건, 개인 사용자 1명) 대비 반복 시리즈는 통상 사용자당 소수(가정 [제안] ≤ 20개 활성 시리즈)이므로, 시리즈당 최대 366행이어도 전체 스케줄 용량 증가는 §2 한도 내에 흡수된다. 워스트케이스(20개 DAILY 시리즈 × 60일치 동시 신규 실체화)도 ≤ 1,200행 — 단일 트랜잭션이 아닌 회차별 개별 트랜잭션(logic §18.3)이라 커밋 단위가 작다.
+- **쿼리 비용**: `listOccurrenceStartTimes(masterId)`(gap 탐지, soft-deleted 포함)는 `idx_schedule_recur_parent`(기존 인덱스, `database.md` §4) 로 마스터 1개당 회차 수(≤ 366)만 스캔 — 인덱스 스캔 비용은 무시할 수준. 표시 조회(`findInRange` 등)의 신규 조건 `recurrence_rule IS NULL` 은 부분 인덱스(`idx_schedule_start` 등)로 좁혀진 결과에 추가 필터로 평가되며 별도 인덱스가 필요하지 않다(`database.md` §14.2 근거와 동일).
+- **알림 예약 영향**: 새 회차마다 `ReminderScheduler.sync(occ.id)` 를 호출하지만, 이는 기존 §6 경로(개별 일정 저장 시와 동일)를 재사용할 뿐 — OS 동시 예약 상한(§1.2 `horizonDays=60`)과 독립적으로 상한이 걸려 있어 신규 위험이 없다.
+- **트리거 시점 선택 근거**: 반복 일정 생성 직후에는 `await`(동기)로 horizon 내 실체화를 완료해 사용자가 즉시 결과를 볼 수 있게 하고(AC-82), 이후 정기 트리거(콜드 스타트/`AppState active`/부팅)는 "누락분 보완" 역할만 한다 — `ReminderScheduler.sync()` 와 동일한 신뢰성 모델.
+
+### 17.2 완료 정렬 · 숨기기 필터 렌더 비용 (F-10 / F-25)
+
+- `applyCompletionOrder`/`filterHideCompleted`(logic §7.4/§7.5)는 이미 `DASHBOARD_PAGE_SIZE=100` 으로 상한된 배열에 대한 **O(n) 순수 배열 연산**(filter 2회 + concat)이다. 추가 쿼리·인덱스·네트워크 호출이 없으므로 §1.1 대시보드 렌더 목표(< 400ms 첫 렌더)에 영향이 없다.
+- 완료 토글마다 재계산되지만 페이지 크기가 작아(≤ 100) 매 토글마다 O(100) 비용은 프레임 예산 내 무시할 수준.
+
+### 17.3 기본 유형 시딩 마이그레이션 비용 (F-06)
+
+- 마이그레이션 002(`database.md` §14.3)는 앱 최초 실행(또는 기존 사용자의 다음 실행) 1회만 적용되는 DML 3건(`INSERT … SELECT … WHERE NOT EXISTS`)이다. `category` 테이블은 사용자당 수십 건 이하로 항상 소규모이므로 `WHERE NOT EXISTS` 서브쿼리 비용은 무시할 수준이며 부트스트랩 지연에 영향을 주지 않는다(§1.1 콜드 스타트 목표 < 1.5s 범위 내).
+
+### 17.4 캘린더 날짜 프리필 (F-26) — 무비용
+
+- `combineDateWithTimeOfDay`(logic §7.6)는 순수 함수 호출 1회(`Intl.DateTimeFormat` 포맷 파싱 2회 + 산술)로, DB 조회·네트워크·저장이 없다. 네비게이션 파라미터 전달 시점 1회만 계산되므로 측정 가능한 성능 영향이 없다.
+
+### 17.5 검증 관점
+
+- V-53~V-57(§9). 순수 함수(`recurrence.ts`/`dashboardViewModel.ts`/`time.ts`) + 서비스(`ScheduleService`/`RecurrenceScheduler`) + 화면 로직 단위 테스트로 이 파이프라인 PASS 필수.
+- 반복 회차의 실제 대량 생성(예: DAILY × 60일 반복적 온디바이스 실행)·OS 알림 실제 발송량은 §11 셸 후속(iOS 시뮬레이터 실행/온디바이스 정확도)과 동일 취급 — 정적/단위 테스트로는 로직의 상한·gap 탐지 정확성만 검증한다.
+- 신규 정량 SLO·인덱스·의존성 없음.

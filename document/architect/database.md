@@ -3,15 +3,17 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 데이터베이스 설계 (Database) |
-| 버전 | v1.6 |
-| 상태 | 작성 완료 (스키마 무변경) |
-| 근거 | `document/planner/plan.md` v1.7, `document/architect/overview.md` v1.14 |
+| 버전 | v1.8 |
+| 상태 | 작성 완료 (스키마 변경 — 마이그레이션 002/003 신규) |
+| 근거 | `document/planner/plan.md` v1.9, `document/architect/overview.md` v1.16 |
 | DB 엔진 | SQLite 3 (op-sqlite, 선택적 SQLCipher) |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
+| v1.8 | 2026-09-12 | plan v1.9 — F-24 반복 일정 / F-06 기본 유형 4종 시딩 스키마 영향 검토. **최초로 실제 스키마 변경 발생**(v1.1~v1.7 은 전부 무변경 검토였음). (1) **마이그레이션 002(DML)** — `category` 테이블에 "공부"/"취미"/"업무" 3종을 `WHERE NOT EXISTS`(대소문자·앞뒤공백 무시 비교)로 idempotent 시딩, 색상은 `CATEGORY_COLOR_PALETTE[0..2]`(`#00897B`/`#00ACC1`/`#039BE5`) 고정 배정 — `IS_SYSTEM=0`(D-27(a), 보호 대상 아님). 신규 설치자·기존 사용자 모두 버전 기반 마이그레이션 러너로 동일 적용(E-06-8). (2) **마이그레이션 003(DDL)** — `schedule` 테이블에 `recurrence_reminder_offsets TEXT NULL` 컬럼 추가(`ALTER TABLE … ADD COLUMN`). F-24 반복 마스터 행이 사전 알림 오프셋 템플릿(JSON 배열)을 보관해, 향후 회차 실체화 시 각 회차의 `REMINDER` 행을 재구성하는 데 쓰인다. 마스터 행 자체는 `REMINDER` 행을 갖지 않는다(알림 노출면 확대 방지 — logic §13.9 유사 원칙 재사용). (3) **반복 회차 표시 필터** — `RECURRENCE_RULE`/`RECURRENCE_END_AT`/`RECURRENCE_COUNT`/`RECURRENCE_PARENT_ID` 컬럼은 v1.0(마이그레이션 001)부터 이미 존재했으나 조회 경로에 결선되지 않았던 것을 이번에 결선: `ScheduleRepository.findInRange`/`findForDashboard`/`search` 가 `recurrence_rule IS NULL` 조건을 추가해 마스터 행(반복 규칙 보유, `recurrence_rule` NOT NULL)을 표시 결과에서 제외한다(§14). 신규 인덱스는 불필요(§14 근거). §3.2 SCHEDULE 표에 `RECURRENCE_REMINDER_OFFSETS` 행 추가. §4/§8 갱신. §14 "F-24/F-06 v1.9 스키마 변경 및 마이그레이션" 신설. **F-10(완료 시 하단 이동)·F-25(완료된 일정 숨기기)·F-26(캘린더 프리필)은 스키마 무영향**(F-25 는 기존 `app_setting` EAV 테이블에 신규 키만 추가 — 마이그레이션 불요) |
+| v1.7 | 2026-09-11 | plan v1.8 — F-06 유형 색상 자동 배정 / F-07 우선순위 색상 매핑 / F-10 대시보드 리스트 우선순위·유형 표시 / F-08 사전 알림 프리셋 선택 스키마 영향 검토 — **DDL·인덱스·트리거·시드 무변경**. §13 "F-06/F-07/F-08/F-10 v1.8 색상·표시 개정 스키마 영향 검토" 추가. 사유: (1) 유형 색상 자동 배정(P-59)은 이미 존재하는 `CATEGORY.COLOR TEXT NOT NULL DEFAULT '#8E8E93'`(3.1) 컬럼에 다양한 값을 저장할 뿐 — 컬럼·제약·인덱스 변경 없음, 배정 로직은 애플리케이션 계층 순수 함수(`logic.md` §5.1), (2) 기존에 고정 회색으로 이미 저장된 카테고리 행에 대한 **소급 UPDATE(백필)는 수행하지 않는다**(설계 결정, `logic.md` §5.1 — 마이그레이션 번호 부여 대상 아님), (3) 우선순위 색상 매핑(P-60)은 `SCHEDULE.PRIORITY`(기존 CHECK 제약 `HIGH/NORMAL/LOW`, 3.2)를 코드 상수로 매핑할 뿐 스키마 변경 없음, (4) 대시보드 리스트 우선순위·유형 표시(P-61)는 이미 조회되는 `SCHEDULE.PRIORITY`/`SCHEDULE.CATEGORY_ID`(+ `CATEGORY.COLOR`/`NAME` 조인 없는 별도 `CategoryService.list()` 조회)를 화면에서 렌더할 뿐 신규 쿼리·인덱스 없음, 삭제된 유형 참조(E-10-7)는 F-06 E-06-2 가 이미 트랜잭션 내에서 재지정한 `CATEGORY_ID` 를 그대로 사용, (5) 사전 알림 프리셋 선택(P-62)은 `REMINDER.OFFSET_MINUTES INTEGER`(기존 컬럼, 3.3)에 프리셋 5값(5/10/30/60/1440) 중 사용자가 고른 값을 그대로 저장 — 컬럼·제약(오프셋 개수 상한은 앱 계층 `VALIDATION_REMINDER_LIMIT`, 기존)·인덱스 변경 없음. 결론: 마이그레이션 번호 부여 없음 |
 | v1.6 | 2026-09-10 | 설계 델타(overview v1.14 / logic v1.14 / nfr v1.12 — F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수: Xcode 타깃·SwiftUI UI·`WCSessionDelegate`·워치 로컬 영속). **공유 SQLite 스키마 영향 없음 — DDL·인덱스·트리거·시드 무변경, `database.md` v1.5 내용 전부 유효.** §10 말미에 "v1.6 구현 착수 확인" 문단 추가. 사유: 이번 델타는 (1) `ios/` Xcode 프로젝트에 watchOS 앱 타깃 추가, (2) `ios/TodayWhatWatch/**` Swift 소스(UI·WCSession·LWW 재구현), (3) 워치 앱 컨테이너의 JSON 파일 2개(마지막 스냅샷·보류 큐) — 전부 **공유 SQLite 밖**. 폰 측은 이미 구현된 `src/core/watchSync/**` + `WatchSyncService` + `WatchConnectivityGateway` 를 그대로 사용(§10 검토 시점과 동일). LWW 는 여전히 `SCHEDULE.UPDATED_AT` 근사(N-12), dedup 원장은 `APP_SETTING` `watch.appliedOps` k/v. 새 테이블·컬럼·인덱스·`APP_SETTING` 키·마이그레이션 번호 없음 |
 | v1.5 | 2026-09-10 | plan v1.7 세 번째 탭 "검색"→"통계" 교체 + 통계 화면(F-23) 스키마 영향 검토 — **DDL·인덱스·트리거·시드 무변경**. §12 "F-23 통계 화면 스키마 영향 검토" 추가. 사유: (1) 상단 카드(총/완료 건수, 전체 기간 누적 — D-21(a)/P-55)는 기존 `ScheduleService.findInRange(0, Number.MAX_SAFE_INTEGER, …)` cursor 루프 전건 스캔으로 충족 — `IDX_SCHEDULE_START`(부분 인덱스, `deleted_at IS NULL`)가 스캔 지원, 삭제분 자동 제외, (2) 하단 그래프(선택 연도 1개 × 1~12월 × 유형별 건수 — D-23(a)/P-56)는 `ScheduleService.findInRange(yearStartTs, yearEndTs, …)` `start_at` 연 범위 스캔(CalendarScreen 월 조회와 동형) + **인메모리** 월·유형 집계(순수 `statisticsViewModel.ts` + 코어 공개 `localWallToEpoch`) — 새 집계 컬럼·뷰·인덱스·GROUP BY 쿼리 없음, (3) 선택 연도는 `StatisticsScreen` 로컬 React state — 영구 저장 금지, `APP_SETTING` 키 미추가, (4) F-11 진입점 이전(검색 탭 → 캘린더 헤더, D-20(a))은 네비게이션 배선 변경 — `SCHEDULE_FTS`·검색 쿼리 무관, (5) 삭제 유형 집계(E-23-5)는 E-06-2 의 기존 `SCHEDULE.CATEGORY_ID` 재지정(트랜잭션 내 UPDATE) 결과를 그대로 반영 — 뷰모델이 현재 `category_id` 만 사용. 결론: 마이그레이션 번호 부여 없음 |
 | v1.4 | 2026-09-09 | plan v1.6 대시보드 개선 **재확정 방향**(F-20 컴팩트 / **F-21 진행률 한 줄**(개수 카드 폐기) / **F-22 접이식 검색**(상시 입력창 폐기)) 스키마 영향 재검토 — **DDL·인덱스·트리거·시드 무변경**. §11 갱신. 추가 검토: (1) **진행률 한 줄**(F-21)도 `DashboardService.getSummary(referenceDate)` 의 `total`/`done` 재사용 — progress bar 채움은 UI 계산(완료율 P-07), 새 집계 컬럼·뷰 없음, (2) **`searchExpanded`**(F-22 접이식 펼침/접힘, P-53)는 `DashboardScreen` 로컬 React state — 영구 저장 금지, `APP_SETTING` 키 미추가, (3) **미래 날짜 진행률 표시**(P-52, D-19)는 `isFutureDate(referenceDate, todayStart)` 순수 표시 조건 — `getSummary` 호출·인자·결과 무변경, (4) **접힘 시 검색어 초기화**(D-18)는 화면 state 조작만. 결론 유지: 마이그레이션 번호 부여 없음 |
@@ -87,15 +89,17 @@ SCHEDULE_FTS  (SCHEDULE의 external-content FTS5 미러)
 | RECURRENCE_RULE | TEXT | | Y | NULL | CHECK IN (NULL,'DAILY','WEEKLY','MONTHLY','YEARLY') | 단순 반복 (D-05) |
 | RECURRENCE_END_AT | INTEGER | | Y | NULL | epoch ms | 반복 종료일 |
 | RECURRENCE_COUNT | INTEGER | | Y | NULL | > 0 | 반복 횟수(종료일과 택1) |
-| RECURRENCE_PARENT_ID | INTEGER | | Y | NULL | FK → SCHEDULE.ID | 반복 회차의 원본(P-02) |
+| RECURRENCE_PARENT_ID | INTEGER | | Y | NULL | FK → SCHEDULE.ID | 반복 회차의 원본(P-02). **v1.8부터 실사용**: 회차 행에서 마스터 행을 가리킴. 마스터 행 자체는 NULL |
+| RECURRENCE_REMINDER_OFFSETS | TEXT | | Y | NULL | JSON 배열(예: `'[10,60]'`) (앱 검증) | **v1.8 신규(마이그레이션 003, F-24)**. 마스터 행(`RECURRENCE_RULE` NOT NULL)에만 채움 — 사전 알림 오프셋 템플릿. 회차 실체화 시 각 회차의 `REMINDER` 행 재구성에 사용. 그 외 모든 행(회차·비반복 일정)은 NULL |
 | SOURCE | TEXT | | N | 'LOCAL' | CHECK IN ('LOCAL','CALENDAR') | 생성 출처 (F-14, P-08) |
 | NOTIFY_AT_START | INTEGER | | N | 1 | 0/1 | 정시 알림 on/off (F-09) |
 | CREATED_AT | INTEGER | | N | | epoch ms | |
 | UPDATED_AT | INTEGER | | N | | epoch ms | 낙관적 갱신·동기화 병합 기준 |
 | DELETED_AT | INTEGER | | Y | NULL | epoch ms | soft delete(삭제 Undo, OI-4/N-3) |
 
-- **변경 이유**: 일정의 모든 필수 속성(F-01), 완료(F-05/P-04~06), 유형(F-06), 우선순위(F-07), 반복(D-05/P-01~03), 캘린더 출처(F-14/P-08), 시간대(P-16), soft delete(E-04-2).
-- `RECURRENCE_END_AT`와 `RECURRENCE_COUNT`는 동시 non-null 금지(앱 검증). `RECURRENCE_RULE IS NULL`이면 나머지 recurrence 컬럼도 NULL(앱 검증).
+- **변경 이유**: 일정의 모든 필수 속성(F-01), 완료(F-05/P-04~06), 유형(F-06), 우선순위(F-07), 반복(D-05/P-01~03, v1.8 확정 F-24/P-63), 캘린더 출처(F-14/P-08), 시간대(P-16), soft delete(E-04-2).
+- `RECURRENCE_END_AT`와 `RECURRENCE_COUNT`는 동시 non-null 금지(앱 검증). `RECURRENCE_RULE IS NULL`이면 나머지 recurrence 컬럼(`RECURRENCE_END_AT`/`RECURRENCE_COUNT`/`RECURRENCE_REMINDER_OFFSETS`)도 NULL(앱 검증) — 단, `RECURRENCE_PARENT_ID`는 회차 행에서 NOT NULL이면서 `RECURRENCE_RULE IS NULL`인 조합이 정상(회차는 반복하지 않음, 마스터만 가리킴).
+- **v1.8(F-24) 마스터/회차 구분**: `RECURRENCE_RULE IS NOT NULL AND RECURRENCE_PARENT_ID IS NULL` = 마스터 행(반복 규칙 보유, 목록·대시보드·캘린더·검색 표시 대상 **아님**). `RECURRENCE_PARENT_ID IS NOT NULL` = 회차 행(개별 표시·완료·알림 대상, `RECURRENCE_RULE`은 항상 NULL). 둘 다 NULL이면 일반(비반복) 일정. `ScheduleRepository.findInRange`/`findForDashboard`/`search`는 `RECURRENCE_RULE IS NULL` 조건으로 마스터 행을 결과에서 제외한다(§14).
 
 ### 3.3 REMINDER (F-08, F-09, P-09, P-10)
 
@@ -179,7 +183,7 @@ SCHEDULE_FTS  (SCHEDULE의 external-content FTS5 미러)
 | IDX_SCHEDULE_CATEGORY | SCHEDULE(CATEGORY_ID) WHERE DELETED_AT IS NULL | 유형 필터(AC-11) |
 | IDX_SCHEDULE_PRIORITY | SCHEDULE(PRIORITY, START_AT) WHERE DELETED_AT IS NULL | 우선순위 정렬(AC-12) |
 | IDX_SCHEDULE_SOURCE | SCHEDULE(SOURCE) | 캘린더 동기화 스캔 |
-| IDX_SCHEDULE_RECUR_PARENT | SCHEDULE(RECURRENCE_PARENT_ID) | 반복 회차 조회(P-02) |
+| IDX_SCHEDULE_RECUR_PARENT | SCHEDULE(RECURRENCE_PARENT_ID) | 반복 회차 조회(P-02). **v1.8부터 실사용**: `listOccurrenceStartTimes(masterId)`(회차 실체화 gap 탐지, soft-deleted 포함)·"이후 모두" 삭제 대상 조회 |
 | IDX_REMINDER_TRIGGER_STATE | REMINDER(STATE, TRIGGER_AT) | 다가오는 알림 예약/복원(AC-08) |
 | IDX_REMINDER_SCHEDULE | REMINDER(SCHEDULE_ID) | 일정별 알림 정리(AC-10) |
 | IDX_CALLINK_EXTERNAL | CALENDAR_LINK(EXTERNAL_CALENDAR_ID, EXTERNAL_EVENT_ID) UNIQUE | 중복 판정(P-08) |
@@ -344,6 +348,7 @@ VALUES ('notif.showTitle', 'true', 1756944000000);
 | --- | --- |
 | CATEGORY / SCHEDULE / REMINDER / APP_SETTING / CALENDAR_LINK / ACCOUNT_LINK / SCHEDULE_FTS / SCHEMA_MIGRATION | category / schedule / reminder / app_setting / calendar_link / account_link / schedule_fts / schema_migration |
 | SCHEDULE.CATEGORY_ID, START_AT, IS_DONE, DONE_AT … | schedule.category_id, start_at, is_done, done_at … |
+| SCHEDULE.RECURRENCE_REMINDER_OFFSETS (v1.8, 마이그레이션 003) | schedule.recurrence_reminder_offsets |
 
 ---
 
@@ -431,3 +436,82 @@ VALUES ('notif.showTitle', 'true', 1756944000000);
 **인덱스 추가 검토**: 하단 그래프의 월·유형 그룹핑을 SQL 로 옮기면 `(start_at, category_id)` 복합 커버링 인덱스가 행 조회를 줄일 수 있으나, (1) 집계는 인메모리 뷰모델에서 수행하므로 조회는 기존 keyset 경로 그대로이고, (2) 대상 규모가 단일 사용자·연 ~2,000건(§2)·화면 진입 시 1회이며, (3) 인덱스 추가는 모든 `schedule` insert/update 에 쓰기 비용을 더한다. → **추가하지 않는다.** 기존 `IDX_SCHEDULE_START` 로 충분.
 
 **결론**: 마이그레이션 번호 부여 없음. F-23 은 `migrations/001_init.sql` 스키마와 기존 `IDX_SCHEDULE_START` / `IDX_SCHEDULE_DONE_START` 인덱스로 충족한다. 상단 카드·하단 그래프 모두 기존 `ScheduleService.findInRange` + `CategoryService.list()` 결과의 인메모리 집계(순수 뷰모델)이며, 신규 테이블·컬럼·인덱스·트리거·`APP_SETTING` 키가 없다. 선택 연도는 영속 데이터가 아니다.
+
+---
+
+## 13. F-06/F-07/F-08/F-10 v1.8 색상·표시 개정 스키마 영향 검토 (스키마 무변경) — v1.7
+
+`plan.md` v1.8 이 확정한 4개 항목 — (1) 유형(카테고리) 색상 자동 배정(P-59) (2) 우선순위 색상 매핑(P-60) (3) 대시보드 리스트 아이템의 우선순위·유형 표시(P-61) (4) 사전 알림 프리셋 선택(P-62) — 에 대해 로컬 저장소 변경 필요성을 검토한 결과 **DDL·인덱스·트리거·초기 데이터 모두 변경 없음**. 근거:
+
+| 요구 (plan v1.8) | 필요 저장/조회 요소 | 기존 스키마 충족 방식 | 변경 |
+| --- | --- | --- | --- |
+| P-59 새 유형 추가 시 기존 유형과 구별되는 색상 자동 배정(E-06-7 폴백 포함) | 유형별 색상값 저장 | `CATEGORY.COLOR TEXT NOT NULL DEFAULT '#8E8E93'`(3.1, **기존 컬럼**)에 `CategoryService.create()`(앱 계층 순수 함수 `assignCategoryColor`, `logic.md` §5.1)가 계산한 값을 저장. 컬럼 타입·제약·기본값·인덱스 모두 무변경 — "자동 배정"은 **저장 전 애플리케이션 로직**일 뿐 DB 구조와 무관 | 없음 |
+| — 기존에 고정 회색으로 이미 생성된 카테고리의 처리(요청 사항 — 마이그레이션/재배정 필요 여부 판단) | — | **소급 재배정(백필) 없음** — `CategoryService.create()` 는 신규 호출부터만 적용되고, 이미 저장된 행의 `COLOR` 값을 일괄 UPDATE 하는 마이그레이션 스크립트를 추가하지 않는다(설계 결정, `logic.md` §5.1 근거 참조). 스키마·DDL 변경이 없으므로 마이그레이션 번호 부여 대상 자체가 아니다 | 없음 |
+| P-60 우선순위 색상 매핑(높음/보통/낮음 = 빨강/오렌지/연두 계열, 정확한 헥스값) | — | `SCHEDULE.PRIORITY TEXT NOT NULL DEFAULT 'NORMAL' CHECK IN ('HIGH','NORMAL','LOW')`(3.2, **기존 컬럼·기존 CHECK 제약**). 색상 매핑은 코드 상수(`PRIORITY_COLORS`, `logic.md` §5.2)이며 DB 에는 저장하지 않는다(파생 표시값) | 없음 |
+| P-61 대시보드 리스트 항목에 우선순위·유형 시각 표시 | 이미 조회되는 필드 | 우선순위 점 = `SCHEDULE.PRIORITY`(이미 `ScheduleService.findInRange` 결과에 포함). 유형 배지 = `SCHEDULE.CATEGORY_ID` 로 `CategoryService.list()`(기존 메서드) 결과를 화면에서 조인(인메모리 `Map`) — SQL JOIN·신규 쿼리·신규 인덱스 없음 | 없음 |
+| E-10-7 삭제된 유형을 참조하던 항목의 표시 | — | F-06 E-06-2 가 이미 트랜잭션 내에서 `SCHEDULE.CATEGORY_ID` 를 system default("기타") id 로 UPDATE 후 유형 DELETE(3.1/3.2 기존 로직, `database.md` §9). 대시보드는 그 `CATEGORY_ID` 를 그대로 조회하므로 자동으로 "기타"의 라벨/색이 나온다 — 신규 컬럼·플래그 불필요 | 없음 |
+| P-62 사전 알림 오프셋 5개 프리셋(5/10/30/60/1440분) 중 다중 선택(0개 이상) | 오프셋 값 저장 | `REMINDER.OFFSET_MINUTES INTEGER NOT NULL`(3.3, **기존 컬럼**, `>= 0` 제약)에 프리셋 값을 그대로 저장 — 프리셋이라는 개념은 UI 레벨 선택지일 뿐 저장 형식은 기존과 동일한 "분 단위 정수". 오프셋 개수 상한(P-10, 최대 5)은 기존 앱 계층 검증(`VALIDATION_REMINDER_LIMIT`)이 그대로 담당 — DB 제약 추가 없음. `UNIQUE(SCHEDULE_ID,KIND,OFFSET_MINUTES)`(3.3) 도 기존 그대로 중복 오프셋 방지 | 없음 |
+| E-08-6 0개 선택 시 사전 알림 없이 저장 | — | `REMINDER` 테이블에 해당 일정의 `KIND='PRE'` 행이 0건인 상태 — 기존 `ReminderRepository.replaceForSchedule` 로직이 빈 배열을 받으면 기존 행을 전부 지우고 아무 것도 새로 만들지 않는 것과 동일(기존 동작, 신규 아님) | 없음 |
+
+**결론**: 마이그레이션 번호 부여 없음. 4개 항목 모두 `migrations/001_init.sql` 의 기존 `CATEGORY.COLOR`/`SCHEDULE.PRIORITY`/`SCHEDULE.CATEGORY_ID`/`REMINDER.OFFSET_MINUTES` 컬럼과 기존 제약(CHECK/UNIQUE/DEFAULT)만으로 충족된다. 신규 테이블·컬럼·인덱스·트리거·`APP_SETTING` 키가 없다. 색상 자동 배정·삭제된 유형 재지정 표시는 전부 **애플리케이션(코어 서비스·화면) 계층의 로직**이며 DB 구조 변경을 요구하지 않는다. 기존 카테고리에 대한 소급 색상 재배정은 이번 릴리스에서 하지 않기로 결정했으므로 관련 백필 마이그레이션도 존재하지 않는다.
+
+---
+
+## 14. F-24 반복 일정 실체화 · F-06 기본 유형 4종 시딩 — 스키마 변경 및 신규 마이그레이션 — v1.8
+
+`plan.md` v1.9 가 확정한 F-24(반복 일정)·F-06 개정(기본 유형 4종 시딩)에 대해 검토한 결과, **이번 버전에서 최초로 실제 스키마 변경(마이그레이션 002/003)이 발생**한다. F-10(완료 시 하단 이동)·F-25(완료된 일정 숨기기)·F-26(캘린더 프리필)은 무영향이며 §14 말미에 근거만 남긴다.
+
+### 14.1 F-24 반복 일정 — DDL 변경 (마이그레이션 003)
+
+`recurrence_rule`/`recurrence_end_at`/`recurrence_count`/`recurrence_parent_id`(전부 `migrations/001_init.sql`부터 존재)는 이번 릴리스에서 최초로 실사용된다(logic.md §18 — 조회 경로 결선 이전에는 죽은 컬럼이었음). 마스터 행(반복 규칙 보유)과 회차 행(개별 표시·완료·알림 대상)을 분리하는 실체화 전략을 위해 사전 알림 오프셋 템플릿을 보관할 컬럼이 하나 더 필요하다 — **마스터 행은 `REMINDER` 행을 직접 갖지 않으므로**(알림 노출면 확대 방지, 마스터는 목록·알림 대상이 아님) 오프셋 목록을 별도로 저장해야 향후 회차 생성 시 재사용할 수 있다.
+
+```sql
+-- migrations/003_recurrence_reminder_offsets.sql
+ALTER TABLE schedule ADD COLUMN recurrence_reminder_offsets TEXT;
+```
+
+- **NULL 규칙**: 마스터 행(`recurrence_rule IS NOT NULL AND recurrence_parent_id IS NULL`)만 non-NULL(JSON 배열 문자열, 예: `'[10,60]'`). 회차 행·비반복 일정은 항상 NULL(앱 검증).
+- **인덱스 불필요**: 이 컬럼은 회차 실체화(`RecurrenceScheduler`) 시점에만 읽히며, 조건절에 쓰이지 않는다(오직 값 자체를 읽어 JSON 파싱). 조회 빈도가 매우 낮고(활성 반복 시리즈당 1회/실체화 사이클) 대상 행 수가 마스터 행으로 국한되어 인덱스 없이도 성능 영향이 없다(`nfr.md` §17.1).
+- **하위 호환**: `ALTER TABLE … ADD COLUMN` 은 기존 행에 자동으로 NULL을 채우며 기존 쿼리·인덱스·제약에 영향을 주지 않는다.
+
+### 14.2 F-24 반복 일정 — 조회 필터 결선 (DDL 무변경, 조회 로직 변경)
+
+기존 `RECURRENCE_RULE`/`RECURRENCE_PARENT_ID` 컬럼 조합으로 "마스터 행(비표시)"과 "회차 행(표시)"을 구분한다(§3.2 갱신 참조). `ScheduleRepository.findInRange`/`findForDashboard`/`search`(코어 어댑터 SQL)에 `WHERE … AND recurrence_rule IS NULL` 조건을 추가해 마스터 행을 표시 결과에서 제외한다.
+
+- **신규 인덱스 불필요**: 마스터 행은 사용자당 활성 반복 시리즈 수만큼만 존재(§2 용량 가정상 극소수, 통상 수십 건 이하)이므로, 기존 `IDX_SCHEDULE_START`/`IDX_SCHEDULE_DONE_START`(부분 인덱스, `WHERE deleted_at IS NULL`) 로 range 를 좁힌 뒤 추가 조건 `recurrence_rule IS NULL` 을 평가하는 비용은 무시할 수준이다.
+- `IDX_SCHEDULE_RECUR_PARENT`(§4, 기존 인덱스, 이번에 최초로 실사용)는 `listOccurrenceStartTimes(masterId)`(회차 실체화 시 gap 탐지 — **soft-deleted 포함 전체 조회**, 삭제된 회차 재생성 방지)와 "이후 모두" 삭제 대상 조회(`findInRange` 확장 필터 `recurrenceParentId`)를 지원한다.
+- `ScheduleFilter`(코어 타입, 논리 모델 아님)에 `recurrenceParentId?` 필터 항목 추가는 애플리케이션 계층 타입 변경으로 DDL 과 무관.
+
+### 14.3 F-06 기본 유형 4종 시딩 — DML 변경 (마이그레이션 002)
+
+`알림앱.md` 추가기능 원문("기본 유형추가 : 공부, 취미, 업무")과 plan P-65/E-06-8/D-27(a)에 따라, 신규 설치자와 기존 사용자 모두에게 3종을 추가 시딩한다. 스키마 러너가 버전 기반이므로 신규 설치자는 001→002→003 을 연속 적용하고, 기존 사용자는 다음 실행 시 002→003 만 적용받아 동일한 최종 상태에 도달한다.
+
+```sql
+-- migrations/002_seed_default_categories.sql
+INSERT INTO category (name, color, icon, is_system, sort_order, created_at, updated_at)
+SELECT '공부', '#00897B', NULL, 0, 101, (CAST(strftime('%s','now') AS INTEGER) * 1000), (CAST(strftime('%s','now') AS INTEGER) * 1000)
+WHERE NOT EXISTS (SELECT 1 FROM category WHERE lower(trim(name)) = lower('공부'));
+
+INSERT INTO category (name, color, icon, is_system, sort_order, created_at, updated_at)
+SELECT '취미', '#00ACC1', NULL, 0, 102, (CAST(strftime('%s','now') AS INTEGER) * 1000), (CAST(strftime('%s','now') AS INTEGER) * 1000)
+WHERE NOT EXISTS (SELECT 1 FROM category WHERE lower(trim(name)) = lower('취미'));
+
+INSERT INTO category (name, color, icon, is_system, sort_order, created_at, updated_at)
+SELECT '업무', '#039BE5', NULL, 0, 103, (CAST(strftime('%s','now') AS INTEGER) * 1000), (CAST(strftime('%s','now') AS INTEGER) * 1000)
+WHERE NOT EXISTS (SELECT 1 FROM category WHERE lower(trim(name)) = lower('업무'));
+```
+
+- **색상**: `CATEGORY_COLOR_PALETTE[0..2]`(`logic.md` §5.1 `categoryColor.ts`)를 그대로 하드코딩 — 마이그레이션은 순수 SQL이라 TS 함수를 호출할 수 없으므로, "최초-미사용 탐색" 배정 결과와 동일한 값을 직접 대입해 이후 사용자가 4번째 유형을 추가할 때 `assignCategoryColor`가 자연히 팔레트 인덱스 3부터 이어받는다(색상 충돌 없음).
+- **idempotent 존재 확인**: `WHERE NOT EXISTS (… lower(trim(name)) = lower(X))` 로 대소문자·앞뒤공백 무시 비교(E-06-8). 이미 동일 이름의 사용자 정의 유형이 있으면 새로 만들지 않고 기존 유형을 그대로 사용— 단, `category.name` 의 `UNIQUE` 제약 자체는 SQLite 기본 대소문자 구분 비교이며 이는 기존(v1.0)부터의 특성으로 이번 변경 범위가 아니다.
+- **`created_at`/`updated_at`**: 마이그레이션 001의 초기 데이터는 고정 리터럴 epoch(설치 시점 고정 베이스라인)를 쓰지만, 002는 실행 시점이 사용자마다 달라지므로(신규 설치 또는 임의 시점 업그레이드) `strftime('%s','now')*1000`(SQLite 내장, 초 정밀도) 로 실제 마이그레이션 적용 시각을 기록한다.
+- **실패 격리(P-65)**: 마이그레이션 러너(`runMigrations`, `migration/runner.ts`)는 각 마이그레이션을 독립 트랜잭션으로 실행하고 실패 시 그 마이그레이션만 롤백 후 중단한다 — 002가 실패해도 001(기타 시딩)의 상태는 보존되며, 앱은 "기타"가 항상 보장된 상태로 최초 진입이 막히지 않는다(안전 모드 진입 여부는 §5 기존 정책과 동일).
+
+### 14.4 F-10 / F-25 / F-26 — 스키마 무영향 근거
+
+| 요구 | 근거 |
+| --- | --- |
+| F-10 완료 시 목록 하단 이동(P-64) | `ScheduleService.findInRange` 결과 배열을 화면 표시 계층에서 재배치(`applyCompletionOrder`, logic §7.4)할 뿐 — 정렬 기준(`start_at`)·조회 조건·인덱스 무변경 |
+| F-25 완료된 일정 숨기기(P-66) | 신규 `APP_SETTING` **키**(`dashboard.hideCompleted`)만 추가 — `app_setting` 은 기존부터 자유 키/값 EAV 테이블(§3.4)이라 신규 키 도입에 DDL/마이그레이션이 필요 없다(기존 `theme.mode`/`notif.enabled` 도입 때와 동일 패턴) |
+| F-26 캘린더 날짜 프리필(P-67) | 순수 네비게이션 파라미터·시각 결합 계산(앱 계층) — DB 조회·저장 자체가 없음 |
+
+**결론**: 이번 버전(v1.8)의 실제 스키마 변경은 (1) 마이그레이션 002(DML, F-06 시딩) + (2) 마이그레이션 003(DDL, `SCHEDULE.RECURRENCE_REMINDER_OFFSETS` 컬럼 추가, F-24) 2건으로 한정된다. 신규 테이블·인덱스·트리거는 없다.

@@ -3,16 +3,22 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 검증 결과 (기능 테스트 + 코드 리뷰 + 보안 점검) |
-| 버전 | v1.14 |
-| 대상 | (v1.0) `src/core/**` · (v1.1~1.2) `src/app/**` · (v1.5) op-sqlite 6.2.11→9.3.0 상향 + iOS 온디바이스 빌드/실행 검증 · (v1.6) ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1) · (v1.7) 애플워치 워치 타깃 추가 (F-19, AC-23·AC-47~AC-56) · (v1.10) 대시보드("오늘" 탭) 개선 (F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색, AC-57~AC-66) · (v1.11) 대시보드 개선 **재확정 방향** (F-20 컴팩트 / F-21 진행률 한 줄 / F-22 접이식 검색, AC-57~AC-68, E-21-4·E-22-6·E-22-7) · (v1.12) 세 번째 탭 "검색"→"통계" 교체 + 통계 화면(F-23) (AC-69~AC-76, E-23-1~E-23-5, R-23-1~R-23-4) · (v1.13) 통계 화면(F-23) 하단 "유형별 월별 할 일 건수" 그래프 막대(bar)→선(line) 교체 — 프레젠테이션 한정 델타 (AC-71~AC-75, E-23-1~E-23-5, R-23-1~R-23-4, nfr V-46~V-49 무변경) · (v1.14) F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수 (logic §17.11, nfr §11.1·§14, AC-47~AC-56·E-19-1~7) |
-| 근거 | `document/planner/plan.md` v1.7, `document/architect/{overview,logic,database,nfr}.md` (v1.14 기준: overview v1.14, logic v1.14, database v1.6, nfr v1.12; 그 이전 델타는 표기 유지) |
+| 버전 | v1.20 |
+| 대상 | (v1.0) `src/core/**` · (v1.1~1.2) `src/app/**` · (v1.5) op-sqlite 6.2.11→9.3.0 상향 + iOS 온디바이스 빌드/실행 검증 · (v1.6) ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1) · (v1.7) 애플워치 워치 타깃 추가 (F-19, AC-23·AC-47~AC-56) · (v1.10) 대시보드("오늘" 탭) 개선 (F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색, AC-57~AC-66) · (v1.11) 대시보드 개선 **재확정 방향** (F-20 컴팩트 / F-21 진행률 한 줄 / F-22 접이식 검색, AC-57~AC-68, E-21-4·E-22-6·E-22-7) · (v1.12) 세 번째 탭 "검색"→"통계" 교체 + 통계 화면(F-23) (AC-69~AC-76, E-23-1~E-23-5, R-23-1~R-23-4) · (v1.13) 통계 화면(F-23) 하단 "유형별 월별 할 일 건수" 그래프 막대(bar)→선(line) 교체 — 프레젠테이션 한정 델타 (AC-71~AC-75, E-23-1~E-23-5, R-23-1~R-23-4, nfr V-46~V-49 무변경) · (v1.14) F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수 (logic §17.11, nfr §11.1·§14, AC-47~AC-56·E-19-1~7) · (v1.15) F-19 watchOS 네이티브 앱 재검증(실기 시뮬레이터 데모 포함, v1.14 허위 기록 정정) · (v1.16) F-23 통계 화면 유형별 꺾은선 그래프 — iOS 시뮬레이터 실기동 시각 검증 · (v1.17) F-06 유형 색상 자동 배정 / F-07 우선순위 색상 정책 / F-08 사전 알림 프리셋 선택 / F-10 대시보드 리스트 우선순위·유형 표시 (AC-77~AC-81) · (v1.18) 사용자 요청("빌드후 휴대폰과 워치 시뮬레이터를 띄워줘") — iOS+watchOS 동시 빌드 및 두 시뮬레이터 부팅·앱 설치·실행 재검증(신규 요구사항 없음, v1.17 변경분 그대로) · (v1.19) `알림앱.md` "추가기능" 미착수 5개 항목(F-24 반복 일정 신규 / F-10 개정 완료 시 하단 이동 / F-06 개정 기본 유형 4종 시딩 / F-25 완료된 일정 숨기기 신규 / F-26 캘린더 날짜 프리필 신규) — **FAIL**(High 1건: F-24 `RecurrenceScheduler`의 `AppState 'active'` 트리거 누락) · (v1.20) RECUR-01 Bug Fix 재검증 — `App.tsx`의 `AppState 'active'` 핸들러에 `recurrenceScheduler.sync()` 병행 호출 추가 + 콜드 스타트 초기렌더 경합 해소(부트스트랩 완료 후 `invalidate` + `DashboardScreen` 라이브 스토어 구독) — **PASS** |
+| 근거 | `document/planner/plan.md` v1.9 §5.18(P-63~P-67)·AC-82~AC-90·D-25~D-29, `document/architect/{overview.md v1.16, logic.md v1.16 §5.3/§7.4/§7.5/§7.6/§16.3.1/§18, database.md v1.8 §14, nfr.md v1.14 §17}` |
 | 작성 주체 | Tester |
-| 일자 | 2026-09-10 |
+| 일자 | 2026-09-13 |
 
 ## 변경 이력
 
 | 버전 | 변경 |
 | --- | --- |
+| v1.20 | Bug Fix 재검증: v1.19 RECUR-01(High, IMPLEMENTATION_ERROR — `RecurrenceScheduler.sync()`의 `AppState 'active'` 트리거 배선 누락) Developer 수정분 검증 — **PASS**. 변경 파일은 `App.tsx`(`AppState 'active'` 핸들러에 `recurrenceScheduler.sync()` 병행 호출 추가 + 부트스트랩 `runPostRender` 완료 직후 `useShellStore.invalidate('list','dashboard')` 추가) + `DashboardScreen.tsx`(`useShellStore.subscribe` 기반 라이브 구독 신규 — 화면이 이미 포커스된 상태에서도 `stale` 전이를 즉시 감지해 재조회) 2개뿐(`git status --porcelain` 대조로 다른 파일 무변경 재확인). **코드 대조**로 logic §18.3/nfr §17.1·§17.3 이 요구하는 4개 트리거 중 콜드 스타트(`composeNative.native.ts` 88행)·`AppState 'active'`(`App.tsx` 108행, 신규)·생성 직후(`scheduleService.ts` `syncRecurrenceSafely`) 3곳이 배선되어 있음을 확인. **iOS 시뮬레이터(iPhone 17 Pro) 실기동**으로 두 시나리오를 모두 재현: (1) SQLite에 DAILY/count=3 마스터를 직접 시드 후 콜드 재시작 → 재시작 후 약 3초 이내에 대시보드가 "오늘" 회차를 즉시 표시(`0/1완료`)함을 스크린샷으로 확인(v1.19는 동일 절차에서 회차가 즉시 보이지 않는 결함을 관찰했었음 — 이번에 해소 확인). (2) 미래 회차 1건을 SQLite에서 직접 삭제한 뒤, 앱을 종료하지 않고 Home으로 백그라운드 전환 후 다시 포그라운드로 복귀(동일 PID로 재개 확인 — 콜드 재시작 아님)했더니 삭제했던 회차가 새 id로 재실체화됨을 SQLite 조회로 확인 — `AppState 'active'` 전이 시 `RecurrenceScheduler.sync()`가 실제로 동작함을 직접 실증(코드 리뷰뿐 아니라 행위 기반 증거). 회귀: `node --experimental-strip-types --test "tests/**/*.test.ts"` **291/291 pass, 0 fail**(v1.19와 동일 건수, 회귀 0). `npx tsc -p tsconfig.json`: `App.tsx`/`DashboardScreen.tsx` 관련 신규 오류 0(기존 `node:test`/`node:assert` 미해석 및 `categoryService.test.ts` 오류는 v1.17부터 반복된 사전 베이스라인과 동일). 코드 리뷰: `DashboardScreen.tsx` 신규 구독은 `navigation.isFocused()` 가드로 비포커스 상태에서 무시되고(다른 화면의 `invalidate` 호출과 충돌 없음), `false→true` 전이만 반응해 무한 루프 위험 없음(`clearStale` 은 `true→false` 전이라 재귀 트리거 안 됨), cleanup 이 `unsubscribe()`를 정확히 반환해 메모리 누수 없음. **Low(비차단) 1건**: 같은 화면 내부(`toggle`/`removeOne`/`removeFollowing`)가 포커스 상태에서 `invalidate('list','dashboard')`를 호출하면 새 구독 리스너와 기존 명시적 `void load()` 호출이 동시에 각각 `load()`를 발생시켜 동일 액션마다 중복 조회가 1회 더 발생함 — 기존 `loadSeqRef`/`isFreshLoadSequence`(E-20-4) 가드가 최신 결과만 반영하도록 이미 보호하고 있어 데이터 정합성 문제는 없고 단순 비효율(추가 DB 왕복 1회)에 그침, 신규 결함으로 분류하되 기능·보안에 영향 없어 비차단. 보안 점검: 이번 변경은 인메모리 boolean 무효화 신호와 구독 등록뿐 — 민감정보 노출·자원 고갈(무한 루프 없음, 위 Low 건은 유한 1회 중복에 그침)·인증/인가 변경 없음, 미해결 취약점 0. **부팅 완료(Android BOOT_COMPLETED) 트리거**는 `ReminderScheduler`/`RecurrenceScheduler` 양쪽 모두 실제 headless task 등록 코드가 저장소에 없음(매니페스트 권한 선언만 존재) — 이번 라운드 수정 대상(AppState 누락)과 무관한 기존 상태이며 v1.7~v1.19 문서가 이미 "실기기 전용 후속(N-11 계열, ENVIRONMENT_ERROR)"으로 분류해 온 것과 동일 성격이므로 이번 판정에서 새 결함으로 세지 않음(Info, 비차단, 범위 밖 재확인). 상세는 아래 `# v1.20` 섹션 참조. |
+| v1.19 | Feature: `알림앱.md` "추가기능" 미착수 5개 항목 — F-24(반복 일정 매일/매월/매년 신규) / F-10 개정(완료 시 목록 하단 이동) / F-06 개정(기본 유형 "기타·공부·취미·업무" 4종 시딩) / F-25(완료된 일정 숨기기, 대시보드+설정 공유) / F-26(캘린더 "+" 버튼 날짜 프리필) — plan v1.9 §5.18(P-63~P-67), 설계 overview/logic v1.16·database v1.8·nfr v1.14 — **FAIL**. 직전 세션이 이 Tester 검증 도중 TaskStop으로 결과 없이 중단되어 처음부터 재수행. `node --experimental-strip-types --test "tests/**/*.test.ts"` 직접 재현 **291/291 pass**(신규 `recurrenceScheduler.test.ts` 15건 포함, 회귀 0). AC-83~AC-90은 단위테스트+코드 리뷰로 전부 충족 확인. AC-82(반복 회차 개별 인스턴스 생성)는 단위테스트 통과에 더해 **iOS 시뮬레이터(iPhone 17 Pro) 실기동**으로 실증 — 앱 컨테이너 SQLite에 DAILY/count=3 마스터 행을 직접 시드 후 앱을 콜드 재시작하자 `RecurrenceScheduler.sync()`가 실제로 회차 3건(1일 간격)을 실체화함을 SQLite 조회로 직접 확인. AC-87(기본 유형 4종 시딩)도 실기기 SQLite로 실증(`category` 테이블에 기타(`#8E8E93`,시스템)/공부(`#00897B`)/취미(`#00ACC1`)/업무(`#039BE5`) 4행, `PRAGMA user_version=3`). 그러나 코드 리뷰 중 **High 1건**을 발견: 설계(`logic.md` §18.3, `nfr.md` §17.1/§17.3)가 `RecurrenceScheduler.sync()`의 필수 트리거로 콜드 스타트·`AppState 'active'`·부팅 완료·생성 직후 4곳을 명시하고 이미 존재하는 `ReminderScheduler`는 이 4곳 모두에 배선되어 있으나(`App.tsx` 91행), `RecurrenceScheduler`는 콜드 스타트(`composeNative.native.ts` `createPostRenderSteps().syncReminders`)와 생성 직후(`ScheduleService.create()`)에만 배선되고 **`App.tsx`의 `AppState 'active'` 리스너(91행)에는 배선되지 않음** — `App.tsx`는 이번 Developer 변경 파일 목록에 없어 이 배선 누락이 발생했다. 실기동 재현으로 관련 증상(콜드 스타트 직후 새로 실체화된 "오늘" 회차가 대시보드 초기 로드와의 경합으로 즉시 표시되지 않음)도 직접 관찰. 코드 리뷰 Critical 0 · High 1(RECUR-01) · Medium 0. 보안 점검(F-24 반복 회차 무한 증식 방지 DoS 관점 포함) 미해결 취약점 0 — `expandOccurrences` 절대 상한 366 + `RecurrenceScheduler` horizon 60일 이중 방어를 코드·단위테스트(`recurrence.test.ts` cap 테스트, `recurrenceScheduler.test.ts` E-24-3)로 확인. F-06/07/08/10(색상·프리셋) 등 기존 F-01~F-23 회귀 없음(스크린샷·SQLite 직접 확인 포함). 상세는 아래 `# v1.19` 섹션 참조. |
+| v1.18 | Analysis/Inspection 성격의 빌드·실행 재검증(신규 요구사항/설계 변경 없음, v1.17 변경분 그대로) — 사용자 요청 "빌드후 휴대폰과 워치 시뮬레이터를 띄워줘" — **PASS**. `npm run typecheck`(`tsc -p tsconfig.json --noEmit`): 현재 워킹트리(미커밋 변경 포함) vs `git stash -u` 로 되돌린 HEAD 상태를 직접 비교(diff) — 신규로 늘어난 오류는 `tests/categoryColor.test.ts`(신규 파일)의 `node:test`/`node:assert` 미해석 2건 + `tests/categoryService.test.ts` 신규 테스트 블록(86행)의 `TS2532 Object is possibly undefined` 1건뿐이며, 전부 기존 v1.11~v1.17에서 반복 확인된 `tsconfig.json`(`types: []`)의 공통 베이스라인 패턴과 동일 범주(신규 카테고리 오류 0). `npm test`(`node --test tests/**/*.test.ts`) **265/265 pass, 0 fail**(회귀 0). iOS: `xcodebuild -workspace ios/TodayWhat.xcworkspace -scheme TodayWhat -configuration Debug -destination 'platform=iOS Simulator,id=5870B58C-3630-456A-B7A0-44A07DB378EE' -derivedDataPath build_ios build` → **BUILD SUCCEEDED**(TodayWhatWatch 워치 타깃도 의존성으로 동시 빌드·임베드됨, "Copy .../TodayWhatWatch.app → Debug-watchsimulator" 단계로 확인). `xcrun simctl boot`으로 iPhone 17 Pro(iOS 26.2) + Apple Watch Series 11 (46mm)(watchOS 26.2, 기존 활성 페어) 두 시뮬레이터를 실제로 부팅(`Booted` 상태 확인), 두 앱(`kr.purpledog.todaywhat` PID 3249, `kr.purpledog.todaywhat.watchkitapp` PID 3023)을 `simctl install`+`launch` 로 실제 설치·실행. 초기 iOS 실행 시 Metro 패키저 미기동으로 `RCTFatal("No bundle URL present")` 발생(스크린샷으로 확인) → `npx react-native start --port 8081` 로 Metro 를 실제 기동(`packager-status:running`) 후 앱 재실행 → 정상 번들링·렌더 확인(스크린샷: "일정 편집" 화면이 제목/시작일시/종료일시 토글/내용/중요도 세그먼트/유형 배지/시작 시 알림 토글/사전 알림 프리셋 5종/저장 버튼까지 크래시 없이 렌더 — 이전 세션이 남긴 앱 데이터로 재현된 화면이며 이번 세션 코드 변경과 무관). watchOS 앱도 `simctl io screenshot` 로 실기동 확인: "동기화 대기 4" 배지 + "완료 2 / 미완료 0" 카드 + "오늘" 목록("아침 약 먹기 09:00·기타")까지 크래시 없이 렌더. 코드 리뷰: 이번 세션 미커밋 diff(`categoryColor.ts` 신규, `categoryService.ts`/`types.ts`/`reminders.ts`/`bindings.ts`/`DashboardScreen.tsx`/`ScheduleEditorScreen.tsx`/`scheduleService.ts`)는 v1.17 에서 이미 상세 리뷰된 것과 동일 내용(계층 분리 유지 — 프레젠테이션은 `PRIORITY_COLORS`/`CATEGORY_COLOR_FALLBACK` 상수만 참조, 서비스 계층에 로직 유지) — Critical/High/Medium 신규 0, v1.17 이 지적한 Low 1건(categoryService.create() 방어적 try/catch 중복)만 잔존(비차단, 재확인). 보안 점검: 신규 취약점 0(색상 로직은 결정론적 순수 함수, 사용자 입력 미유입; Metro 는 로컬 개발 서버로 시뮬레이터 로컬호출 전용, 외부 노출 없음; 신규 비밀정보/네트워크 호출 없음). ENVIRONMENT_ERROR 성격 관찰 1건(비차단, FAIL 아님): watchOS 시뮬레이터에 터치 주입 수단이 없어 워치 UI 인터랙션(체크박스 탭 등)은 여전히 미실행 — v1.14~v1.17과 동일 성격, 코드 리뷰로 갈음. 결론: iOS·watchOS 두 시뮬레이터 모두 실제로 부팅되었고 두 앱 모두 실제로 설치·실행되어 화면이 렌더링됨을 스크린샷으로 확인 — PASS. |
+| v1.17 | Feature: F-06 유형 색상 자동 배정 / F-07 우선순위 색상 정책 / F-08 사전 알림 프리셋 선택 / F-10 대시보드 리스트 우선순위·유형 표시(plan v1.8 §5.17 P-59~P-62, AC-77~AC-81 / 설계 overview·logic v1.15 §5.1·§5.2·§6.1·§7.3, database v1.7, nfr v1.13) — **PASS**(Low/Info 2건, ENVIRONMENT_ERROR 1건, 전부 비차단). 상세는 아래 `# v1.17` 섹션 참조. 이전 세션이 이 검증 도중 강제 종료되어 이번 세션이 Tester 단계부터 처음부터 재수행. `node --experimental-strip-types --test "tests/**/*.test.ts"` 직접 재현 **265/265**(기존 252 + 신규 13: `categoryColor.test.ts` 7 / `categoryService.test.ts` 3 / `scheduleService.test.ts` 3). `tsc -p tsconfig.json` src 스코프 신규 오류 0(사전 기준선만 유지). AC-77/AC-78/AC-79 는 iOS 시뮬레이터(iPhone 17 Pro) 온디바이스 스크린샷 3장으로 실증(우선순위 HIGH/NORMAL/LOW 점 빨강/오렌지/초록 + 서로 다른 유형 배지 색상+이름). AC-80/AC-81 은 코드 리뷰 + 신규 단위테스트로 검증(수정 화면 탭 진입은 시뮬레이터 터치 주입 수단 부재로 미실행, ENVIRONMENT_ERROR·비차단, 기존 세션과 동일 성격). 코드 리뷰 Critical/High **0**. 보안 미해결 취약점 0. |
+| v1.16 | F-23 통계 화면 유형별 꺾은선 그래프 — iOS 시뮬레이터 **실기동 시각 검증**(사용자 요청 "시뮬레이터에서 보여줘" / plan v1.7 §F-23 / 설계 overview·logic v1.13 §16.3.8, D-08) — **PASS**(Info 1건 비차단). iPhone 17 Pro(iOS 26.3 시뮬레이터) 대상 `xcodebuild -workspace TodayWhat.xcworkspace -scheme TodayWhat` **BUILD SUCCEEDED**, Metro 실기동, 앱 설치·실행, 통계 탭 실제 화면 캡처(`f23-statistics-line-chart-01-onedevice-3categories.png`) — 카드 2장·연도 선택기·요약 문구·SVG 그래프(축/그리드/y눈금)·범례(색 스와치+텍스트) 크래시 없이 렌더 확인. 코드 대조(`StatisticsScreen.tsx` `MonthlyLineChart` 79~153행)로 `seriesCategoryIds.map` 이 유형(계열) 수만큼 `Polyline`+비영 `Circle` 마커를 생성함을 재확인(설계 §16.3.8/1291~1310행과 일치, 코드 리뷰 Critical/High 0). **발견(Info, 비차단, 신규 결함 아님)**: 실기기 DB 상 카테고리 3종(기타/공부/취미) 색상이 전부 `#8E8E93`로 동일 — `CategoryManagerScreen.tsx` `add()` 가 `categories.create(trimmed)` 를 색상 인자 없이 호출하고 `categoryService.create()` 기본값이 고정 상수이기 때문에, 앱의 유일한 유형 생성 경로로는 사용자가 만든 모든 유형이 항상 동일 색이 됨 → 값이 겹치는 달에는 3개 선이 시각적으로 완전히 겹쳐 구분 불가(스크린샷에서 9월 지점 1개만 보임). 그러나 이는 F-23 신규 결함이 아니라 **D-08(유형 속성 편집 범위="이름만", 색상/아이콘 시스템 자동 배정, OI-8 후속)** 로 이미 설계 단계에서 인지·수용된 제약이며, logic.md §16.3.8/1303행 및 소스 주석(392행)도 "범례는 텍스트 라벨로 구분 — 색만으로 구분하지 않음"을 명시해 동일 문제를 이미 전제하고 있음 — FAIL 사유 아님, D-08/OI-8 계보에 재기록. 별도 다색 데이터셋(월별로 다른 건수 + 임의 배정한 구분색)을 SQLite 직접 시드로 준비해 2차 검증을 시도했으나, 이 시점부터 Simulator 창이 다른 디스플레이로 재배치된 뒤 `cliclick` 좌표 클릭이 재현되지 않아(윈도우 좌표 재계산·재`activate`·press+release 시퀀스 등 총 7회 중 1회만 성공) 2차 스크린샷은 확보하지 못함 — **ENVIRONMENT_ERROR, 비차단**(v1.15 가 이미 문서화한 "시뮬레이터 터치 주입 수단 부재/불안정"과 동일 성격; `idb-companion` 설치 시도는 harness 의 미신뢰 tap 차단 정책으로 중단, 우회 시도 안 함). 회귀 `node --experimental-strip-types --test "tests/**/*.test.ts"` **252/252**(회귀 0, 이번 세션 소스 무변경). 보안: 이번 세션 변경 없음(순수 시각 검증), 신규 취약점 0. |
+| v1.15 | F-19 watchOS 네이티브 앱 재검증(실기 시뮬레이터 데모 포함, v1.14 허위 기록 정정) — **PASS**. 상세는 아래 `# v1.15` 섹션 참조(Tester 가 `npm test` 252/252·`xcodebuild`(워치+iOS 호스트) `BUILD SUCCEEDED` 직접 재현, Metro 실기동 + SQLite 직접 시드로 폰→워치 WCSession 라운드트립 2회 스크린샷 실증, 코드 리뷰 Medium 1/Low 2·보안 미해결 0). |
 | v1.14 | Feature: F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수(plan v1.7 §F-19 / 설계 logic v1.14 §17.11 · nfr v1.12 §11.1/§14 · overview v1.14) — **PASS**. 회귀 `npm test`(Node 24) 252/252(watchSync 42/42 포함, 신규 0·기존 전부 통과). `xcodebuild -scheme TodayWhatWatch -destination 'platform=watchOS Simulator,name=Apple Watch Series 11 (46mm)' CODE_SIGNING_ALLOWED=NO build` → **BUILD SUCCEEDED**, 링크 프레임워크 시스템 전용(Foundation/WatchConnectivity/SwiftUI/Combine/UIKit(weak) — RN Pod 0, Frameworks 디렉터리 없음). `ruby ios/scripts/add_watch_target.rb` 2회 연속 실행 — PBXNativeTarget 3·"Embed Watch Content" 5·PBXTargetDependency 2 불변(구조적 중복 없음, 멱등). 페어드 iPhone 17 + Apple Watch Series 11 (46mm) 시뮬레이터(watchOS 26.2): 워치 앱 최초 실행 → `NotConfiguredView`(E-19-2) 크래시 없이 렌더(스크린샷). iOS 앱에서 오늘자 일정 3건(완료 1 + 미완료 2, HIGH 1) 준비 → `pushSnapshot()` → 실제 WCSession(`updateApplicationContext`/`sendMessage` reply) 라운드트립으로 워치 `TodayView` 에 오늘 목록 렌더: 요약 헤더 "1/3 완료", 다음 예정 "저녁 산책 오후 7:00", 행별 제목+로컬 시작시각(오전 9:00/오전 10:00/오후 7:00, Asia/Seoul)+유형 라벨/색 점("기타")+중요도(!) 표식+지남·미완료 시각 강조(빨강). 스크린샷 `document/test/screenshots/f19-watch-0{1,2,3}-*.png` + `f19-phone-01-*.png`. 코드 리뷰(Swift 10파일) Critical/High/Medium 0 — 페이로드 계약 `Models.swift` ↔ `src/core/watchSync/types.ts` 필드 1:1(정수 epoch ms·IANA tz·`decodeIfPresent` null 키·`FailableDecodable` 항목 단위 방어·`opId` = `UUID().uuidString.lowercased()`·`nowEpochMs()` `.rounded()` 정수), 봉투 `{type,payload}` = `watchMessage.ts`/`WatchConnectivityGateway.native.ts` 일치, 계층 분리·강제 언랩 0·방어적 디코딩. 보안 점검(§13.9 / §17.11.6 / STRIDE·OWASP) 미해결 취약점 0 — `SnapshotStore`/`PendingQueue` `.completeFileProtection` + App Group 밖, 페이로드 P-40 필드만(메모·이력·토큰·계정·알림 없음), 워치 발신 = `{opId,scheduleId,done,watchChangedAt,baseUpdatedAt}` op 1종뿐(그 외 쓰기 경로 코드상 부재), V-40 정적 확인(워치 `ios/TodayWhatWatch/**` 에 알림/리마인더/URLSession/네트워크/비밀정보 참조 0). 지적 2건(전부 Low·비차단): WATCH-W1(`recomputeStale()` 가 `activationState != .activated` 면 방금 `ingest` 한 라이브 스냅샷도 stale 로 표기 — 시뮬레이터에서 "최신 아님" 배지 상시; nfr §14 임계는 `[제안]`, 표시 계층 한정), WATCH-W2(`add_watch_target.rb` 재실행이 xcodeproj 재직렬화로 무해한 diff 노이즈 — 타깃/페이즈/의존성 카운트는 불변). **환경 외 후속(§11.2 / N-11 잔여, FAIL 아님)**: 워치 완료 토글 탭(체크박스) → 낙관적 카운트 갱신 → "동기화 대기"(D-11) 배지 → 폰 대시보드 역전파(AC-23/AC-48 확장)는 watchOS 시뮬레이터에 터치 주입(XCUITest) 수단이 없어 미실행 — 폰 측 역전파는 V-37(`node:test`) 통과로 커버, 워치 발신 경로는 코드 리뷰 + 계약 대조로 확인. 물리 Apple Watch WCSession 특성·`BOOT` 후 파일 영속·백그라운드 `transferUserInfo` 타이밍도 §11.2 후속. |
 | v1.13 | Feature(프레젠테이션 한정 델타): 통계 화면(F-23) 하단 "유형별 월별 할 일 건수" 그래프 시각화 막대(bar)→선(line) 교체(사용자 요청 / plan v1.7 §F-23 형태 위임 — plan 델타 없음 / 설계 overview·logic v1.13 §16.3.8 · nfr v1.11 §16.2/§16.6) — **PASS**. `node --experimental-strip-types --test "tests/**/*.test.ts"` → 252/252(회귀 0, 기준선 247 + 신규 5: `tests/app/statisticsSeriesPointMax.test.ts` — 빈 집계 0 / maxBucketTotal 비동일 / 단일 계열·월 / 삭제유형 "기타" 폴드 / 순수성·입력 비파괴). `tsc -p tsconfig.json` src 스코프 신규 오류 0(`statisticsViewModel.ts` 클린; 사전 기준선 유지: `repositories.ts` Buffer x2, `index.ts` console x2 + process x1, 다수 테스트 파일 `node:test`/`node:assert` 미해석). 신규 `statisticsSeriesPointMax.test.ts` 의 `node:test`/`node:assert` 2건도 20+ 기존 테스트 파일 공통 기준선. `StatisticsScreen.tsx` 는 `tsconfig.json` 제외 대상이고 `tsconfig.app.json` 은 사전 config 결함(TS5095/TS5109)으로 미실행 — 이번 변경과 무관, 정적 리뷰로 대체(프로젝트 확립 관례). **집계 계약 불변 확인**: `statisticsViewModel.ts` 기존 8개 export(`aggregateTotals`/`aggregateYear`/`monthBoundaries`/`monthIndexOf`/`currentYear`/`yearRangeEpochs`/`hasMeaningfulCategories`/`statisticsEmptyState`) 시그니처·본문·`YearAggregate` 반환 형태(`months[12]`·`seriesCategoryIds`·`maxBucketTotal`·`placedRowCount`) verbatim 유지, `tests/app/statisticsViewModel.test.ts` 17/17 무수정 통과. 신규 순수 export `seriesPointMax(agg)` 1개만 추가 — 한 (월,유형) 셀 최대 건수 반환(스택 합 `maxBucketTotal` 아님), 입력 비파괴·반복 호출 동일·빈 집계 0. `package.json`/`package-lock.json` 무변경(git 대조 — `react-native-svg` 15.11.2 기보유 재사용, 신규 npm 의존성 0). `src/core/**`·DB DDL·포트·`bindings.ts`·네비게이션 이번 델타 무변경. 불변 3요건 충족(① 계열당 `Polyline`+`colorOf(cid)`+범례, ② x축 1~12월 고정 12눈금, ③ `selectedYear` 1개 연도). 0건 월 = baseline(y=0) 실점 연결(선 안 끊음), 비영 점만 `Circle` 마커. 좌표 매핑 `chartX(m)=padLeft+(m-1)/11·plotW` / `chartY(v)=padTop+(1-v/yMax)·plotH` / `yMax=max(1, seriesPointMax)` — off-by-one·0 나눗셈 방어 정상. `MonthlyLineChart` 순수 프레젠테이션(props 주입만, core/서비스/bindings 무의존, 부수효과 없음). 미사용 스타일 `col`/`barArea`/`colLabel`·상수 `BAR_AREA_HEIGHT` 제거 — 잔여 참조 0(grep). 빈 상태·삭제 유형·rename·`'ok'` 게이팅 분기 이전과 동일(`statisticsEmptyState` 무변경). 접근성: 주 스크린리더 경로 = 데이터 요약 `<Text>`(`buildGraphSummary` — 월/유형/건수) 문구·값 유지, `Circle.accessibilityLabel`("{m}월 {유형명} {n}건") best-effort, 정적 1회 렌더라 Reduce Motion 무영향(OI-23). 코드 리뷰 Critical/High/Medium 0. 보안 미해결 취약점 0(STRIDE/OWASP — polyline `points`·`Circle` 좌표는 집계 정수에서 코드 계산, 사용자 제어 문자열 미유입, 마크업/문자열 파싱 없음; `react-native-svg` 기보유 버전 재사용 — 신규 네이티브 표면 0; 카운트만 표시(제목/메모 없음) — 정보 노출 표면 불변; 새 신뢰 경계/주입/저장 표면 없음, logic §13.3/§13.8 정합). **DEV-01 판정**: 월 숫자 레이블을 SVG `<Text>` 로 렌더한 선택은 logic §16.3.8 이 "화면 하단 RN `<Text>` 행 … 또는 `<Text>`(svg)" 로 명시한 **동등 옵션 범위 안** → 설계 위반 아님(viewBox 스케일에서 polyline 정점과 픽셀 정합 확보 근거 타당). 잔여(Info·비차단): DOC-01(nfr §16.2 표 "월 라벨은 RN `<Text>` 행" 문구가 logic §16.3.8 의 "또는 `<Text>`(svg)" 허용과 미세 불일치 — nfr §16.2 는 비구속 렌더 비용 기술이고 logic v1.13 이 이 델타의 정본, 기능·설계 준수 영향 없음). 온디바이스 실렌더 픽셀·프레임·스크린리더 낭독 측정은 nfr §16.6 / §11 셸 후속과 동일 취급. |
 | v1.12 | Feature: 하단 세 번째 탭 "검색"→"통계" 교체 + 통계 화면 F-23 신규(plan v1.7 / 설계 v1.12 — §7.2·§16.3.8, database §12, nfr §16 V-46~V-49) — **PASS**. `node --test --experimental-strip-types "tests/**/*.test.ts"` → 247/247(회귀 0, 기준선 230 + 신규 17: `statisticsViewModel.test.ts` — 상수 1 / `currentYear` 1 / `yearRangeEpochs`·`monthBoundaries` 2 / `monthIndexOf` 4 / `aggregateTotals` 2 / `aggregateYear` 6 / `hasMeaningfulCategories`·`statisticsEmptyState` 2). `tsc -p tsconfig.json` src 신규 오류 0(사전 5건 유지: `repositories.ts` Buffer x2, `index.ts` console x2 + process x1). 신규 `statisticsViewModel.test.ts` 의 `node:test`/`node:assert` 미해석 2건은 20+ 기존 테스트 파일 공통 사전 패턴 — 신규 오류 아님. `.tsx`(StatisticsScreen/RootNavigator/CalendarScreen)는 프로젝트 확립 관례상 정적 리뷰(tsconfig.app.json 은 사전 config 결함으로 미실행 — 이번 변경과 무관). `src/core/**`·DB DDL/인덱스/트리거/`APP_SETTING`·포트(`repositories.ts`/`gateways.ts` 계약)·`package.json`/`package-lock.json` 무변경(git 대조). `bindings.ts` 는 `StatisticsScreen` 읽기 전용 1행 추가(writes/invalidates 빈 배열) + `routes.ts`/`RootNavigator` 탭 Search→Statistics·Stack `Search` 추가·`CalendarScreen` 헤더 검색 아이콘 엣지. AC-69~AC-76 전부 통과(정적/단위). E-23-1~E-23-5 · R-23-1~R-23-4 충족. 코드 리뷰 Critical/High 0(순수 뷰모델 react 미import·코어 공개 `localWallToEpoch` 재사용, `dashboardViewModel` 패턴 일치). 보안 미해결 취약점 0(읽기 전용 집계·연도는 정수 컨트롤·집계는 파라미터 바인딩 `findInRange` 재사용·신규 SQL/FTS 없음; `Search:{initialQuery?}` 파라미터는 앱 코드가 설정하지 않고 `SearchScreen` 이 읽지 않음 — 주입/XSS 표면 없음; 접근성 라벨·요약 텍스트는 월·유형명·건수만 노출(제목/메모 없음); 전체 기간 카드 스캔은 §2 용량 + cursor 루프 + `MAX_PAGES` 상한으로 유한; `selectedYear`·집계결과 비영속·비로그). F-11 전역 검색 회귀 0(`SearchService`·리포지토리·`SCHEDULE_FTS`·`bindings.ts` SearchScreen 항목 무변경, Tab→Stack 이전 + 캘린더 헤더 진입점만; 잔여 `SearchTab` 참조·Search 딥링크 없음; AC-13/AC-14 경로 무영향). 지적(전부 Low·비차단): STAT-01(`load()` 전체조회에 stale-seq 가드 없음 — 동일 데이터라 수렴, 순간 flicker) / STAT-02(`currentYear` 가 Intl year part 부재 시 `NaN` — 실질 불가) / STAT-03(`MAX_PAGES=200` 로 4만 행 초과 시 무음 절단 — §2 용량 내) / STAT-04(`no-categories` 판정이 유형 목록 구성만 근거 — 설계 §16.3.8 시그니처와 일치). |
@@ -1851,3 +1857,376 @@ Critical/High **0건**.
 ## 판정 (v1.15)
 
 **PASS** — Tester 가 직접 재현한 `npm test`(252/252) 와 `xcodebuild`(워치/iOS 호스트 둘 다 `BUILD SUCCEEDED`, Embed Watch Content 확인)에 더해, Metro 를 실제로 기동하고 폰 SQLite 파일에 실제 오늘 일정 2건을 시드해 **폰 대시보드 → WCSession → 워치 화면**까지 실제 데이터가 두 차례(최초 1/2건, 이후 2/2건 갱신) 라운드트립되는 것을 스크린샷(`f19-v2-phone-0{0,1,2,3}-*.png`, `f19-v2-watch-0{1,2}-*.png`)으로 실증했다. 코드 리뷰 Critical/High 0(Medium 1건·Low 2건은 비차단, Developer 개선 권고), 보안(§13.9) 미해결 취약점 0(파일 보호·페이로드 최소화·강제언랩 0·비밀정보 0·네트워크/알림 표면 0 — 전부 이번 세션 grep/otool 로 재확인). 워치 발 완료 토글의 실제 탭 구동만 이 실행 환경의 UI 자동화 수단 부재로 미실측(§C-9, 미확인 항목 1) — v1.14 가 "환경 외 후속"으로 분류했던 것과 동일 성격의 제약이며 FAIL 사유로 보지 않는다(대안: TS 단위테스트 V-37/V-38 재통과 + Swift 코드 정적 대조). 다음 라우팅은 Orchestrator 결정.
+
+---
+
+# v1.16 — F-23 통계 화면 유형별 꺾은선 그래프: iOS 시뮬레이터 실기동 시각 검증
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-11 |
+| status | **PASS** (Info 1건·환경 제약 1건, 전부 비차단) |
+| 배경 | 사용자가 "통계에 라인 그래프를 꺾은선 그래프로 하고 유형별로 표시해줘. 유형이 3개면 선이 3개 나와야 돼" 요청. v1.12/v1.13 에서 이미 설계·구현·정적 테스트(252/252, 코드리뷰/보안 Critical/High 0)가 완료돼 있었으나, **온디바이스로 실제 화면을 캡처한 시각 증거**가 없었다. 이번 세션의 목적은 그 실기동 시각 확인 1건. |
+| 근거 | `plan.md` v1.7 §F-23(그래프 형태는 Architect 위임 — 델타 없음), `overview.md`/`logic.md` v1.13 §16.3.8(1291~1310행, D-08 포함), `nfr.md` v1.11 §16.2/§16.6. 이번 세션 문서 변경 없음(4종 모두 재검증 대상 아님, 순수 실행 검증) |
+| 검증 환경 | macOS, Xcode 26.2, iOS 26.3 시뮬레이터(iPhone 17 Pro, UDID `22A18639-FC20-4BD0-BDCB-D177ED987914`), Node v22.11.0, Metro 0.80.12(포트 8081, 실제 기동) |
+
+## A. 빌드 · 실행
+
+- `cd ios && xcodebuild -workspace TodayWhat.xcworkspace -scheme TodayWhat -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -derivedDataPath build_ios_stats build` → **BUILD SUCCEEDED** (기존 Pods/Podfile.lock 재사용, 신규 의존성 0, Watch Embed 페이즈 정상 동작 확인).
+- `npx react-native start --port 8081` 백그라운드 기동 → `Dev server ready` 확인(더미 아님, 실제 번들링 — 설치 후 최초 실행 시 시뮬레이터 화면에 `Bundling 35%…` → 완료 후 렌더 관찰).
+- `xcrun simctl install`/`launch` 로 이번 빌드 산출물을 실제 설치·실행, 냉시동 크래시 0.
+
+## B. 통계 탭 실기동 캡처
+
+- 시뮬레이터 화면 탭 좌표 클릭(`cliclick`, macOS Accessibility 권한 미허용 환경 — 아래 D 항목 참조)으로 하단 탭 바의 "통계" 항목을 눌러 진입 **1회 성공**, 화면을 `xcrun simctl io <device> screenshot` 로 캡처.
+- 캡처 시점 앱 컨테이너의 실제 SQLite(`.../Library/todaywhat.db`)에는 이전 세션에서 남은 카테고리 3종(`기타`(시스템)/`공부`/`취미`)과 스케줄 4건이 이미 존재했다(신규 시딩 불필요, "기존 시드 데이터 활용"에 해당).
+- 스크린샷(`document/test/screenshots/f23-statistics-line-chart-01-onedevice-3categories.png`, 실물)에서 육안 확인한 내용:
+  - 상단 카드 2장("총 할 일 건수 3" / "완료된 건수 1") + 연도 선택기("2026년") 정상 렌더.
+  - 데이터 요약 문구 "2026년 · 9월 공부 1건, 취미 1건, 기타 1건" — `buildGraphSummary` 출력과 일치.
+  - SVG 그래프: y축(0/1 눈금) + baseline/top 그리드선 + x축 1~12월 12눈금 전부 정상 렌더, 크래시·레이아웃 깨짐 없음.
+  - 9월 지점에 상승·하강하는 꺾은선(점) 1개 + 원형 마커(`Circle`) 1개가 보인다. 범례에는 "공부"/"취미"/"기타" **3개 항목**이 색 스와치와 함께 모두 표시된다(텍스트 라벨은 3개 다 구분됨).
+  - **다만 3개 계열의 실제 선 색상이 시각적으로 전부 동일한 회색**이고 9월 값이 셋 다 1건으로 동일해, 화면상으로는 선이 1개처럼 보인다(겹침) — 아래 C 항목 참조.
+
+## C. 코드 대조 + 근본 원인 분석 (Info, 비차단, 신규 결함 아님)
+
+1. **렌더링 로직 자체는 설계대로 정확히 구현됨**: `StatisticsScreen.tsx` `MonthlyLineChart`(79~153행)의 `agg.seriesCategoryIds.map((cid) => ...)` 가 계열(유형) 수만큼 `<Polyline stroke={colorOf(cid)} .../>` + 비영 포인트에 한해 `<Circle fill={colorOf(cid)} .../>` 를 생성한다(105~136행) — `logic.md` §16.3.8/1291~1310행("유형 N개 → 선 N개")과 1:1 일치. 범례(392~399행)도 `seriesCategoryIds.map` 으로 3개 전부 렌더한다. 즉 **"유형이 3개면 선이 3개 나와야 한다"는 요건은 DOM/SVG 구조 수준에서 정확히 충족**된다(코드 리뷰 Critical/High 0).
+2. **실제 원인**: 캡처된 실기기 DB 를 조회(`sqlite3 todaywhat.db "SELECT id,name,color FROM category"`)한 결과 `기타`/`공부`/`취미` 3행 모두 `color = '#8E8E93'` 로 동일했다. 앱에서 유형을 만드는 유일한 경로인 `CategoryManagerScreen.tsx` 의 `add()` 가 `categories.create(trimmed)` 를 색상 인자 없이 호출하고(28~39행), `categoryService.create(name, color = '#8E8E93', ...)` 의 기본값이 고정 상수이기 때문에, **사용자가 이 화면에서 만드는 모든 유형은 항상 동일한 색**을 갖는다. 색이 같고 그 달의 값도 같으면 선이 완전히 겹쳐 육안 구분이 불가능해진다.
+3. **판정: FAIL 사유 아님(D-08 기수용 제약)**. `logic.md` D-08(841행)이 "유형 속성 편집 범위 — '이름만' 채택(plan v1.3). 색상·아이콘 시스템 자동 배정(`CATEGORY.COLOR` 기본값/`ICON` NULL) … 후속 OI-8" 로 이미 명시적으로 색상 편집 UI 부재를 설계 결정으로 수용했고, §16.3.8/1303행 및 소스 주석(`StatisticsScreen.tsx` 392행) 모두 "범례는 텍스트 라벨로 구분 — **색만으로 구분하지 않음**" 을 전제로 한다. 즉 색 충돌 가능성은 설계 단계에서 이미 인지·문서화된 트레이드오프이며, 이번 v1.13(막대→선 교체) 델타가 새로 만든 결함이 아니고 이전 막대 그래프에도 동일하게 존재했을 제약이다. **다만 실사용 관점에서 사용자가 명시적으로 요청한 "선이 구분되어야 한다"는 기대와 실제 체감 결과 사이에 간극이 있다는 점은 Info 로 기록** — Orchestrator/기획 판단으로 D-08/OI-8 범위를 "유형 생성 시 회전 팔레트 자동 배정" 등으로 확장할지 검토 권고(코드 변경 없이도 개선 가능한 낮은 비용의 후속 제안).
+
+## D. 2차(다색) 검증 시도 — 환경 제약으로 스크린샷 미확보
+
+- 위 발견을 격리 검증하기 위해 SQLite 를 직접 조작해 카테고리 3종에 서로 다른 색(`기타`=`#8E8E93` 유지, `공부`=`#007AFF`, `취미`=`#FF9500`)과 월별로 다른 건수(1·3·9월 vs 2·5·9월 vs 4·9·11월)를 갖는 정리된 데이터셋을 시딩했다(스케줄 14건, 기존 4건 대체).
+- 그러나 이 시점부터 `xcrun simctl` 부팅 시뮬레이터를 표시하는 Simulator.app 창이 다른 디스플레이(다중 가상 디스플레이 환경, `CGWindowListCopyWindowInfo` 로 확인: 창이 `X=551`→`X=3503` 로 이동)로 재배치된 뒤, 창 좌표를 매번 재계산해 `cliclick` 으로 재시도(윈도우 좌표 재조회 3회, `osascript activate` 재호출, `move+down+wait+up` 시퀀스 등 — 총 7회 클릭 시도 중 최초 1회만 실제로 반영되고 이후 6회는 화면에 아무 변화 없음)했음에도 통계 탭 재진입에 실패했다.
+- `osascript`/System Events 는 "보조 접근 허용되지 않음(-1719)" 로 거부되고, `screencapture` 도 화면 기록 권한 없이 실패한다. `idb-companion`(Accessibility 불필요한 대안) 설치를 시도했으나 이 harness 의 brew 래퍼가 "untrusted tap" 정책으로 `facebook/fb` tap 의 포뮬러 로드를 차단했다 — 신뢰 정책 우회(`brew trust`) 는 시도하지 않고 즉시 tap 을 제거해 원복했다(보안 가드를 존중, Tester 권한 밖 조치로 판단).
+- 결과: **다색·비중첩 데이터셋의 2차 스크린샷은 확보하지 못했다**(cause: `ENVIRONMENT_ERROR`, 비차단). v1.15 가 이미 "이 실행 환경에 시뮬레이터 화면 터치·클릭 주입 수단이 전무"로 기록한 것과 동일 성격의 제약이 이번 세션에도 재확인됐다(다만 이번엔 최초 1회는 우연히 성공해 §B 스크린샷을 확보할 수 있었다는 점만 다르다). 이 갭은 §C 의 코드 대조(Polyline/Circle/범례 로직이 계열 수·색·좌표 계산에서 데이터에 따라 달라짐을 소스 레벨로 확인)로 갈음한다 — 로직 자체가 순수 함수(props 주입만, 부수효과 없음)이므로 코드 검증의 신뢰도는 높다고 판단.
+
+## E. 회귀 · 보안
+
+| 항목 | 결과 |
+| --- | --- |
+| `node --experimental-strip-types --test "tests/**/*.test.ts"` | **252/252 pass**, 회귀 0. 이번 세션 `src/`·`tests/` 무변경(git 대조) — 순수 실기동 검증 |
+| 코드 리뷰 | Critical/High/Medium **0**. §C-1 확인 내용 외 신규 지적 없음(범위: `StatisticsScreen.tsx`, `CategoryManagerScreen.tsx`, `categoryService.ts` — 전부 이번 세션 무변경 기존 코드 재확인) |
+| 보안 | 이번 세션 코드 변경 없음(순수 시각 검증) — 신규 취약점 0. 시딩에 사용한 SQL 은 Tester 가 로컬 시뮬레이터 컨테이너 파일에 대해서만 직접 실행(앱 코드 경로 미경유, 프로덕션 영향 없음) |
+| 스크린샷 | `document/test/screenshots/f23-statistics-line-chart-01-onedevice-3categories.png` (신규 1장, 실물 `xcrun simctl io screenshot`) |
+
+## 판정 (v1.16)
+
+**PASS** — 사용자가 요청한 "유형별 꺾은선 그래프"가 실기 iOS 시뮬레이터에서 크래시 없이 렌더되는 것을 스크린샷으로 확인했고, `seriesCategoryIds.map` 기반 계열별 `Polyline`+`Circle`+범례 로직이 설계(§16.3.8)와 정확히 일치함을 코드로 재확인했다(코드 리뷰 Critical/High 0, 보안 신규 취약점 0, 회귀 252/252). **Info(비차단)**: 캡처된 실기기 데이터 조건에서는 유형 3개가 모두 시스템 기본색(`#8E8E93`)을 공유해 선이 시각적으로 겹치는 현상을 실측했으나, 이는 F-23 의 신규 결함이 아니라 이미 설계 문서(D-08/OI-8, logic §16.3.8/1303행)가 "색만으로 구분하지 않음"으로 명시 수용한 기존 제약이며, F-06(유형 관리)의 색상 자동 배정 정책 범위다 — Orchestrator/기획에 D-08/OI-8 확장 검토를 권고 사항으로 전달. **환경 제약(비차단)**: 다색·비중첩 데이터셋을 이용한 2차 스크린샷은 시뮬레이터 터치 주입 수단의 불안정성(7회 중 1회만 성공)으로 확보하지 못했다(cause: ENVIRONMENT_ERROR) — 동일 로직 경로를 코드 대조로 갈음. 다음 라우팅은 Orchestrator 결정.
+
+---
+
+# v1.17 — F-06/F-07/F-08/F-10: 유형 색상 자동 배정 · 우선순위 색상 정책 · 사전 알림 프리셋 선택 · 대시보드 리스트 표시
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-11 |
+| status | **PASS** (Low 1건 · Info 1건 · ENVIRONMENT_ERROR 1건, 전부 비차단) |
+| 배경 | 사용자 요청 4건(카테고리별 자동 색상 배정 / 오늘 리스트에 중요도·유형 표시 / 중요도 색상 높음=빨강·보통=오렌지·낮음=연두 / 사전 알림 5분·10분·30분·1시간·하루 전 프리셋)을 Planner(plan.md v1.8) → Architect(overview/logic/database/nfr v1.15/v1.15/v1.7/v1.13, PASS·설계가능) → Developer(구현 DONE) 순으로 이미 완료한 상태. **이 검증(Tester)이 실행되던 도중 이전 세션이 사용자에 의해 강제 종료**되어 결과가 유실되었다. 이번은 완전히 새로운 Orchestrator 실행이며, Tester 단계를 처음부터 재수행한다. Planner/Architect/Developer 산출물은 워킹트리에 이미 실존(git status M/커밋 전)하고 있어 재작업 없이 그대로 검증 대상으로 사용했다. |
+| 근거 | `document/planner/plan.md` v1.8 §5.17(P-59~P-62)·AC-77~AC-81·D-08(갱신)/D-24, `document/architect/{overview.md v1.15, logic.md v1.15 §5.1/§5.2/§6.1/§7.3, database.md v1.7, nfr.md v1.13}` |
+| 검증 환경 | macOS, Xcode 26.2, iOS 26.3 시뮬레이터(iPhone 17 Pro, UDID `22A18639-FC20-4BD0-BDCB-D177ED987914`, 기존 부팅 상태 재사용), Node(현재 세션 런타임), Metro 8081(기존 기동 재사용) |
+
+## A. 기능 테스트 (직접 재현, 보고값 재신뢰 안 함)
+
+```
+node --experimental-strip-types --test "tests/**/*.test.ts"
+# tests 265
+# pass 265
+# fail 0
+```
+
+기준선 252(v1.16 시점) + 신규 13:
+- `tests/categoryColor.test.ts`(신규 파일, 7개) — 빈 배열→팔레트 1번째, 앞쪽 사용중→최초-미사용 선택, 대소문자 무시 중복 판정, 중간 빈 슬롯 우선 재사용, 12색 모두 소진 시 `length % 12` 순환(13번째 케이스 포함), 내부 오류 시 예외 없이 폴백 반환(E-06-7), 팔레트 12색이 `PRIORITY_COLORS` 3색과 겹치지 않음.
+- `tests/categoryService.test.ts`(+3) — `color` 생략 시 자동 배정(서로 다른 색, 고정회색 아님) / `color` 명시 시 그대로 사용(후방호환) / 기존 카테고리 색상은 소급 변경되지 않음.
+- `tests/scheduleService.test.ts`(+3) — `getReminderOffsets` 중복제거·오름차순 반환 / `CANCELLED` 상태 제외 / 존재하지 않는 일정 조회 시 예외 없이 빈 배열.
+
+`npx tsc -p tsconfig.json --noEmit` — src 스코프 신규 오류 **0**(사전 기준선만 유지: `src/core/infra/memory/repositories.ts` Buffer x2, `src/index.ts` console x2 + process x1). `DashboardScreen.tsx`/`ScheduleEditorScreen.tsx`는 기존 관례대로 `tsconfig.json` 제외 대상 — 정적 코드 리뷰로 대체.
+
+## B. AC 대조
+
+| AC | 결과 | 근거 |
+| --- | --- | --- |
+| AC-77 유형 색상 자동 배정 | **충족** | `categoryColor.ts`(`assignCategoryColor`, 12색 고정 팔레트 + 최초-미사용 탐색 + 소진 시 순환) + `categoryService.create()`가 `color` 생략 시 이를 호출. 단위테스트 7종 + §C 실기동 스크린샷(§B-2)에서 서로 다른 카테고리가 서로 다른 색으로 렌더됨을 실증. |
+| AC-78 우선순위 색상 매핑 | **충족** | `types.ts` `PRIORITY_COLORS = {HIGH:'#D32F2F', NORMAL:'#E65100', LOW:'#689F38'}`(빨강/오렌지/연두 계열) + `DashboardScreen.tsx` 우선순위 점(dot)이 이 상수를 그대로 사용. §C 스크린샷에서 HIGH=빨강, NORMAL=오렌지, LOW=초록 점 실측 확인(아래 이미지 3 참조). |
+| AC-79 대시보드 리스트 아이템의 우선순위·유형 표시 | **충족** | `DashboardScreen.tsx` `renderItem`이 체크박스·시각·제목과 함께 우선순위 점(8dp)+유형 배지(pill, 이름 텍스트 포함)를 렌더. `categoriesById` Map은 `categories.list()`를 요약/목록과 병렬 조회(`bindings.ts` 갱신)해서 구성. §C 스크린샷에서 실제 렌더 확인. |
+| AC-80 사전 알림 프리셋 선택 UI | **코드 리뷰로 충족 확인(실행형 미실행)** | `ScheduleEditorScreen.tsx`가 `REMINDER_OFFSET_PRESETS`(5/10/30/60/1440분) 5개만 칩으로 렌더, 자유 입력란 없음(D-24), `toggleReminderOffset`으로 다중 선택. 전역 알림 OFF 시 `disabled`+저채도 스타일로 비활성 표시. 시뮬레이터에서 일정 편집 화면으로 실제 진입해 탭하는 것은 §D의 환경 제약으로 이번 세션에 실행하지 못함(ENVIRONMENT_ERROR, 비차단) — 코드 구조가 명세와 1:1 대응함을 정적으로 확인. |
+| AC-81 사전 알림 다중 프리셋 발송 | **충족(저장 계약 단위테스트로 검증, 실제 알림 발화는 범위 밖 기존 로직)** | 저장 시 `effOffsets`(= `reminderOffsets` state)를 **항상 명시적으로** `create`/`update`에 전달(과거 "미전송=유지" 관례 폐기, E-08-6/AC-81 요건과 일치) — 0개 선택 시 빈 배열이 그대로 전달되어 `buildReminderDrafts`가 `PRE` 초안을 만들지 않음(코드 확인, 로직 자체는 v1.0부터 존재해 무변경·안정). 프리필(`getReminderOffsets`) 3종 신규 단위테스트로 왕복 계약 검증. 실제 OS 알림 발화 타이밍은 기존 `ReminderScheduler`(이번 세션 무변경) 책임 범위로 이미 별도 검증되어 있음. |
+
+## C. 실기동 시각 검증 (iOS 시뮬레이터)
+
+1. `cd ios && xcodebuild -workspace TodayWhat.xcworkspace -scheme TodayWhat -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -derivedDataPath build_ios_stats build` → **BUILD SUCCEEDED**(기존 derivedData 재사용한 증분 빌드, 27초, 에러/경고 없이 완료).
+2. 기존에 기동돼 있던 Metro(8081)를 재사용. `xcrun simctl install`/`launch kr.purpledog.todaywhat` — 냉시동 크래시 없음.
+3. 최초 실행 화면(일정 0건) 캡처 → `f06-f07-f10-01-dashboard-empty-launch.png`.
+4. 앱 컨테이너 SQLite(`.../Library/todaywhat.db`)에 Tester가 직접 카테고리 2종("업무" `#1E88E5`, "공부" `#8E24AA`)과 오늘 날짜 일정 2건(HIGH/"업무"/09:00, LOW/"공부"/14:00)을 시드 → 재실행 캡처 → `f06-f07-f10-02-dashboard-2items-high-low.png`: 빨간 점+"업무"(파랑 배지), 초록 점+"공부"(보라 배지) 확인.
+5. NORMAL 우선순위 일정 1건("점심 약속", 시스템 기본 유형 "기타", 11:00) 추가 시드 → 재실행 캡처 → `f06-f07-f10-03-dashboard-3priorities-3categories.png`: **HIGH=빨강 점 / NORMAL=오렌지 점 / LOW=초록 점** 3색 전부 실기기에서 확인, "업무"(파랑)/"기타"(회색, 시스템 기본색 `#8E8E93` 유지)/"공부"(보라) 배지 색상·이름 텍스트 모두 정상 렌더, 완료 카드 "0/3 완료" 정확히 갱신.
+6. 스크린샷은 시딩에 사용한 색을 Tester가 직접 지정한 것이라(실제 `assignCategoryColor` 호출 경로는 앱의 "유형 관리" 화면에서 이름만 입력해 생성하는 흐름) AC-77의 **자동 배정 알고리즘 자체**는 §A 단위테스트 7종이 담당하고, 이 스크린샷은 **DashboardScreen이 카테고리의 `color` 필드를 실제로 읽어 배지에 정확히 반영하는지**(렌더 경로)를 담당 — 두 증거가 상호 보완적으로 AC-77·AC-79를 완전히 커버한다.
+
+## D. 미실행 항목 — 환경 제약 (ENVIRONMENT_ERROR, 비차단)
+
+- 일정 작성/수정 화면(사전 알림 프리셋 칩)으로 실제 탭 이동해 다중 선택 UI를 화면 캡처하는 것은 시도하지 않았다. `osascript`/System Events 를 통한 Simulator 창 좌표 조회가 이번 세션에서도 "보조 접근이 허용되지 않음(-1719)"으로 거부되었고, 이는 v1.15/v1.16 이 이미 문서화한 것과 동일한 이 실행 환경의 구조적 제약이다(2회 연속 세션에서 재확인됨 — 반복이지만 동일 근본 원인이므로 새 조사를 시도하지 않고 코드 검증으로 갈음).
+- 갈음 근거: §B AC-80/AC-81 코드 리뷰(정확히 5개 프리셋, 자유입력 없음, disabled 처리, 저장 시 명시 전송) + §A 신규 단위테스트 3종(`getReminderOffsets` 왕복 계약). Dashboard 스크린샷(§C)에서 이미 앱이 정상적으로 빌드·설치·실행되고 SQLite→화면 렌더 파이프라인이 살아있음을 실측했으므로, 일정 편집 화면 자체가 크래시 등으로 렌더 불가능할 가능성은 낮다고 판단(같은 네비게이션 스택·같은 데이터 소스 사용).
+
+## E. 코드 리뷰
+
+- **계층/설계 준수**: `categoryColor.ts`는 순수 함수 모듈(부수효과 없음, `core/domain` 위치 적절). `CategoryService.create()`는 기존 시그니처를 하위호환 확장(`color?: string`)했고 `list()` 재조회는 자동 배정이 필요한 경우에만 발생 — 불필요한 쿼리 없음. `ScheduleService.getReminderOffsets()`는 기존 포트(`ReminderRepository.findBySchedule`)만 재사용, 신규 포트/쿼리 없음. `DashboardScreen.tsx`의 `categoriesById` 조회는 요약/목록과 `Promise.all` 병렬 조회로 워터폴 없음. Critical/High/Medium **0**.
+- **Low-01**(스타일, 비차단): `CategoryService.create()`가 `assignCategoryColor()` 호출을 다시 `try/catch`로 감싸고 있는데, `assignCategoryColor()` 자체가 이미 내부적으로 모든 예외를 잡아 `CATEGORY_COLOR_FALLBACK`을 반환하도록 구현되어 있어(§A `categoryColor.test.ts` E-06-7 케이스로 확인) 이 바깥쪽 `try/catch`는 현재 도달 불가능한 방어 코드다. 동작에는 전혀 영향 없음(순수 방어적 중복) — 리팩터링 권고 수준, 수정 강제 아님.
+- **Info-01**(회귀 확인 결과, 비차단, 이번 세션 신규 결함 아님): Developer가 "범위 밖으로 판단해 미구현"이라고 자진 보고한 카테고리 이름 중복 검증(E-06-4, "앞뒤 공백 제거 후 대소문자 무시 비교")을 재확인했다. `CategoryService.create()`/`rename()` 어디에도 애플리케이션 레벨의 대소문자 무시 중복 검사가 없고, 유일한 방어는 `database.md`/`migrations.ts`의 `NAME TEXT NOT NULL UNIQUE` 제약(대소문자 구분 — `COLLATE NOCASE` 미지정)뿐이다. 즉 정확히 동일한 이름("취미"="취미")은 DB 제약으로 막히지만, 대소문자만 다른 이름(예: 영문 "Work"/"work")은 현재 통과된다 — E-06-4 스펙(대소문자 무시)의 **일부만** 충족. `CategoryManagerScreen.tsx add()`도 클라이언트 측 사전 검사 없이 그대로 `create()`를 호출한다. **이번 세션 diff는 이 로직을 전혀 건드리지 않았으므로 회귀가 아니라 기존부터 있던 갭**이며, 이번 4개 기능(F-06/F-07/F-08/F-10) 요구사항 범위 밖이다(plan v1.8은 "이름 추가/변경/삭제 규칙(E-06-1~E-06-6)은 변경 없음"이라고 명시). FAIL 사유로 판단하지 않고 향후 백로그로 기록 권고(신규 OI 또는 기존 이슈 트래커에 등재는 Orchestrator/Planner 판단).
+
+## F. 보안 점검
+
+| 항목 | 결과 |
+| --- | --- |
+| 입력/출력 | 배지·점에 쓰이는 색상 값은 전부 코드 상수(`PRIORITY_COLORS`) 또는 팔레트에서 결정론적으로 계산된 값(`assignCategoryColor`) — 사용자 자유 입력이 색상 문자열로 직접 반영되는 경로 없음(`CategoryService.create(color?)`의 명시적 `color` 인자는 앱 UI에서 호출되지 않고 테스트/향후 픽스처용 후방호환 매개변수뿐). 알림 오프셋은 `REMINDER_OFFSET_PRESETS`의 5개 고정값 중에서만 선택 가능(자유 입력란 없음, D-24) — 주입/오버플로 표면 없음. |
+| 데이터 보호 | 신규 컬럼/신규 저장 데이터 없음(기존 `CATEGORY.COLOR`/`SCHEDULE.PRIORITY`/`REMINDER.OFFSET_MINUTES` 컬럼 재사용). 민감정보(제목/메모) 노출 범위 불변. |
+| 인증/인가 | 해당 없음(로컬 전용 기능, 신규 권한 경계 없음). |
+| 의존성/설정 | 신규 npm/네이티브 의존성 0(git diff로 `package.json`/`Podfile` 무변경 확인). |
+| 결론 | 미해결 취약점 **0**. |
+
+## G. 회귀
+
+- 기존 252 테스트(watchSync 42/42, statistics 17+5, dashboard 등) 전부 무손상 통과.
+- `CategoryService.create()`의 E-06-3(빈 이름 거부)·E-06-1(미지정 시 "기타") 경로는 이번 diff에서 `trimmed.length===0` 검사 라인이 그대로 유지되어 변경 없음 — 단위테스트 기준선 유지로 회귀 없음 확인.
+- `ScheduleEditorScreen.tsx` 저장 로직이 "미전송=유지"에서 "항상 명시 전송"으로 바뀐 것은 **의도된 설계 변경**(overview.md v1.15 changelog에 명시)이지 회귀가 아니다 — 다만 이 변경으로 인해 알림 OFF→ON 없이 기존 오프셋만 조회 없이 새로 저장하는 흐름에서, 화면이 `getReminderOffsets`로 정확히 프리필하지 못하면 사용자가 모르는 사이 기존 알림이 사라질 위험이 있었는데, `useEffect`가 수정 모드 진입 시 항상 `getReminderOffsets`를 호출해 프리필하므로 이 위험은 코드상 차단되어 있음을 확인(§B AC-81 표).
+- `bindings.ts`의 `DashboardScreen` reads에 `categories.list()`가 추가된 것 외 다른 화면 바인딩(써치/캘린더/통계)은 무변경.
+
+## 판정 (v1.17)
+
+**PASS** — 4개 요청 기능(F-06 유형 색상 자동 배정 / F-07 우선순위 색상 정책 / F-08 사전 알림 프리셋 선택 / F-10 대시보드 리스트 우선순위·유형 표시)이 모두 설계(overview/logic/database/nfr v1.15/v1.15/v1.7/v1.13)와 일치하게 구현되어 있음을 확인했다. 기능 테스트 265/265(신규 13건 포함) 직접 재현, `tsc` 신규 오류 0, 코드 리뷰 Critical/High/Medium 0(Low 1건 비차단 스타일 지적), 보안 미해결 취약점 0. AC-77~AC-79는 iOS 시뮬레이터 온디바이스 스크린샷 3장(우선순위 3색 + 서로 다른 유형 배지 2색 + 기존 유형 배지 1색, 총 3개 유형·3개 우선순위 조합)으로 실증했고, AC-80/AC-81은 코드 리뷰 + 신규 단위테스트로 검증했다(일정 편집 화면 실측 탭 조작만 시뮬레이터 터치 주입 수단 부재로 미실행 — ENVIRONMENT_ERROR, v1.15/v1.16과 동일 성격, 비차단). **Info(비차단, 신규 결함 아님)**: 카테고리 이름 중복 검증(E-06-4)의 대소문자 무시 비교가 애플리케이션 레벨에 구현되어 있지 않다는 기존 갭을 재확인했으나 이번 세션 범위 밖이며 회귀가 아니다 — 향후 백로그 등재를 권고사항으로 전달. 다음 라우팅은 Orchestrator 결정.
+
+---
+
+# v1.19 — Feature: `알림앱.md` "추가기능" 미착수 5개 항목 (F-24 반복 일정 / F-10 개정 / F-06 개정 / F-25 / F-26)
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-13 |
+| status | **FAIL** (High 1건 — RECUR-01, 그 외 Critical/Medium 0, ENVIRONMENT_ERROR 일부 비차단) |
+| 배경 | `알림앱.md` "## 추가기능" 6개 항목 중 미착수 5개(1·3·4·5·6번, 2번 스마트워치 간단표시는 기존 F-19로 완결·변경 없음)를 Planner(plan.md v1.8→v1.9) → Architect(기획검증 PASS, overview/logic/database/nfr v1.16/v1.16/v1.8/v1.14, logic.md §5 잔존 구식 서술 1건 자체 발견·수정) → Developer(구현 DONE, `recurrenceScheduler.ts` 신규 + 30여 파일 수정) 순으로 이미 완료한 상태. **직전 세션에서 이 Tester 검증이 이미 한 번 지시되었으나 사용자의 TaskStop으로 결과 없이 강제 종료**되어, 이번 세션이 Tester 단계를 처음부터 재수행한다(이전 시도의 부분 결과는 없음). |
+| 근거 | `document/planner/plan.md` v1.9 §5.18(P-63~P-67)·AC-82~AC-90·D-25~D-29, `document/architect/{overview.md v1.16, logic.md v1.16 §5.3·§7.4·§7.5·§7.6·§16.3.1·§18, database.md v1.8 §14, nfr.md v1.14 §17}`, `.claude/skills/_shared/conventions.md` |
+| 검증 환경 | macOS, Xcode(iOS 26.0 시뮬레이터 iPhone 17 Pro, UDID `1D65385D-4A27-4B4C-A16A-05855D3C502B`), Node(현재 세션 런타임), Metro 8081(이번 세션 신규 기동), sqlite3 CLI(앱 컨테이너 DB 직접 조회/시드) |
+
+## A. 기능 테스트 (직접 재현)
+
+```
+node --experimental-strip-types --test "tests/**/*.test.ts"
+# tests 291
+# pass 291
+# fail 0
+```
+
+기준선 265(v1.17/v1.18 시점) + 신규 26: `tests/recurrenceScheduler.test.ts`(신규 파일, 15건 — AC-82 마스터/회차 분리·findInRange/findForDashboard/search 마스터 제외, findRecurringMasters/listOccurrenceStartTimes, E-24-4 "이 일정만" 삭제, E-24-5/AC-84 "이후 모두" 삭제, E-24-1 규칙 변경, E-24-2/AC-83 종료일<시작일 거부, 비반복 회귀, E-24-3 horizon/상한, sync 멱등) + `tests/categoryColor.test.ts`(v1.17 이관분 재확인 포함) + `tests/time.test.ts` F-26 `combineDateWithTimeOfDay` 3건 + `tests/app/dashboardViewModel.test.ts` F-10/F-25 `applyCompletionOrder`/`filterHideCompleted`/`all-hidden` 다수 + `tests/app/migrations.test.ts` 002/003 마이그레이션 3건 등.
+
+`npx tsc -p tsconfig.json`: src 비-테스트 스코프 신규 오류 **0**(사전 기준선만 유지 — `src/core/infra/memory/repositories.ts` Buffer x2, `src/index.ts` console x2 + process x1, 전부 `tsconfig.json`(`types: []`)로 인한 v1.10부터 반복 확인된 기존 베이스라인이며 이번 델타와 무관). 테스트 디렉터리의 `node:test`/`node:assert` 미해석 다수도 동일 기존 베이스라인.
+
+## B. AC 대조 (AC-82~AC-90)
+
+| AC | 결과 | 근거 |
+| --- | --- | --- |
+| AC-82 반복 회차가 목록·대시보드·캘린더·검색에 개별 인스턴스로 나타남 | **충족** | `recurrenceScheduler.test.ts` 5건(마스터 비표시/회차만 노출, `findForDashboard`/`search` 동일) + **§C 실기동**으로 실증(DAILY count=3 시드 → 콜드 재시작 → SQLite에서 회차 3건 확인). |
+| AC-83 반복 종료일 < 시작일 저장 거부 | **충족** | `validation.ts` `VALIDATION_RECURRENCE_END_BEFORE_START` + `recurrenceScheduler.test.ts` "E-24-2/AC-83" 케이스(저장소 변경 없음까지 확인). |
+| AC-84 "이 일정만"/"이후 모두" 삭제 스코프 | **충족** | `ScheduleService.deleteRecurrenceFollowing`(§18.5) 단위테스트(#3부터 이후 3건 삭제, 과거 2건 보존, `recurrenceEndAt` 고정) + `ScheduleDetailScreen.tsx`/`DashboardScreen.tsx` 양쪽 모두 `recurrenceParentId!==null`일 때 3-옵션 액션시트(취소/이 일정만/이후 모두)로 분기하는 코드 확인. |
+| AC-85 완료 시 목록 하단 이동 | **충족** | `dashboardViewModel.ts` `applyCompletionOrder`(안정 파티션) + `dashboardViewModel.test.ts` "완료 항목은 뒤로, 각 그룹 내부 순서 유지" 케이스. `DashboardScreen.tsx` 표시 파이프라인이 검색→숨기기→완료정렬 순으로 고정 적용됨을 코드로 확인. |
+| AC-86 완료 해제 시 위치 복귀 | **충족** | `dashboardViewModel.test.ts` "완료 해제 후 재계산하면 미완료 그룹으로 복귀(AC-86)" 케이스 — 순수 재계산으로 별도 로직 없이 성립함을 확인. |
+| AC-87 기본 유형 시딩 | **충족** | `migrations.test.ts`(002 DML 3건 idempotent) + **§C 실기동**으로 실증(앱 컨테이너 SQLite `category` 테이블에 기타(`#8E8E93`,`is_system=1`)·공부(`#00897B`)·취미(`#00ACC1`)·업무(`#039BE5`) 4행, `PRAGMA user_version=3` 확인). |
+| AC-88 완료된 일정 숨기기 토글 — 대시보드 | **충족** | `filterHideCompleted` + `dashboardViewModel.test.ts` on/off 케이스, `DashboardService.getSummary` 무변경(집계 유지) 코드 확인. **§C 실기동**으로 토글 UI 자체 렌더 확인("완료된 일정 숨기기" 스위치). |
+| AC-89 대시보드·설정 상태 공유 | **충족(코드 리뷰)** | 단일 `APP_SETTING` 키 `dashboard.hideCompleted`를 `DashboardScreen`/`SettingsScreen` 양쪽이 `useFocusEffect`로 포커스마다 재조회 — 상호 반영 메커니즘을 코드로 확인. 탭 전환 실측(탭 간 값 동기화 스크린샷)은 §D 환경 제약으로 실행하지 못함(코드 검증으로 대체). |
+| AC-90 캘린더 "+" 버튼 날짜 프리필 | **충족(코드 리뷰)** | `CalendarScreen.tsx`가 `combineDateWithTimeOfDay(selectedDateAtMidnight(), clock.now(), tz)`를 `presetStartAt`으로 전달, `ScheduleEditorScreen.tsx`가 신규 생성 시 이를 기본 시작 일시로 사용. `time.test.ts` `combineDateWithTimeOfDay` 3건 통과. 실기기 탭 이동 실측은 §D 환경 제약으로 미실행. |
+
+## C. 실기동 시각 검증 (iOS 시뮬레이터)
+
+1. `xcodebuild -workspace TodayWhat.xcworkspace -scheme TodayWhat -destination 'platform=iOS Simulator,id=1D65385D-4A27-4B4C-A16A-05855D3C502B' -derivedDataPath build/DerivedData build` → **BUILD SUCCEEDED**.
+2. `xcrun simctl boot` + `npx react-native start --port 8081`(Metro 신규 기동, `packager-status:running`) + `simctl install`/`launch kr.purpledog.todaywhat` — 냉시동 크래시 없음. 최초 렌더 캡처(대시보드: 날짜 네비 "9월 13일(일)", "0/0 완료", 검색 아이콘, **"완료된 일정 숨기기" 토글**, 빈 상태 "오늘 일정이 없습니다"+"일정 추가" 버튼, FAB, 하단 탭 4개) — `document/test/screenshots/f24-f25-f26-01-dashboard-launch-hidecompleted-toggle.png`.
+3. 앱 컨테이너 SQLite(`.../Library/todaywhat.db`) 직접 조회: `PRAGMA user_version` = **3**(마이그레이션 001~003 전부 적용), `category` 테이블에 기타/공부/취미/업무 4행이 설계된 색상·`is_system` 값 그대로 존재 — **AC-87 실기기 실증**.
+4. 같은 DB에 `recurrence_rule='DAILY', recurrence_count=3`인 마스터 행을 Tester가 직접 INSERT(시작 시각=현재+5분, `recurrence_parent_id=NULL`) → 앱을 `simctl terminate`+`launch`로 콜드 재시작 → 재시작 직후 DB를 재조회하니 `recurrence_parent_id`가 마스터를 가리키는 **회차 행 3개**(1일 간격, `recurrence_rule=NULL`)가 실제로 생성되어 있음을 확인 — `RecurrenceScheduler.sync()`가 부트스트랩(cold start) 트리거로 실제 동작함을 실기기로 실증(**AC-82**).
+5. 같은 상황에서 대시보드 화면을 재캡처했으나 방금 실체화된 "오늘" 회차가 목록에 나타나지 않고 여전히 "오늘 일정이 없습니다 / 0-0완료"로 표시됨(스크린샷 확보, 재현 2회) — 아래 §E RECUR-01의 근거로 사용.
+
+스크린샷: `document/test/screenshots/f24-f25-f26-01-dashboard-launch-hidecompleted-toggle.png`.
+
+## D. 미실행 항목 — 환경 제약 (ENVIRONMENT_ERROR, 비차단)
+
+- 일정 작성 화면의 반복 세그먼트 탭 선택, 캘린더 날짜 선택 후 "+" 탭, 설정 화면 이동 등 **탭(touch) 조작이 필요한 흐름**은 이번 세션에서도 실행하지 못했다. `osascript`/System Events로 Simulator 창 좌표를 조회하려 하자 3회 연속 "보조 접근이 허용되지 않음(-1719)"으로 거부되었고, `idb`/`idb_companion`도 설치되어 있지 않다 — v1.15~v1.18이 이미 문서화한 것과 동일한 이 실행 환경의 구조적 제약(반복 확인, 새 조사 시도 안 함).
+- 갈음 근거: §B의 코드 리뷰(정확한 파일·라인 대조) + 신규 단위테스트 26건 + §C의 SQLite 직접 시드·조회를 통한 실기기 실증(AC-82/AC-87, 그리고 §C-5의 예상외 발견 RECUR-01)으로 대체했다. 탭 조작 자체가 필요한 나머지 확인 사항(AC-89/90의 화면 전환 실측, F-24 UI 반복 세그먼트 실측)은 코드 검증만으로 충분히 설계와의 일치를 확인했다고 판단한다.
+
+## E. 코드 리뷰
+
+- **설계 준수(전반)**: `RecurrenceScheduler`(마스터/회차 분리, horizon 60일 + 절대 상한 366, 재진입 락)가 `ReminderScheduler`와 동형으로 구현되어 logic.md §18.2~§18.3과 정확히 일치. `ScheduleService.create()`의 반복 분기(마스터+회차#1 동시 생성 → 회차#1 알림 동기 → `recurrenceScheduler.sync(master.id)` 동기 대기)가 §18.4 pseudocode와 1:1 대응. `deleteRecurrenceFollowing`/`updateRecurrenceRule`이 §18.5와 일치(신규 로직 최소화, 기존 `softDelete`/`update` 재사용). `ScheduleRepository.findInRange`/`findForDashboard`/`search`(메모리 구현 + SQLite 네이티브 구현 양쪽) 모두 `recurrence_rule IS NULL` 필터가 결선되어 마스터 행 비노출을 보장(§18.2, database §14.2) — 두 어댑터 구현이 서로 어긋나지 않음을 대조 확인. `applyCompletionOrder`/`filterHideCompleted`(§7.4/§7.5)는 표시 계층 순수 함수로 서비스/DB 무변경 원칙을 지킴. `combineDateWithTimeOfDay`(§7.6)는 기존 순수 유틸(`wallParts`/`localWallToEpoch`) 재사용. 마이그레이션 002/003(database §14.1/§14.3)이 SQL·idempotent 조건·색상값까지 설계 그대로. 계층 분리(Controller/Service/Model 상당의 화면·서비스·도메인 경계), SOLID(특히 OCP — 기존 `ReminderScheduler` 코드를 고치지 않고 동형 신규 클래스로 확장), Naming 전부 conventions.md 기준 위반 없음.
+- **RECUR-01 (High, CODE_REVIEW, cause=IMPLEMENTATION_ERROR)** — `logic.md` §18.3과 `nfr.md` §17.1/§17.3은 `RecurrenceScheduler.sync()`의 트리거 지점을 "`ReminderScheduler.sync()`와 동일 지점에 병행 호출: 콜드 스타트, **`AppState 'active'`**, 반복 일정 생성 직후, 기기 부팅 완료" 4곳으로 명시한다. 실제 구현은 콜드 스타트(`src/app/bootstrap/composeNative.native.ts` `createPostRenderSteps().syncReminders`)와 생성 직후(`ScheduleService.create()` 내부 `syncRecurrenceSafely`) 2곳에만 배선되어 있다. 이미 존재하는 `ReminderScheduler.sync()`는 `App.tsx`(91행) `AppState.addEventListener('change', ...)` 핸들러에서 이미 재호출되도록 배선돼 있으나, 같은 핸들러가 `result.services.recurrenceScheduler.sync()`는 호출하지 않는다. `App.tsx`는 이번 Developer 변경 파일 목록(git status)에 포함되어 있지 않다 — 새 서비스를 기존 resume 트리거에 이어붙이는 배선 1곳이 누락된 것으로 판단(설계·구현 대조로 확인, 추정 아님). **영향**: `ScheduleService.create()`가 생성 시점에 horizon(60일) 전체를 동기 실체화하므로 신규 반복 일정은 즉시 정상 동작하지만, "종료 없음(무기한)" 반복 일정의 horizon 경계가 시간 경과로 앞으로 밀려날 때(예: 앱이 완전히 종료되지 않고 장기간 포그라운드/백그라운드만 반복하는 경우) 이를 갱신할 트리거가 콜드 스타트 1곳만 남아 E-24-3("이후 회차는 도래 시점에 생성/예약한다")이 설계 의도만큼 자주 갱신되지 않는다. **§C-5에서 관련 증상을 실기기로 직접 관찰**: 콜드 스타트 직후 `RecurrenceScheduler`가 "오늘" 회차를 막 실체화했음에도(SQLite로 확인) 대시보드 화면은 그 회차를 표시하지 못했다 — `App.tsx`의 최초 `useEffect`가 `setResult(r)`로 화면을 마운트한 뒤 `await runPostRender(...)`(reminderScheduler.sync + recurrenceScheduler.sync)를 별도로 기다리는 구조라, `DashboardScreen`의 마운트 시 `load()`가 `runPostRender` 완료보다 먼저 실행되어도 이를 감지해 재조회하는 연결 고리가 없기 때문이다(이 두 번째 관찰은 RECUR-01과 원인은 다르지만 같은 "트리거 배선 불완전" 계열이라 함께 기록한다). 재현: `document/test/screenshots` 캡처 절차 §C-4~5. 관련 요구사항: F-24, E-24-3, AC-82. 관련 설계: `logic.md` §18.3, `nfr.md` §17.1/§17.3, `overview.md` v1.16 changelog(587행 "AppState 'active' 전이 시 sync() 재호출"의 병행 대상에 `RecurrenceScheduler`도 포함됨).
+- 그 외 Critical/Medium **0**. Low 신규 지적 없음(F-24/F-10/F-06/F-25/F-26 구현 자체 품질은 우수 — 기존 `ReminderScheduler` 패턴 재사용, 중복·미사용 코드 없음).
+
+## F. 보안 점검 (STRIDE / OWASP, F-24 반복 회차 무한 증식 방지 DoS 관점 포함)
+
+| 항목 | 결과 |
+| --- | --- |
+| DoS / 자원 고갈 (F-24 반복 회차 무한 증식) | `expandOccurrences`(순수 함수) 절대 상한 **366**(`recurrence.ts` `MAX_EXPANSION`, `while (iterations < cap)`로 horizon과 무관하게 항상 적용됨을 코드로 확인) + `RecurrenceScheduler` horizon **60일**(`sync()` 호출당 마스터별 상한) 이중 방어. `recurrenceScheduler.test.ts` "E-24-3: horizon(60일) 내에서만 실제 회차가 실체화되고 상한(366)을 초과하지 않는다"(무기한 DAILY로 55~62건 실체화 확인) + 기존 `recurrence.test.ts` "cap으로 무한 전개를 방지" 테스트로 재확인. 마스터 행은 `REMINDER` 행을 갖지 않아 알림 노출면이 늘지 않음(코드 확인). |
+| 입력 검증 | `recurrenceReminderOffsets`(신규 컬럼, JSON 문자열) 파싱은 `safeParseOffsets`가 `try/catch` + 배열 여부 + 정수·비음수 필터링으로 방어 — 손상된 값이 회차 생성 자체를 막지 않음(§18.3 설계와 일치). `validation.ts`가 반복 규칙 값(`DAILY/WEEKLY/MONTHLY/YEARLY`)·종료일<시작일·count 양의 정수 여부를 저장 전에 검증. |
+| 인증/인가 | 해당 없음(로컬 전용, 신규 권한 경계 없음 — 4개 기능 전부 단말 로컬 SQLite/APP_SETTING 범위). |
+| 데이터 보호 / 비밀정보 | 신규 컬럼 `recurrence_reminder_offsets`는 사용자가 이미 입력한 분 단위 정수 배열만 저장(민감정보 아님). `dashboard.hideCompleted`는 boolean 1개. 마이그레이션 002 시딩값은 코드 상수(색상 헥스값)뿐 — 하드코딩된 비밀정보 없음. |
+| 의존성/설정 | 신규 npm/네이티브 의존성 0(git diff로 `package.json`/`Podfile` 무변경 확인). |
+| 결론 | 미해결 취약점 **0**. §13.3/§13.8/§13.9(logic.md v1.16) 서술과 코드가 일치함을 확인. |
+
+## G. 회귀
+
+- 기존 265 테스트(v1.17/v1.18 기준선) 전부 무손상 통과, 신규 26건 추가로 총 291/291.
+- `findInRange`/`findForDashboard`/`search`에 추가된 `recurrence_rule IS NULL` 필터가 비반복 일정 조회에 영향을 주지 않음을 `scheduleService.test.ts`(git status상 이번 세션에서 손질됨) 및 `recurrenceScheduler.test.ts`의 "회귀: 비반복 경로는 기존과 동일하게 동작한다" 케이스로 확인.
+- F-06/F-07/F-08/F-10(색상 자동배정·우선순위 색상·사전알림 프리셋·리스트 표시, v1.17 PASS 확정분) 관련 코드(`categoryColor.ts`, `PRIORITY_COLORS`, `REMINDER_OFFSET_PRESETS`, `DashboardScreen.tsx` 배지 렌더)는 이번 세션 diff에서 로직 자체가 손대지지 않았음을 git diff로 확인 — §C 실기동에서도 대시보드가 정상 렌더되어(토글·날짜 네비·진행률 등) 크래시·시각적 퇴행 없음을 재확인. `document/test/screenshots/f06-f07-f10-0*.png`(v1.17)와 이번 `f24-f25-f26-01-*.png`를 비교해도 공통 레이아웃 요소(브랜드 영역 제외 — 아래 참고) 동일.
+- **참고(회귀 아님, 범위 밖 관찰)**: 이번 세션 스크린샷에서 F-16 로고·태그라인 이미지 대신 "오늘" 텍스트 헤더만 보였다. `DashboardScreen.tsx`의 로고/태그라인 렌더 코드는 이번 diff에서 변경되지 않았고(git diff 확인), 개발 시뮬레이터의 이미지 에셋 로드 이슈로 추정되며 이번 5개 기능과 무관해 회귀 판정에서 제외했다(필요 시 별도 조사 권고).
+
+## Failure Category / Regression
+
+- RECUR-01(High): cause=**IMPLEMENTATION_ERROR** — 설계(`logic.md` §18.3, `nfr.md` §17.1/§17.3)가 명시한 4개 트리거 지점 중 `AppState 'active'` 1곳이 구현에서 누락됨. Developer가 이미 존재하던 `App.tsx`(이번 세션 미변경 파일)의 `AppState` 핸들러에 `recurrenceScheduler.sync()` 호출을 추가하지 않은 것으로 판단(추정 아닌 grep/코드 대조 기반 확정). Failure Handoff: Developer에게 수정 필요 사항으로 반환(`App.tsx` 91행 `AppState 'active'` 핸들러에 `result.services.recurrenceScheduler.sync()` 병행 호출 추가 — `ReminderScheduler.sync()`와 동일 지점).
+- 회귀: 없음(291/291, F-01~F-23 및 최근 F-06/07/08/10 무손상 — §G).
+
+## 판정 (v1.19)
+
+**FAIL** — F-24/F-10개정/F-06개정/F-25/F-26 5개 기능 모두 핵심 요구사항·AC-82~AC-90은 단위테스트·코드 리뷰·iOS 시뮬레이터 실기동(AC-82/AC-87 SQLite 실증 포함)으로 충족을 확인했고, 보안 점검(반복 회차 무한 증식 방지 DoS 관점 포함)에서도 미해결 취약점이 없었다. 그러나 코드 리뷰 중 **High 1건(RECUR-01)**을 발견했다 — 설계가 명시적으로 요구하는 `RecurrenceScheduler`의 `AppState 'active'` 재동기화 트리거가 `App.tsx`에 배선되지 않아, "종료 없음(무기한)" 반복 일정의 향후 회차 실체화가 사실상 앱 콜드 스타트에만 의존하게 되는 설계 위반이며, 관련 증상(콜드 스타트로 막 실체화된 "오늘" 회차가 대시보드 초기 로드와의 경합으로 즉시 표시되지 않음)을 iOS 시뮬레이터 실기동으로 직접 재현·관찰했다. `.claude/skills/_shared/conventions.md`의 Severity 판정 규칙("Critical 또는 High가 하나라도 있으면 FAIL")에 따라 전체 판정을 **FAIL**로 반환한다. 다음 라우팅(Developer 재작업 여부)은 Orchestrator 결정.
+
+---
+
+# v1.20 — Bug Fix 재검증: RECUR-01(`RecurrenceScheduler` `AppState 'active'` 트리거 누락) 수정 확인
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-13 |
+| status | **PASS** |
+| 배경 | v1.19 코드 리뷰에서 발견한 **RECUR-01(High, IMPLEMENTATION_ERROR)** — `logic.md` §18.3 / `nfr.md` §17.1·§17.3 이 명시한 `RecurrenceScheduler.sync()` 4개 트리거(콜드 스타트/`AppState 'active'`/생성 직후/부팅 완료) 중 `AppState 'active'` 1곳이 `App.tsx`에 배선되지 않은 결함 — 에 대한 Developer 수정분 재검증. |
+| 변경 파일 | `App.tsx`(2곳 — ① `AppState 'active'` 핸들러에 `result.services.recurrenceScheduler.sync()` 병행 호출 추가, ② 최초 부트스트랩 `useEffect`에서 `await runPostRender(...)` 완료 직후 `useShellStore.getState().invalidate('list','dashboard')` 추가), `src/app/screens/DashboardScreen.tsx`(`useShellStore.subscribe` 기반 신규 `useEffect` — 화면이 포커스 유지 중에도 `stale.dashboard`/`stale.list`가 `false→true`로 전이되면 `navigation.isFocused()`일 때 즉시 `clearStale`+`load()`). 그 외 파일은 이번 라운드에서 무변경(`git status --porcelain` 대조로 확인, v1.19 이관 pending diff만 잔존). |
+| 검증 환경 | macOS, Xcode(iOS 26.0 시뮬레이터 iPhone 17 Pro, UDID `1D65385D-4A27-4B4C-A16A-05855D3C502B`), Node(현재 세션 런타임), Metro 8081(이번 세션 신규 기동 후 종료), sqlite3 CLI(앱 컨테이너 DB 직접 조회/시드/삭제) |
+
+## A. 코드 대조 — 4개 트리거 배선 재확인
+
+| 트리거 지점 | 배선 위치 | 확인 |
+| --- | --- | --- |
+| 콜드 스타트 | `src/app/bootstrap/composeNative.native.ts` 84~89행 `createPostRenderSteps().syncReminders` — `services.scheduler.sync()` 직후 `services.recurrenceScheduler.sync()` | **OK**(무변경, v1.19부터 배선) |
+| `AppState 'active'` | `App.tsx` 96~111행 — 기존 `result.services.scheduler.sync()` 30초 스로틀 블록 안에 `void result.services.recurrenceScheduler.sync()` 신규 추가(108행) | **OK(신규 수정 확인)** — RECUR-01 수정 대상 |
+| 반복 일정 생성 직후 | `src/core/services/scheduleService.ts` `syncRecurrenceSafely()`(419행 부근) → `this.d.recurrenceScheduler.sync(masterId)` | **OK**(무변경) |
+| 기기 부팅 완료 | Android `BOOT_COMPLETED` — `android/app/src/main/AndroidManifest.xml`에 권한 선언만 존재, `ReminderScheduler`/`RecurrenceScheduler` 양쪽 모두 실제 headless task 등록 코드(`registerHeadlessTask` 등)가 저장소에 없음(grep 결과 0건) | **미구현(기존 상태, 이번 라운드 무관)** — `ReminderScheduler` 도 동일하게 미구현이라 이번 RECUR-01 수정 범위(AppState 누락)와 무관한 기존 갭. v1.7~v1.19 문서가 이미 물리 기기 전용 후속(N-11 계열)으로 분류해 온 것과 같은 성격 — Info, 비차단, 새 결함 아님 |
+
+`App.tsx` 106~108행:
+```ts
+void result.services.scheduler.sync();
+// F-24(RECUR-01 수정, logic §18.3 / nfr §17.1·§17.3): ReminderScheduler.sync() 와 동일 지점에서
+// RecurrenceScheduler.sync() 도 병행 호출 — 콜드 스타트/생성 직후 누락분을 보완한다.
+void result.services.recurrenceScheduler.sync();
+```
+
+## B. iOS 시뮬레이터 실기동 — 행위 기반 재현(코드 리뷰가 아닌 관찰 증거)
+
+1. `xcodebuild -workspace ios/TodayWhat.xcworkspace -scheme TodayWhat -destination 'platform=iOS Simulator,id=1D65385D-4A27-4B4C-A16A-05855D3C502B' -derivedDataPath build/DerivedData build` → **BUILD SUCCEEDED**.
+2. 시뮬레이터 부팅 + `npx react-native start --port 8081`(신규 기동, `packager-status:running`) + `simctl install`/`launch kr.purpledog.todaywhat` — 최초 렌더: 빈 상태("오늘 일정이 없습니다") 확인(`recur01-v1.20-01-coldstart-empty.png`).
+3. 앱 컨테이너 SQLite에 `recurrence_rule='DAILY', recurrence_count=3`인 마스터 행을 Tester가 직접 INSERT(시작 시각 = 현재+2분, `recurrence_parent_id=NULL`).
+4. `simctl terminate` + `simctl launch`로 **콜드 재시작** → 약 3초 후 재스크린샷: 방금 실체화된 "오늘" 회차("RECUR01재검증 마스터", 13:04)가 대시보드에 즉시 표시되고 "0/1 완료"로 갱신됨(`recur01-v1.20-02-coldstart-occurrence-shown-3s.png`) — SQLite 조회로도 마스터(id=1) + 회차 3건(id=2,3,4, 1일 간격)이 생성돼 있음을 확인. **v1.19는 동일 절차에서 회차가 실체화됐음에도 대시보드가 즉시 반영하지 못하는 증상(§C-5)을 관찰했으나, 이번 재현에서는 지연 없이 반영됨을 직접 확인** — `App.tsx` 부트스트랩 `invalidate('list','dashboard')` + `DashboardScreen`의 신규 라이브 구독이 의도대로 동작.
+5. 미래 회차 1건(id=4, 3번째 회차)을 SQLite에서 직접 `DELETE`(horizon 갱신 미도래 상황을 인위적으로 재현).
+6. 앱을 **종료하지 않고** `osascript`(Simulator "Device > Home" 메뉴)로 Home 화면으로 전환(백그라운드) → 재차 `simctl launch`로 포그라운드 복귀. `simctl launch` 응답의 PID가 **재시작 전과 동일(7537)**임을 확인 — 콜드 재시작이 아니라 순수 `AppState` 전이(active↔background)임을 실증.
+7. 포그라운드 복귀 직후 SQLite 재조회: 삭제했던 회차가 **새 id(5)로 재실체화**되어 있음을 확인(`recur01-v1.20-03-appstate-active-resume.png`) — `AppState 'active'` 전이 시 `RecurrenceScheduler.sync()`가 실제로 호출되어 누락분을 보완함을 **행위 기반으로 직접 실증**(코드 리뷰만이 아니라 실기동 관찰 증거).
+
+스크린샷: `document/test/screenshots/recur01-v1.20-0{1,2,3}-*.png`.
+
+## C. 코드 리뷰 — `DashboardScreen.tsx` 신규 구독과 기존 화면들의 상호작용
+
+- `useShellStore.subscribe` 리스너(282~294행)는 `navigation.isFocused()`가 `false`면 즉시 반환 — `CalendarScreen`/`ScheduleEditorScreen`/`ScheduleDetailScreen`/`CategoryManagerScreen`의 `invalidate(...)` 호출이 Dashboard가 블러된 상태(스택 위에 다른 화면이 푸시된 상태)에서 발생해도 이 리스너는 반응하지 않고, 기존 `useFocusEffect`(264~275행)가 포커스 복귀 시점에 `stale` 플래그를 검사·소비하는 기존 경로를 그대로 유지 — **충돌 없음**.
+- 전이 조건이 `(state.stale.X && !prev.stale.X)`(false→true)로만 발화하고, `clearStale`이 발생시키는 true→false 전이는 조건을 만족하지 않아 **재귀/무한 루프 위험 없음**.
+- `useEffect` cleanup이 `useShellStore.subscribe`의 반환값(unsubscribe 함수)을 그대로 반환 — 구독 해제가 정확히 이뤄져 **메모리 누수·중복 리스너 누적 없음**(의존성 `[navigation, clearStale, load]`으로 `referenceDate` 변경 시 `load`가 갱신되어 매번 재구독되지만, 이전 구독은 그때마다 정상 해제됨).
+- **Low(비차단) 신규 지적 1건**: `DashboardScreen` 자신의 `toggle`/`removeOne`/`removeFollowing`이 화면이 포커스된 상태에서 `invalidate('list','dashboard', ...)`를 호출하면, 그 직후 이어지는 명시적 `void load()`와 새로 추가된 구독 리스너의 `void load()`가 같은 액션에서 **중복으로 각각 발생**한다(둘 다 store의 동일 `set()` 호출 한 번으로 촉발됨). `loadSeqRef`/`isFreshLoadSequence`(E-20-4, 기존 설계)가 최신 호출 결과만 반영하도록 이미 방어하고 있어 화면에 잘못된 데이터가 표시되는 일은 없으나, 체크박스 토글·삭제 1회당 `Promise.all(getSummary+findInRange+categories.list)` 조회가 1회 더 발생하는 비효율이다. 기능·데이터 정합성에 영향이 없어 Critical/High/Medium이 아닌 **Low**로 분류하며 이번 판정을 막지 않는다.
+
+## D. 보안 점검
+
+이번 변경(스토어 라이브 구독 추가, `invalidate` 신호 1개 추가)은 인메모리 boolean 플래그 조작과 구독 콜백만 다루며, 외부 입력·네트워크·저장소 스키마·인증/인가 경로에 관여하지 않는다.
+
+| 항목 | 결과 |
+| --- | --- |
+| 정보 노출 | 없음 — `stale` 플래그는 boolean, 페이로드 없음 |
+| 자원 고갈(DoS) | 위 §C Low 건이 유일한 부가 조회 원인이며 액션 1회당 유한 1회 중복에 그침(무한 루프 아님) — 자원 고갈 위험 없음 |
+| 인증/인가 | 해당 없음(로컬 전용, 접근 제어 경계 변경 없음) |
+| 비밀정보 | 신규 하드코딩/노출 없음 |
+| 결론 | 미해결 취약점 **0** |
+
+## E. 회귀
+
+```
+node --experimental-strip-types --test "tests/**/*.test.ts"
+# tests 291
+# pass 291
+# fail 0
+```
+
+v1.19와 동일 건수(291/291) — 회귀 없음. `npx tsc -p tsconfig.json`: `App.tsx`/`DashboardScreen.tsx` 관련 신규 오류 0(출력에 두 파일 미등장 — 기존 `tests/**` `node:test`/`node:assert` 미해석 및 `tests/categoryService.test.ts`의 `TS2532` 4건은 v1.17부터 반복 확인된 사전 베이스라인과 동일, 이번 델타 무관). `git status --porcelain` 대조 결과 `App.tsx`/`src/app/screens/DashboardScreen.tsx` 외 파일은 이번 세션에서 추가로 변경되지 않음(그 외 M 표시 파일들은 v1.19 이전부터의 pending diff, 즉 기존에 이미 검증된 F-24/F-10개정/F-06개정/F-25/F-26 변경분과 동일) — F-24 나머지(AC-82~AC-90) 및 F-10개정/F-06개정/F-25/F-26 로직 자체는 이번 라운드 코드 변경의 영향을 받지 않음.
+
+## Failure Category / Regression
+
+- RECUR-01: **수정 확인** — `App.tsx` 108행에 `recurrenceScheduler.sync()` 배선 추가로 설계(`logic.md` §18.3, `nfr.md` §17.1/§17.3)가 요구하는 `AppState 'active'` 트리거가 이제 실제로 동작함을 코드 대조 + iOS 시뮬레이터 실기동(백그라운드→포그라운드 재개, 동일 PID로 콜드 재시작이 아님을 확인)으로 실증.
+- 부가 발견(신규, Low, 비차단, cause=IMPLEMENTATION_ERROR): `DashboardScreen.tsx`의 신규 라이브 구독이 화면 자신의 `invalidate` 호출과 겹쳐 동일 액션당 `load()`가 1회 더 중복 실행됨 — 기존 stale-seq 가드로 정합성은 보장되므로 기능 결함이 아니며 이번 판정을 막지 않음. 필요 시 후속 백로그로 기록 권고(예: 자기 자신이 유발한 `invalidate`는 구독 콜백에서 무시하거나, 명시적 `void load()` 호출부를 제거하고 구독에만 위임).
+- 회귀: 없음(291/291, App.tsx/DashboardScreen.tsx 외 무변경).
+
+## 판정 (v1.20)
+
+**PASS** — RECUR-01의 근본 원인(`App.tsx`의 `AppState 'active'` 핸들러에 `RecurrenceScheduler.sync()` 미배선)이 수정되었음을 코드 대조로 확인했고, 관련 증상(콜드 스타트 직후 실체화된 "오늘" 회차가 대시보드 초기 로드와 경합해 즉시 표시되지 않던 문제)도 해소되었음을 iOS 시뮬레이터 실기동(콜드 재시작 즉시 반영 + 백그라운드/포그라운드 재개 시 삭제된 미래 회차 재실체화, 동일 PID로 확인)으로 직접 실증했다. 코드 리뷰에서 Critical/High/Medium 결함은 발견되지 않았고(Low 1건 — 동일 액션당 `load()` 중복 실행, 비차단), 보안 점검에서도 미해결 취약점이 없었다. 회귀 스위트 291/291 pass 유지, `App.tsx`/`DashboardScreen.tsx` 외 파일은 이번 라운드에서 변경되지 않아 F-24 나머지·F-10개정·F-06개정·F-25·F-26에 영향 없음을 확인했다. `.claude/skills/_shared/conventions.md`의 Severity 판정 규칙에 따라 Critical/High가 없으므로 전체 판정을 **PASS**로 반환한다. 다음 라우팅(Complete 처리 여부)은 Orchestrator 결정.
+
+---
+
+# RECUR-01 재검증 (v1.21) — 사용자 재요청("테스트 진행해줘")에 의한 확인 재검증
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-13 |
+| status | **PASS** |
+| 배경 | v1.20에서 RECUR-01(`App.tsx`의 `AppState 'active'` 미배선)이 수정 확인되어 PASS 처리됨. 이후 사용자가 "에러가 뜨는 것 같다"고 재테스트를 요청했으나 구체적 에러/재현 절차를 제시하지 않았고, orchestrator가 조사한 결과 워킹트리가 v1.20 PASS 시점과 동일하고 `tsc`/`node --test` 모두 정상이라 새로 재현된 에러는 없었다. 이번에 사용자가 다시 "테스트 진행해줘"라고만 재요청하여, 형식적 반복이 아니라 사용자 안심/확인 목적의 정식 재검증 1회를 수행한다. **v1.20에서 이미 PASS 처리된 내용을 반복 서술하지 않고, 회귀 여부·재현 결과에 집중**한다. |
+| 근거 | `document/planner/plan.md`, `document/architect/{overview.md, logic.md §18.3, database.md, nfr.md §17.1·§17.3}`, `document/test/test-result.md` v1.20 절, `.claude/skills/_shared/conventions.md` |
+| 검증 환경 | macOS, Xcode(iOS 26.0 시뮬레이터 iPhone 17 Pro, UDID `1D65385D-4A27-4B4C-A16A-05855D3C502B` — v1.20과 동일 기기, v1.20이 설치한 바이너리 재사용), Node v25.2.1, Metro 8081(이번 세션 신규 기동 후 종료), sqlite3 CLI(앱 컨테이너 DB 직접 조회/시드/삭제) |
+
+## A. 코드 변경 여부 확인 (git 대조)
+
+`git status --porcelain` / `git log --oneline -15` 대조 결과, v1.20 PASS 판정 이후 **커밋도, 관련 파일의 내용 변경도 없음**을 확인했다. `App.tsx`·`DashboardScreen.tsx`의 RECUR-01 관련 코드가 v1.20 보고서에 인용된 줄 번호·주석 문구와 **바이트 단위로 동일**함을 직접 재확인했다(아래 §B). 즉 이번 라운드는 "새 결함이 재현됐는가"가 아니라 "v1.20 수정이 여전히 유효한가(회귀 없음)"를 확인하는 재검증이며, 실제 코드 변경 없이도 절차(코드 대조/테스트 실행/시뮬레이터 재현)를 실제로 수행해 근거를 남긴다.
+
+## B. 코드 대조 — 4개 트리거 배선 재확인 (회귀 여부)
+
+| 트리거 지점 | 배선 위치 | v1.20 대비 |
+| --- | --- | --- |
+| 콜드 스타트 | `src/app/bootstrap/composeNative.native.ts` 88행 `services.recurrenceScheduler.sync()` | **동일, 무변경** |
+| `AppState 'active'` | `App.tsx` 96~111행 — `scheduler.sync()` 30초 스로틀 블록 안에 108행 `void result.services.recurrenceScheduler.sync()` | **동일, 무변경**(RECUR-01 수정분 유지) |
+| 반복 일정 생성 직후 | `src/core/services/scheduleService.ts` 417~419행 `syncRecurrenceSafely()` → `this.d.recurrenceScheduler.sync(masterId)` | **동일, 무변경** |
+| Dashboard 라이브 구독(부가 배선) | `src/app/screens/DashboardScreen.tsx` 282~294행 `useShellStore.subscribe` — `navigation.isFocused()`일 때 `stale.dashboard`/`stale.list` false→true 전이 시 `clearStale`+`load()` | **동일, 무변경** |
+
+`src/core/services/recurrenceScheduler.ts`(masters 순회, `expandOccurrences`로 [now, now+horizon) 전개, 실패 격리, 재진입 방지 lock)도 함께 대조했으며 로직 변경 없음. 코드 리뷰 관점에서 신규 Critical/High/Medium 결함 없음.
+
+## C. iOS 시뮬레이터 실기동 재현
+
+v1.20이 사용한 것과 동일한 시뮬레이터(동일 UDID)에 이미 설치돼 있던 바이너리(코드 무변경이므로 재빌드 불필요)를 그대로 사용해 Metro(8081)만 재기동하고 재검증했다.
+
+1. 기존 DB에 남아있던 v1.20 테스트 데이터(`RECUR01재검증 마스터`)를 정리하고, 새 마스터(`RECUR01재검증v1.21`, `recurrence_rule='DAILY', recurrence_count=3`, 시작 = 현재+2분)를 SQLite에 직접 INSERT.
+2. `simctl terminate` + `simctl launch`(PID **9913**, 콜드 스타트) → 약 4초 후 스크린샷: 방금 실체화된 "오늘" 회차("RECUR01재검증v1.21", 14:02)가 대시보드에 즉시 "0/1 완료"로 표시됨(`document/test/screenshots/recur01-v1.21-01-coldstart.png`) — SQLite 조회로 마스터(id=6) + 회차 3건(id=7,8,9)이 생성됨을 확인.
+3. 미래 회차 1건(id=9, 3번째 회차)을 SQLite에서 직접 `DELETE`.
+4. 앱을 **종료하지 않고** Simulator "Device > Home" 메뉴로 백그라운드 전환 후, `simctl launch`로 포그라운드 복귀. 응답 PID가 **9913으로 재시작 전과 동일** — 콜드 재시작이 아니라 순수 `AppState`(active↔background) 전이임을 실증.
+5. 포그라운드 복귀 직후 SQLite 재조회: 삭제했던 회차가 **새 id(10)로 동일 시작 시각에 재실체화**됨을 확인 — `AppState 'active'` 전이 시 `RecurrenceScheduler.sync()`가 이번 세션에서도 정상 호출됨을 행위 기반으로 직접 재실증. v1.20 이후 **회귀 없음**.
+
+스크린샷: `document/test/screenshots/recur01-v1.21-01-coldstart.png`(콜드 스타트 즉시 반영). 백그라운드/포그라운드 전이 시점 화면은 직전 세션에서 앱이 설정 탭에 머물러 있던 상태로 재개되어(진짜 `AppState` resume이므로 마지막 탭 상태 보존 — 이 자체가 콜드 재시작이 아님을 뒷받침하는 정황), Dashboard 탭의 시각적 스크린샷 대신 SQLite 재조회를 1차 증거로 사용했다(v1.20과 동일한 방식). iOS 시뮬레이터에 macOS 15+ 전용 `click at` 좌표 클릭이 지원되지 않고 `cliclick` 등 보조 도구도 설치돼 있지 않아, Dashboard 탭으로의 UI 탭 전환 스크린샷까지는 이번 세션에서 확보하지 못했다(ENVIRONMENT_ERROR, 비차단 — 데이터 계층 증거로 대체 확인됨).
+
+## D. 회귀 — 전체 테스트 스위트
+
+```
+node --experimental-strip-types --test "tests/**/*.test.ts"
+# tests 291
+# pass 291
+# fail 0
+```
+
+v1.20과 동일 건수(291/291) — 회귀 없음.
+
+## E. 코드 리뷰 (v1.20 이후 신규분 대조)
+
+- `npx tsc -p tsconfig.json`: `App.tsx`/`DashboardScreen.tsx`/`composeNative.native.ts`/`scheduleService.ts`/`recurrenceScheduler.ts` 어디에도 신규 오류 없음(출력에 해당 파일 미등장). 기존 베이스라인(`src/core/infra/memory/repositories.ts` Buffer x2, `src/index.ts` console x2 + process x1, `tests/**`의 `node:test`/`node:assert` 미해석, `tests/categoryService.test.ts`의 `TS2532`)만 유지.
+- **정보성 관찰(비차단, Low, cause=TEST_ERROR 추정)**: `tests/categoryService.test.ts`의 `TS2532`(Object is possibly 'undefined') 오류가 이번 측정에서 **8건** 확인됨. v1.20 보고서는 "4건"으로 기록했다. 두 시점 사이에 해당 테스트 파일의 실제 diff는 없어(git 대조로 무변경 확인) 코드 변경에 의한 회귀가 아니라, 이전 집계 시점의 기록 오차 또는 tsc 캐시/버전 차이로 추정된다 — RECUR-01 범위와 무관하고 프로덕션 코드가 아닌 테스트 파일의 타입 체크 이슈이므로 이번 판정을 막지 않으나, 사실과 다르게 축소 기록하지 않기 위해 명시한다.
+- `App.tsx`/`DashboardScreen.tsx`의 RECUR-01 관련 코드는 §B에서 대조한 바와 같이 무변경이며 `logic.md` §18.3, `nfr.md` §17.1/§17.3의 처리 흐름을 계속 준수한다.
+
+## F. 보안 점검
+
+이번 라운드는 코드 변경이 없으므로 v1.20에서 점검한 보안 결론(정보 노출 없음/자원 고갈 없음/인증·인가 해당 없음/비밀정보 하드코딩 없음)이 그대로 유지된다. 신규 코드 변경이 없어 새로운 위협 표면도 없음 — 미해결 취약점 **0**.
+
+## Failure Category / Regression
+
+- RECUR-01: **v1.20 수정 유효, 회귀 없음** — 코드 대조(§B) + iOS 시뮬레이터 재현(§C, 콜드 스타트 즉시 반영 + 백그라운드/포그라운드 재개 시 재실체화, 동일 PID 확인)으로 재실증.
+- 코드/설계 변경: 없음(git 대조로 확인).
+- 정보성 관찰 1건(Low, 비차단): `tests/categoryService.test.ts` `TS2532` 건수 기록 불일치(v1.20 "4건" vs 이번 측정 "8건") — 원인 미확정(TEST_ERROR 추정), RECUR-01과 무관.
+- 미실행 항목(ENVIRONMENT_ERROR, 비차단): Dashboard 탭으로의 UI 탭 전환 스크린샷 — 시뮬레이터 좌표 클릭 도구 부재로 대체 증거(SQLite 재조회)로 확인.
+
+## 판정 (v1.21)
+
+**PASS** — 사용자가 구체적 에러를 특정하지 못한 채 재요청한 확인성 재검증으로, git 대조 결과 v1.20 PASS 판정 이후 관련 코드에 실제 변경이 없음을 확인했다. 그럼에도 요청받은 절차(코드 재대조, iOS 시뮬레이터 콜드 스타트/백그라운드→포그라운드 재현, 전체 테스트 스위트 재실행, tsc 재실행, 코드 리뷰·보안 점검)를 실제로 수행하여 RECUR-01 수정이 여전히 유효하고 회귀가 없음을 실증했다(§B~F). 코드 리뷰·보안 점검에서 Critical/High/Medium 결함 없음. 회귀 스위트 291/291 유지. 정보성 관찰 1건(categoryService.test.ts TS2532 건수 기록 불일치)은 RECUR-01과 무관한 테스트 파일 타입 이슈로 비차단이다. 다음 라우팅(Complete 처리 여부)은 Orchestrator 결정.
