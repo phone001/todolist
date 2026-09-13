@@ -26,6 +26,7 @@ import {
 import { FixedClock } from '../../src/core/domain/clock.ts';
 
 const NOW = Date.UTC(2026, 8, 4, 9, 0, 0);
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 test('V-19: watchSync 미주입 시 buildApp 은 기존 형태 + watchSync 서비스(no-op 게이트)를 반환', () => {
   const app = buildApp();
@@ -86,4 +87,21 @@ test('V-19: assembleServices 는 watchSync 포트 없이도 watchSync 서비스�
   const services = assembleServices(ports);
   assert.ok(services.watchSync instanceof WatchSyncService);
   await assert.doesNotReject(services.watchSync.pushSnapshot());
+});
+
+test('v1.17(D-30(a)): pushSnapshot 은 "다음 예정" 후보가 존재해도 항상 nextUpcoming=null 을 전송한다', async () => {
+  const clock = new FixedClock(NOW, 'UTC');
+  const gateway = new FakeWatchSyncGateway(true);
+  const app = buildApp({ clock, watchSync: gateway });
+  // 오늘 밖의 미완료 미래 일정 — 구 로직이면 nextUpcoming 후보가 되었을 항목.
+  await app.schedules.create({
+    title: '다음주 예정',
+    startAt: NOW + 7 * DAY_MS,
+    notifyAtStart: false,
+  });
+
+  await app.watchSync.pushSnapshot();
+
+  assert.equal(gateway.sentSnapshots.length, 1);
+  assert.equal(gateway.lastSnapshot()?.nextUpcoming, null);
 });

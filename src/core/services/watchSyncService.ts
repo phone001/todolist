@@ -4,6 +4,8 @@
  *
  * - `pushSnapshot()` — 데이터 fetch(= DashboardService.getSummary 와 동일 소스) → `buildWatchSnapshot`
  *   → `WatchSyncGateway.sendSnapshot`. 실패는 로깅 후 격리(NFR-12).
+ *   v1.17부터 "다음 예정" 조회를 중단하고 `buildWatchSnapshot`에 항상 `null`을 전달한다
+ *   (logic.md §17.3 "v1.17 개정", D-30(a) — 전송은 `toPlistSafe()`의 null 키 제거로 자동 배제).
  * - `applyIncomingToggle(op)` — 입력 검증 → opId 중복 제거 원장 → `resolveToggleLWW`
  *   → 이기면 `ScheduleService.toggleDone` **만** 호출 → 원장 기록 → ack → `pushSnapshot`.
  *
@@ -83,6 +85,7 @@ export class WatchSyncService {
   /**
    * 최신 "오늘 스냅샷"을 워치로 전송한다. 폰 데이터 변경 후 디바운스로 호출(§17.2).
    * fetch 규칙은 `DashboardService.getSummary` 와 동일 소스(§17.3).
+   * v1.17: "다음 예정" 조회는 수행하지 않고 `buildWatchSnapshot` 두 번째 인자에 항상 `null` 전달(D-30(a)).
    */
   async pushSnapshot(): Promise<void> {
     if (!this.d.gateway.isSupported()) return;
@@ -93,13 +96,11 @@ export class WatchSyncService {
       const dayStart = startOfLocalDay(now, this.d.clock.timeZone());
       const dayEnd = dayStart + DAY_MS;
 
-      const [today, nextPage, categories] = await Promise.all([
+      const [today, categories] = await Promise.all([
         this.d.schedules.findForDashboard(dayStart, dayEnd),
-        this.d.schedules.findInRange(now, Number.MAX_SAFE_INTEGER, { isDone: false }, 'startAt', 1, null),
         this.d.categories.list(),
       ]);
-      const nextUpcoming = nextPage.items[0] ?? null;
-      snapshot = buildWatchSnapshot(today, nextUpcoming, categories, this.d.clock);
+      snapshot = buildWatchSnapshot(today, null, categories, this.d.clock);
     } catch (err) {
       // 읽기 실패도 폰 흐름을 저해하지 않는다.
       this.d.logger.log('warn', 'watch.snapshot.build.fail', { error: String(err) });
