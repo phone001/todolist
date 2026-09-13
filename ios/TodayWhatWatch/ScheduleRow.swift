@@ -2,8 +2,8 @@
 //  ScheduleRow.swift
 //  TodayWhatWatch
 //
-//  오늘 목록 1행 — 제목·시작시각(로컬 tz 변환, P-39)·유형 색 점+라벨·중요도 표식·완료 토글.
-//  탭 시 낙관적 로컬 토글 + PendingQueue.enqueue + connectivity.sendToggle(§17.11.3).
+//  오늘 목록 1행 — 완료 토글(v1.17: 좌측 최선두, P-69/§17.12)·유형 색 점·제목·시작시각(로컬 tz 변환,
+//  P-39)·중요도 표식. 탭 시 낙관적 로컬 토글 + PendingQueue.enqueue + connectivity.sendToggle(§17.11.3).
 //
 
 import SwiftUI
@@ -30,6 +30,12 @@ struct ScheduleRow: View {
 
     var body: some View {
         HStack(spacing: 6) {
+            Button(action: onToggle) {
+                Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
+                    .foregroundColor(item.isDone ? .green : .secondary)
+            }
+            .buttonStyle(.plain)
+
             Circle()
                 .fill(Color(hex: item.categoryColor))
                 .frame(width: 8, height: 8)
@@ -53,12 +59,6 @@ struct ScheduleRow: View {
             }
 
             Spacer()
-
-            Button(action: onToggle) {
-                Image(systemName: item.isDone ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(item.isDone ? .green : .secondary)
-            }
-            .buttonStyle(.plain)
         }
         .opacity(isOverdue ? 0.85 : 1.0)
     }
