@@ -3,9 +3,9 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 검증 결과 (기능 테스트 + 코드 리뷰 + 보안 점검) |
-| 버전 | v1.22 |
-| 대상 | (v1.0) `src/core/**` · (v1.1~1.2) `src/app/**` · (v1.5) op-sqlite 6.2.11→9.3.0 상향 + iOS 온디바이스 빌드/실행 검증 · (v1.6) ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1) · (v1.7) 애플워치 워치 타깃 추가 (F-19, AC-23·AC-47~AC-56) · (v1.10) 대시보드("오늘" 탭) 개선 (F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색, AC-57~AC-66) · (v1.11) 대시보드 개선 **재확정 방향** (F-20 컴팩트 / F-21 진행률 한 줄 / F-22 접이식 검색, AC-57~AC-68, E-21-4·E-22-6·E-22-7) · (v1.12) 세 번째 탭 "검색"→"통계" 교체 + 통계 화면(F-23) (AC-69~AC-76, E-23-1~E-23-5, R-23-1~R-23-4) · (v1.13) 통계 화면(F-23) 하단 "유형별 월별 할 일 건수" 그래프 막대(bar)→선(line) 교체 — 프레젠테이션 한정 델타 (AC-71~AC-75, E-23-1~E-23-5, R-23-1~R-23-4, nfr V-46~V-49 무변경) · (v1.14) F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수 (logic §17.11, nfr §11.1·§14, AC-47~AC-56·E-19-1~7) · (v1.15) F-19 watchOS 네이티브 앱 재검증(실기 시뮬레이터 데모 포함, v1.14 허위 기록 정정) · (v1.16) F-23 통계 화면 유형별 꺾은선 그래프 — iOS 시뮬레이터 실기동 시각 검증 · (v1.17) F-06 유형 색상 자동 배정 / F-07 우선순위 색상 정책 / F-08 사전 알림 프리셋 선택 / F-10 대시보드 리스트 우선순위·유형 표시 (AC-77~AC-81) · (v1.18) 사용자 요청("빌드후 휴대폰과 워치 시뮬레이터를 띄워줘") — iOS+watchOS 동시 빌드 및 두 시뮬레이터 부팅·앱 설치·실행 재검증(신규 요구사항 없음, v1.17 변경분 그대로) · (v1.19) `알림앱.md` "추가기능" 미착수 5개 항목(F-24 반복 일정 신규 / F-10 개정 완료 시 하단 이동 / F-06 개정 기본 유형 4종 시딩 / F-25 완료된 일정 숨기기 신규 / F-26 캘린더 날짜 프리필 신규) — **FAIL**(High 1건: F-24 `RecurrenceScheduler`의 `AppState 'active'` 트리거 누락) · (v1.20) RECUR-01 Bug Fix 재검증 — `App.tsx`의 `AppState 'active'` 핸들러에 `recurrenceScheduler.sync()` 병행 호출 추가 + 콜드 스타트 초기렌더 경합 해소(부트스트랩 완료 후 `invalidate` + `DashboardScreen` 라이브 스토어 구독) — **PASS** · (v1.21) RECUR-01 확인성 재검증(코드 무변경) — **PASS** · (v1.22) 실행환경 재확인 — iOS 시뮬레이터 재시작 + Metro 선기동 순서로 "No bundle URL present" 미재현 확인 + F-06/F-07/F-10/F-24/F-25/RECUR-01 iOS 실기동 시각 재확인(F-08/F-26은 코드 무변경으로 이전 판정 유지) — **PASS** |
-| 근거 | `document/planner/plan.md` v1.9 §5.18(P-63~P-67)·AC-82~AC-90·D-25~D-29, `document/architect/{overview.md v1.16, logic.md v1.16 §5.3/§7.4/§7.5/§7.6/§16.3.1/§18, database.md v1.8 §14, nfr.md v1.14 §17}` |
+| 버전 | v1.23 |
+| 대상 | (v1.0) `src/core/**` · (v1.1~1.2) `src/app/**` · (v1.5) op-sqlite 6.2.11→9.3.0 상향 + iOS 온디바이스 빌드/실행 검증 · (v1.6) ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1) · (v1.7) 애플워치 워치 타깃 추가 (F-19, AC-23·AC-47~AC-56) · (v1.10) 대시보드("오늘" 탭) 개선 (F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색, AC-57~AC-66) · (v1.11) 대시보드 개선 **재확정 방향** (F-20 컴팩트 / F-21 진행률 한 줄 / F-22 접이식 검색, AC-57~AC-68, E-21-4·E-22-6·E-22-7) · (v1.12) 세 번째 탭 "검색"→"통계" 교체 + 통계 화면(F-23) (AC-69~AC-76, E-23-1~E-23-5, R-23-1~R-23-4) · (v1.13) 통계 화면(F-23) 하단 "유형별 월별 할 일 건수" 그래프 막대(bar)→선(line) 교체 — 프레젠테이션 한정 델타 (AC-71~AC-75, E-23-1~E-23-5, R-23-1~R-23-4, nfr V-46~V-49 무변경) · (v1.14) F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수 (logic §17.11, nfr §11.1·§14, AC-47~AC-56·E-19-1~7) · (v1.15) F-19 watchOS 네이티브 앱 재검증(실기 시뮬레이터 데모 포함, v1.14 허위 기록 정정) · (v1.16) F-23 통계 화면 유형별 꺾은선 그래프 — iOS 시뮬레이터 실기동 시각 검증 · (v1.17) F-06 유형 색상 자동 배정 / F-07 우선순위 색상 정책 / F-08 사전 알림 프리셋 선택 / F-10 대시보드 리스트 우선순위·유형 표시 (AC-77~AC-81) · (v1.18) 사용자 요청("빌드후 휴대폰과 워치 시뮬레이터를 띄워줘") — iOS+watchOS 동시 빌드 및 두 시뮬레이터 부팅·앱 설치·실행 재검증(신규 요구사항 없음, v1.17 변경분 그대로) · (v1.19) `알림앱.md` "추가기능" 미착수 5개 항목(F-24 반복 일정 신규 / F-10 개정 완료 시 하단 이동 / F-06 개정 기본 유형 4종 시딩 / F-25 완료된 일정 숨기기 신규 / F-26 캘린더 날짜 프리필 신규) — **FAIL**(High 1건: F-24 `RecurrenceScheduler`의 `AppState 'active'` 트리거 누락) · (v1.20) RECUR-01 Bug Fix 재검증 — `App.tsx`의 `AppState 'active'` 핸들러에 `recurrenceScheduler.sync()` 병행 호출 추가 + 콜드 스타트 초기렌더 경합 해소(부트스트랩 완료 후 `invalidate` + `DashboardScreen` 라이브 스토어 구독) — **PASS** · (v1.21) RECUR-01 확인성 재검증(코드 무변경) — **PASS** · (v1.22) 실행환경 재확인 — iOS 시뮬레이터 재시작 + Metro 선기동 순서로 "No bundle URL present" 미재현 확인 + F-06/F-07/F-10/F-24/F-25/RECUR-01 iOS 실기동 시각 재확인(F-08/F-26은 코드 무변경으로 이전 판정 유지) — **PASS** · (v1.23) `알림앱.md` "### 20260913 추가요청" 5개 항목 — F-19 개정(워치 다음일정 제거·헤더 요약 "오늘 - M/N"·체크박스 좌측 배치) / F-06·F-07·F-08·F-24 개정(중요도·유형·반복·사전알림 셀렉트박스화) / F-16 개정(캘린더 탭 아이콘 calendar.png) — **PASS** |
+| 근거 | `document/planner/plan.md` v1.10 §5.19(P-68~P-71)·AC-91~AC-94·D-30~D-31, `document/architect/{overview.md v1.17, logic.md v1.17 §16.2·§16.3.1·§17.3·§17.12, database.md v1.8(무변경), nfr.md v1.15 §14.3/§14.5/§9 V-58~V-60}` |
 | 작성 주체 | Tester |
 | 일자 | 2026-09-13 |
 
@@ -13,6 +13,7 @@
 
 | 버전 | 변경 |
 | --- | --- |
+| v1.23 | Feature: `알림앱.md` "### 20260913 추가요청" 5개 항목 — F-19 개정(워치 "다음 예정" 제거, 헤더 우측 요약 "오늘 - {완료}/{전체}", 완료 체크박스 좌측 배치) / F-06·F-07·F-08·F-24 개정(일정 작성/수정 화면의 중요도·유형·반복·사전 알림 4필드를 `SelectField`/`MultiSelectField` 셀렉트박스로 전환) / F-16 개정(캘린더 탭 아이콘 `goal.png`→`calendar.png`) — plan v1.10 §5.19(P-68~P-71, AC-91~94, D-30~31), 설계 overview/logic v1.17·nfr v1.15 — **PASS**. `node --experimental-strip-types --test "tests/**/*.test.ts"` 직접 재현 **303/303 pass, 0 fail**(v1.22의 291 + 신규 12: `selectFieldLogic.test.ts` 8 / `rootNavigatorIcons.test.ts` 3 / `appWiring.test.ts` v1.17 D-30(a) 1). `npx tsc -p tsconfig.json --noEmit` 93줄 — v1.22 이전과 동일한 기존 베이스라인(`repositories.ts` Buffer x2, `index.ts` console/process x3, 테스트 파일들의 `node:test`/`node:assert` 미해석 등)만 남고 신규 오류 0. **실기동 검증**: (1) watchOS — `xcodebuild -scheme TodayWhatWatch -destination 'id=Apple Watch Series 11 (46mm)'` **BUILD SUCCEEDED**(수정된 `TodayView.swift`/`ScheduleRow.swift` 컴파일 확인), 워치 시뮬레이터에 설치·실행 후 로컬 스냅샷 캐시를 직접 조작해 두 케이스를 스크린샷으로 실증 — 빈 스냅샷(0/0)에서 헤더 "오늘 - 0/0"(E-19-8) + "다음 예정" 섹션 부재, 3건(완료1/미완료2) 시드에서 헤더 "오늘 - 1/3"(AC-91) + 완료 토글(체크/원) 아이콘이 각 행 최좌측에 배치됨(AC-92, P-69)을 육안 확인 — `document/test/screenshots/v1.23-watch-01-empty-header-0of0.png`, `v1.23-watch-02-seeded-header-1of3-checkbox-left.png`. (2) iOS 폰 — 기존 `TodayWhat.app` 빌드 재사용 + Metro 기동 + `simctl install/launch` → 대시보드 하단 탭의 캘린더 아이콘이 실제로 달력 모양(`calendar.png`)으로 렌더됨을 스크린샷으로 확인(AC-94) — 일정 작성 화면의 `SelectField`/`MultiSelectField` 렌더 자체는 시뮬레이터 터치 자동화 수단 부재(v1.15~v1.22가 반복 문서화한 동일 환경 제약, `osascript`/System Events 좌표 클릭 1회 시도 후 무반응 확인)로 실측하지 못해 코드 리뷰 + 단위테스트로 대체. 코드 리뷰: 5개 항목 전부 설계(logic.md §17.3/§17.12/§16.2/§16.3.1)와 구현이 1:1 대응, `SelectField`/`MultiSelectField`는 `src/core/**`·서비스 미의존 순수 프레젠테이션 컴포넌트로 값 도메인·검증·서비스 계약 무변경 원칙을 지킴, `watchSyncService.ts`의 "다음 예정" 조회 제거가 기존 로직에 부작용 없음(V-19/V-36/D-30(a) 테스트로 회귀 확인). Critical/High/Medium **0**. 보안 점검: STRIDE/OWASP 관점에서 신규 취약점 **0**(고정 옵션 배열만 선택하는 UI, 이미 전송되던 `summary` 재계산·재배치, require 경로 문자열 교체뿐 — 신규 입력·저장·로그 표면 없음, logic §13.3/§13.8 "해당 없음" 서술과 코드 일치 확인). 회귀 없음. 상세는 아래 `# v1.23` 섹션 참조. |
 | v1.22 | Analysis/Inspection 성격의 실행환경 재확인 — 사용자가 보고한 "No bundle URL present"(iOS 시뮬레이터, 이미 설치된 앱을 Metro 미기동 상태에서 단독 재실행할 때 발생)에 대해, 오케스트레이터의 이전 조사(코드 결함 아님 판정)를 실기동으로 직접 검증 — **PASS**. iPhone 17 Pro 시뮬레이터(`1D65385D-4A27-4B4C-A16A-05855D3C502B`)를 `simctl shutdown`+`boot`로 재시작한 뒤, **(1)** Metro 미기동 상태에서 기설치 앱을 `simctl launch`로 단독 실행 → `RCTFatal("No bundle URL present")` 적색 화면이 실제로 재현됨을 스크린샷으로 1차 확인(오케스트레이터 진단이 정확했음을 실증). **(2)** 이어서 `npx react-native start --port 8081`을 백그라운드로 먼저 기동(`packager-status:running` 확인) 후 앱을 `terminate`+`launch`로 재시작 → 번들이 정상 로드되어 대시보드가 크래시 없이 렌더됨을 확인, 동일 조건에서 에러가 더 이상 재현되지 않음. 결론: 코드 결함 아님, **ENVIRONMENT_ERROR**(Metro 선기동 필요라는 React Native Debug 빌드의 정상 동작 요건, 실행 절차 문제) — 근본 원인 불변, 코드 수정 불필요. 이어서 F-06/F-07/F-10/F-24/F-25/RECUR-01을 SQLite 직접 시딩 + `simctl terminate`/`launch`(콜드) 및 Device>Home 백그라운드→`simctl launch` 포그라운드(AppState 전이, 동일 PID로 콜드 재시작 아님을 확인) 방식으로 재확인 — 전부 설계대로 동작함을 스크린샷·SQLite 조회로 실증(§C). F-08(사전 알림 프리셋)·F-26(캘린더 날짜 프리필)은 관련 코드가 이번 세션 무변경(`git diff --stat HEAD` 확인)이라 v1.17/v1.19 PASS 판정을 그대로 유지. 회귀 `node --experimental-strip-types --test "tests/**/*.test.ts"` **291/291 pass, 0 fail**(v1.20/v1.21과 동일 건수). 코드/설계 변경 없음(git 대조로 확인) — 코드 리뷰·보안 점검은 "변경 없음, 이전 판정(v1.17/v1.19/v1.20/v1.21) 유지"로 갈음. 부가 관찰(Info, 비차단): 이번 세션 중 macOS 손쉬운 사용(Accessibility) 권한이 간헐적으로 허용되어 `System Events`로 Simulator 메뉴 클릭(Device>Home) 및 좌표 클릭 1건이 우연히 성공했으나 재현성이 없어(대부분 `-1719` 오류) 정밀 좌표 보정에 사용하지 않았고, 좌표 클릭 1회가 의도치 않게 테스트 데이터 항목 하나를 완료 처리한 것을 즉시 SQLite로 원복함 — v1.16이 문서화한 "시뮬레이터 터치 주입 수단 불안정" 성격과 동일, 정밀 UI 탭 자동화로 확대하지 않음. 상세는 아래 `# v1.22` 섹션 참조. |
 | v1.20 | Bug Fix 재검증: v1.19 RECUR-01(High, IMPLEMENTATION_ERROR — `RecurrenceScheduler.sync()`의 `AppState 'active'` 트리거 배선 누락) Developer 수정분 검증 — **PASS**. 변경 파일은 `App.tsx`(`AppState 'active'` 핸들러에 `recurrenceScheduler.sync()` 병행 호출 추가 + 부트스트랩 `runPostRender` 완료 직후 `useShellStore.invalidate('list','dashboard')` 추가) + `DashboardScreen.tsx`(`useShellStore.subscribe` 기반 라이브 구독 신규 — 화면이 이미 포커스된 상태에서도 `stale` 전이를 즉시 감지해 재조회) 2개뿐(`git status --porcelain` 대조로 다른 파일 무변경 재확인). **코드 대조**로 logic §18.3/nfr §17.1·§17.3 이 요구하는 4개 트리거 중 콜드 스타트(`composeNative.native.ts` 88행)·`AppState 'active'`(`App.tsx` 108행, 신규)·생성 직후(`scheduleService.ts` `syncRecurrenceSafely`) 3곳이 배선되어 있음을 확인. **iOS 시뮬레이터(iPhone 17 Pro) 실기동**으로 두 시나리오를 모두 재현: (1) SQLite에 DAILY/count=3 마스터를 직접 시드 후 콜드 재시작 → 재시작 후 약 3초 이내에 대시보드가 "오늘" 회차를 즉시 표시(`0/1완료`)함을 스크린샷으로 확인(v1.19는 동일 절차에서 회차가 즉시 보이지 않는 결함을 관찰했었음 — 이번에 해소 확인). (2) 미래 회차 1건을 SQLite에서 직접 삭제한 뒤, 앱을 종료하지 않고 Home으로 백그라운드 전환 후 다시 포그라운드로 복귀(동일 PID로 재개 확인 — 콜드 재시작 아님)했더니 삭제했던 회차가 새 id로 재실체화됨을 SQLite 조회로 확인 — `AppState 'active'` 전이 시 `RecurrenceScheduler.sync()`가 실제로 동작함을 직접 실증(코드 리뷰뿐 아니라 행위 기반 증거). 회귀: `node --experimental-strip-types --test "tests/**/*.test.ts"` **291/291 pass, 0 fail**(v1.19와 동일 건수, 회귀 0). `npx tsc -p tsconfig.json`: `App.tsx`/`DashboardScreen.tsx` 관련 신규 오류 0(기존 `node:test`/`node:assert` 미해석 및 `categoryService.test.ts` 오류는 v1.17부터 반복된 사전 베이스라인과 동일). 코드 리뷰: `DashboardScreen.tsx` 신규 구독은 `navigation.isFocused()` 가드로 비포커스 상태에서 무시되고(다른 화면의 `invalidate` 호출과 충돌 없음), `false→true` 전이만 반응해 무한 루프 위험 없음(`clearStale` 은 `true→false` 전이라 재귀 트리거 안 됨), cleanup 이 `unsubscribe()`를 정확히 반환해 메모리 누수 없음. **Low(비차단) 1건**: 같은 화면 내부(`toggle`/`removeOne`/`removeFollowing`)가 포커스 상태에서 `invalidate('list','dashboard')`를 호출하면 새 구독 리스너와 기존 명시적 `void load()` 호출이 동시에 각각 `load()`를 발생시켜 동일 액션마다 중복 조회가 1회 더 발생함 — 기존 `loadSeqRef`/`isFreshLoadSequence`(E-20-4) 가드가 최신 결과만 반영하도록 이미 보호하고 있어 데이터 정합성 문제는 없고 단순 비효율(추가 DB 왕복 1회)에 그침, 신규 결함으로 분류하되 기능·보안에 영향 없어 비차단. 보안 점검: 이번 변경은 인메모리 boolean 무효화 신호와 구독 등록뿐 — 민감정보 노출·자원 고갈(무한 루프 없음, 위 Low 건은 유한 1회 중복에 그침)·인증/인가 변경 없음, 미해결 취약점 0. **부팅 완료(Android BOOT_COMPLETED) 트리거**는 `ReminderScheduler`/`RecurrenceScheduler` 양쪽 모두 실제 headless task 등록 코드가 저장소에 없음(매니페스트 권한 선언만 존재) — 이번 라운드 수정 대상(AppState 누락)과 무관한 기존 상태이며 v1.7~v1.19 문서가 이미 "실기기 전용 후속(N-11 계열, ENVIRONMENT_ERROR)"으로 분류해 온 것과 동일 성격이므로 이번 판정에서 새 결함으로 세지 않음(Info, 비차단, 범위 밖 재확인). 상세는 아래 `# v1.20` 섹션 참조. |
 | v1.19 | Feature: `알림앱.md` "추가기능" 미착수 5개 항목 — F-24(반복 일정 매일/매월/매년 신규) / F-10 개정(완료 시 목록 하단 이동) / F-06 개정(기본 유형 "기타·공부·취미·업무" 4종 시딩) / F-25(완료된 일정 숨기기, 대시보드+설정 공유) / F-26(캘린더 "+" 버튼 날짜 프리필) — plan v1.9 §5.18(P-63~P-67), 설계 overview/logic v1.16·database v1.8·nfr v1.14 — **FAIL**. 직전 세션이 이 Tester 검증 도중 TaskStop으로 결과 없이 중단되어 처음부터 재수행. `node --experimental-strip-types --test "tests/**/*.test.ts"` 직접 재현 **291/291 pass**(신규 `recurrenceScheduler.test.ts` 15건 포함, 회귀 0). AC-83~AC-90은 단위테스트+코드 리뷰로 전부 충족 확인. AC-82(반복 회차 개별 인스턴스 생성)는 단위테스트 통과에 더해 **iOS 시뮬레이터(iPhone 17 Pro) 실기동**으로 실증 — 앱 컨테이너 SQLite에 DAILY/count=3 마스터 행을 직접 시드 후 앱을 콜드 재시작하자 `RecurrenceScheduler.sync()`가 실제로 회차 3건(1일 간격)을 실체화함을 SQLite 조회로 직접 확인. AC-87(기본 유형 4종 시딩)도 실기기 SQLite로 실증(`category` 테이블에 기타(`#8E8E93`,시스템)/공부(`#00897B`)/취미(`#00ACC1`)/업무(`#039BE5`) 4행, `PRAGMA user_version=3`). 그러나 코드 리뷰 중 **High 1건**을 발견: 설계(`logic.md` §18.3, `nfr.md` §17.1/§17.3)가 `RecurrenceScheduler.sync()`의 필수 트리거로 콜드 스타트·`AppState 'active'`·부팅 완료·생성 직후 4곳을 명시하고 이미 존재하는 `ReminderScheduler`는 이 4곳 모두에 배선되어 있으나(`App.tsx` 91행), `RecurrenceScheduler`는 콜드 스타트(`composeNative.native.ts` `createPostRenderSteps().syncReminders`)와 생성 직후(`ScheduleService.create()`)에만 배선되고 **`App.tsx`의 `AppState 'active'` 리스너(91행)에는 배선되지 않음** — `App.tsx`는 이번 Developer 변경 파일 목록에 없어 이 배선 누락이 발생했다. 실기동 재현으로 관련 증상(콜드 스타트 직후 새로 실체화된 "오늘" 회차가 대시보드 초기 로드와의 경합으로 즉시 표시되지 않음)도 직접 관찰. 코드 리뷰 Critical 0 · High 1(RECUR-01) · Medium 0. 보안 점검(F-24 반복 회차 무한 증식 방지 DoS 관점 포함) 미해결 취약점 0 — `expandOccurrences` 절대 상한 366 + `RecurrenceScheduler` horizon 60일 이중 방어를 코드·단위테스트(`recurrence.test.ts` cap 테스트, `recurrenceScheduler.test.ts` E-24-3)로 확인. F-06/07/08/10(색상·프리셋) 등 기존 F-01~F-23 회귀 없음(스크린샷·SQLite 직접 확인 포함). 상세는 아래 `# v1.19` 섹션 참조. |
@@ -2303,3 +2304,94 @@ v1.20/v1.21과 동일 건수(291/291) — 회귀 없음. `git status --porcelain
 ## 판정 (v1.22)
 
 **PASS** — 사용자가 보고한 "No bundle URL present"는 시뮬레이터 재시작 후 실기동으로 재현(Metro 미기동 시) 및 해소(Metro 선기동 후 앱 재실행 시)를 모두 직접 확인했으며, 근본 원인은 Orchestrator의 사전 진단(코드 결함 아님, 실행 절차 문제)과 일치한다(ENVIRONMENT_ERROR, 코드 수정 불필요). Metro가 정상 기동된 상태에서 F-06(유형 색상)/F-07(우선순위 색상)/F-10(완료 시 하단 이동)/F-24(반복 일정 생성)/F-25(완료된 일정 숨기기)/RECUR-01(AppState 전이 시 반복 동기화)을 SQLite 직접 시딩과 콜드/AppState 전이 재현을 통해 실기동으로 재확인했고 전부 설계대로 동작했다. F-08/F-26은 코드 무변경을 확인해 이전 PASS 판정을 유지한다. 전체 회귀 스위트 291/291 유지(v1.20/v1.21과 동일 건수), 소스 코드 변경이 없어 코드 리뷰·보안 점검도 이전 판정을 그대로 유지하며 미해결 Critical/High/취약점이 없다. 신규 결함 없음 — Developer 재투입 불필요. 다음 라우팅(Complete 처리 여부)은 Orchestrator 결정.
+
+---
+
+# v1.23 — Feature: `알림앱.md` "### 20260913 추가요청" 5개 항목 (F-19 개정 / F-06·F-07·F-08·F-24 개정 / F-16 개정)
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-13 |
+| status | **PASS** |
+| 배경 | `알림앱.md` "### 20260913 추가요청" 5개 항목을 Planner(plan.md v1.9→v1.10) → Architect(기획 재검증 PASS, overview/logic v1.16→v1.17, nfr v1.14→v1.15, database v1.8 무변경) → Developer(구현 완료) 순으로 이미 완료한 상태. Tester가 기능 테스트 + 코드 리뷰 + 보안 점검을 종합 수행한다. |
+| 근거 | `document/planner/plan.md` v1.10 §5.19(P-68~P-71)·AC-91~AC-94·D-30~D-31, `document/architect/{overview.md v1.17, logic.md v1.17 §16.2·§16.3.1·§17.3·§17.9·§17.10·§17.12·§13.3·§13.8, database.md v1.8(무변경), nfr.md v1.15 §14.3·§14.5·§9 V-58~V-60}`, `.claude/skills/_shared/conventions.md` |
+| 검증 환경 | macOS, Xcode 26.2(Build 17C52). iOS 시뮬레이터 iPhone 17 Pro(`5870B58C-3630-456A-B7A0-44A07DB378EE`, 기존 부팅 상태 재사용). watchOS 시뮬레이터 Apple Watch Series 11 46mm(`D898C6F3-3587-4633-905F-FE97A347AD6E`, 기존 부팅 상태 재사용). Node(현재 세션 런타임), Metro 8081(기존 세션에서 이미 기동 중이던 프로세스 재사용, `packager-status:running` 확인) |
+
+## A. 설계 대조 (요구사항 → 설계 → 구현)
+
+`plan.md` v1.10 §5.19(P-68~P-71) 5개 정책과 `logic.md` v1.17 개정 지점을 구현 코드와 1:1 대조했다.
+
+| 항목 | 설계 지점 | 구현 대조 결과 |
+| --- | --- | --- |
+| 워치 "다음 예정" 조회·전송 중단 (P-68 전반부, D-30(a)) | logic §17.3 "v1.17 개정" — `pushSnapshot()`이 다음 예정 조회를 제거하고 `buildWatchSnapshot(today, null, categories, clock)` 호출 | `src/core/services/watchSyncService.ts` `pushSnapshot()` 이 정확히 `buildWatchSnapshot(today, null, categories, this.d.clock)` 호출(기존 `findInRange(now, MAX, …)` 다음예정 조회 라인 없음) — 설계와 일치 |
+| 워치 헤더 요약 "오늘 - {완료}/{전체}" (P-68 후반부, AC-91) | logic §17.12 — `NavigationStack`+`.navigationTitle("오늘")`+`.toolbar` trailing, `summary.done`/`summary.done+notDone` 산출 | `ios/TodayWhatWatch/TodayView.swift` `headerSummaryText`가 정확히 이 식으로 산출, 기존 "완료/미완료" 헤더 `Section` 제거 확인 — 설계와 일치 |
+| 워치 "다음 예정" 표시 영역 완전 제거 (AC-92) | logic §17.12 — `if let upcoming = snapshot?.nextUpcoming { Section(...) }` 블록 삭제 | `TodayView.swift`에 해당 블록 없음(grep 결과 0건) — 설계와 일치 |
+| 워치 체크박스 좌측 배치 (P-69, AC-92) | logic §17.12 — `HStack` 순서를 `[토글] → [색점] → [제목/시각]`으로 재배치, 토글 로직 무변경 | `ios/TodayWhatWatch/ScheduleRow.swift` `HStack` 순서가 `Button(토글)` → `Circle`(색점) → `VStack`(제목/시각) → `Spacer` — 설계와 일치. `onToggle` 클로저·낙관적 반전 로직 미변경 확인 |
+| 4필드 셀렉트박스화 (P-70, D-31(a), AC-93) | logic §16.3.1 신설 소단락 — `SelectField<T>`/`MultiSelectField` 신규(순수 프레젠테이션, `src/core/**`·서비스 미의존), 4필드 배선 | `src/app/components/{SelectField,MultiSelectField,selectFieldLogic}.ts(x)` 신규 파일 3개가 설계 시그니처와 정확히 일치(`SelectOption<T>`, 트리거+`Modal` 옵션 목록, `accessibilityRole="button"/"radio"/"checkbox"`). `ScheduleEditorScreen.tsx`가 중요도·유형·반복(신규+"반복 설정 변경")·사전 알림 4곳 모두 `SelectField`/`MultiSelectField`로 교체, `PRIORITY_OPTIONS`/`RECURRENCE_RULE_OPTIONS`/`cats.map`/`REMINDER_OFFSET_PRESETS.map` 옵션 배열과 기존 상태 핸들러(`setPriority`/`setCategoryId`/`setRecurrenceRule`/`setReminderOffsets`)가 그대로 연결됨 — 값 도메인·검증·서비스 계약(`create`/`update` 호출부) 무변경 확인 |
+| 캘린더 탭 아이콘 `goal.png`→`calendar.png` (P-71, AC-94) | logic §16.2 "v1.17 구현 필수 지시" — `TAB_ICONS[TAB_ROUTES.Calendar]` 한 줄 교체, 나머지 3개 탭 불변 | `src/app/navigation/RootNavigator.tsx` `TAB_ICONS[TAB_ROUTES.Calendar] = require('../../assets/icons/calendar.png')`로 교체됨, `goal.png` 실행 코드 참조 0건(주석 제외). `todo.png`/`statistics.png`/`settings.png` require 경로 문자열 불변 확인 |
+
+5개 항목 모두 설계 지점과 구현이 정확히 대응하며, 설계가 명시한 "무변경 대상"(공유 페이로드 타입, DB 스키마, 값 도메인·검증, 토글 로직)도 실제로 손대지 않았음을 확인했다.
+
+## B. 기능 테스트 — 회귀 스위트 직접 재현
+
+```
+node --experimental-strip-types --test "tests/**/*.test.ts"
+# tests 303
+# pass 303
+# fail 0
+```
+
+v1.22 기준선 291 + 신규 12건: `tests/app/selectFieldLogic.test.ts` 8건(`resolveSelectedLabel` 값 매칭/미매칭/`null` 옵션 3, `formatMultiSelectTriggerLabel` 0개·N개·방어적 필터 3, `toggleMultiSelectValue` 추가/제거 2) + `tests/app/rootNavigatorIcons.test.ts` 3건(V-60 — `calendar.png` require 확인, `goal.png` 잔존 참조 없음, 나머지 3개 탭 require 불변) + `tests/watchSync/appWiring.test.ts` 신규 1건("v1.17(D-30(a)): pushSnapshot 은 '다음 예정' 후보가 존재해도 항상 nextUpcoming=null 을 전송한다" — 오늘 밖의 미완료 미래 일정을 시드해 구 로직이면 `nextUpcoming` 후보가 됐을 케이스를 직접 반증).
+
+`npx tsc -p tsconfig.json --noEmit` → **93줄**, 전부 v1.10 이전부터 반복 확인된 기존 베이스라인(`src/core/infra/memory/repositories.ts` Buffer x2, `src/index.ts` console x2 + process x1, 다수 테스트 파일의 `node:test`/`node:assert`/`node:fs`/`node:url` 미해석 + `ImportMeta.url` 미지원, `categoryService.test.ts`/`searchService.test.ts`/`shellPureLogic.test.ts`의 `TS2532`/`TS18047`/`TS18048`) — 신규 오류 **0**. `tests/app/selectFieldLogic.test.ts`/`tests/app/rootNavigatorIcons.test.ts` 자체 오류도 동일 베이스라인 패턴(`node:test` 계열)뿐, 로직 오류 아님.
+
+## C. 실기동 시각 검증
+
+### C.1 watchOS — Xcode 빌드 + 시뮬레이터 스크린샷
+
+1. `xcodebuild -workspace TodayWhat.xcworkspace -scheme TodayWhatWatch -destination "id=D898C6F3-3587-4633-905F-FE97A347AD6E" build` → **BUILD SUCCEEDED**(수정된 `TodayView.swift`/`ScheduleRow.swift` 포함 전체 컴파일 성공 — Swift 타입/구문 오류 없음을 실증).
+2. 앱을 `simctl install`+`launch`로 실행 → 이전 세션이 남긴 로컬 캐시(`watch-snapshot.json`, 빈 스냅샷)를 그대로 로드한 초기 화면을 스크린샷: 헤더 "오늘 - 0/0"(빈 스냅샷에서도 분기 없이 자동 산출, **E-19-8**), "다음 예정" 섹션 부재, "오늘 일정이 없습니다" 빈 상태 — `document/test/screenshots/v1.23-watch-01-empty-header-0of0.png`.
+3. 앱 컨테이너의 `watch-snapshot.json`(로컬 캐시 파일)에 오늘 일정 3건(완료 1 "운동", 미완료 2 "아침 회의"(HIGH, 지남)/"점심 약속")을 담은 스냅샷 JSON을 직접 기록(설계된 `WatchSnapshot`/`WatchScheduleItem` 스키마 그대로) → `simctl terminate`+`launch`(콜드)로 캐시를 재로드 → 스크린샷: 헤더 **"오늘 - 1/3"**(done=1, total=1+2, **AC-91**), "다음 예정" 섹션 여전히 부재(**AC-92**), 3개 행 모두 **완료 토글(원/체크 아이콘)이 각 행의 최좌측**에 배치되고 그 다음 카테고리 색 점 → 제목/시각 순서(**P-69, AC-92**), HIGH 항목에 빨간 느낌표 표식·지난 시각 항목은 주황색 강조까지 기존 로직대로 표시됨 — `document/test/screenshots/v1.23-watch-02-seeded-header-1of3-checkbox-left.png`.
+
+### C.2 iOS 폰 — 기존 빌드 재사용 + Metro + 시뮬레이터 스크린샷
+
+1. 기존 `ios/build_ios/Build/Products/Debug-iphonesimulator/TodayWhat.app`(이전 세션 빌드 산출물, JS 변경 사항은 Metro가 런타임에 새로 번들링하므로 네이티브 재빌드 불필요)을 iPhone 17 Pro 시뮬레이터에 `simctl install`+`launch`.
+2. Metro(포트 8081, 기존 세션에서 이미 기동 중이던 프로세스, `curl .../status` → `packager-status:running` 확인)가 최신 JS(`RootNavigator.tsx` 등)를 번들링해 서빙 → 대시보드 최초 렌더 스크린샷에서 하단 탭 바 4개 아이콘 중 "캘린더" 탭이 실제로 **달력 모양 아이콘**(`calendar.png`)으로 렌더됨을 육안 확인, 기존 "goal"(과녁) 아이콘이 아님 — **AC-94** 충족.
+3. 일정 작성 화면(`ScheduleEditorScreen`)의 `SelectField`/`MultiSelectField` 렌더는 "일정 추가" 버튼을 탭해야 진입 가능한데, 시뮬레이터에 터치 자동화 도구(idb/idb_companion 미설치, XCUITest 미구성)가 없어 `osascript`/System Events로 버튼 좌표 추정 클릭을 1회 시도했으나 화면 전환이 발생하지 않았다(v1.15~v1.22가 이미 반복 문서화한 것과 동일한 이 환경의 구조적 제약 — 새로운 우회 시도는 하지 않음). 이 부분은 §D 코드 리뷰 + §B 단위테스트(`selectFieldLogic.test.ts` 8건)로 대체 검증한다.
+
+## D. 코드 리뷰
+
+- **설계 준수**: §A 표대로 5개 항목 전부 설계 지점과 정확히 대응. 특히 `SelectField`/`MultiSelectField`는 `F-17 BrandLoadingIndicator`와 동일한 "순수 프레젠테이션 컴포넌트" 원칙(`src/core/**`·서비스·`bindings.ts` 미의존)을 지켰고, 라벨/토글 계산 로직(`selectFieldLogic.ts`)을 컴포넌트에서 분리해 `react`/`react-native` 의존 없이 `node:test`로 직접 검증 가능하게 한 점이 `loadingIndicatorMachine.ts` 패턴과 일관적이다(관심사 분리, SOLID SRP 준수).
+- **계층 아키텍처**: `ScheduleEditorScreen.tsx`의 저장 로직(`create`/`update` 호출, `effOffsets`/`recurrenceInput` 계산)은 이번 변경에서 전혀 손대지 않았고, 위젯 교체는 순수 렌더 계층에 한정됨 — Presentation과 Service 호출 경계가 섞이지 않았다.
+- **회귀 영향 분석**: `watchSyncService.ts`의 "다음 예정" 조회 제거는 `pushSnapshot()` 내부 한 곳만 수정되었고, `applyIncomingToggle`/LWW/dedup 원장/ack 경로는 완전히 무변경(diff 대조 확인) — 워치 완료 토글 역전파(AC-23/AC-48)에 부작용 없음. `tests/watchSync/appWiring.test.ts`/`reconcile.test.ts`/`watchSyncService.test.ts` 등 기존 워치 관련 테스트 전부 무손상 통과.
+- **Naming/중복/미사용 코드**: `SelectField`/`MultiSelectField`는 각자 책임(단일/다중 선택)이 명확히 분리되어 있고 공통 로직(`SelectOption<T>` 타입)만 `selectFieldLogic.ts`에서 공유 — 코드 중복 없음. 신규 컴포넌트에 미사용 export·죽은 코드 없음(grep 확인).
+- **테스트 커버리지**: 신규 순수 로직(`selectFieldLogic.ts`) 3개 함수 모두 단위테스트로 커버(경계값 포함 — 빈 배열, 옵션에 없는 값, `null` 옵션 매칭). `RootNavigator.tsx`는 react-native 의존으로 직접 import 불가하지만 `rootNavigatorIcons.test.ts`가 nfr.md V-60이 명시한 "정적 grep" 방식으로 소스 문자열을 검증(기존 `securityLogging.test.ts`와 동일 기법 재사용) — 프로젝트 확립 관례를 따름.
+- Critical / High / Medium **0**. 신규 Low 지적 없음.
+
+## E. 보안 점검 (STRIDE / OWASP)
+
+| 항목 | 결과 |
+| --- | --- |
+| 입력 검증/주입 | `SelectField`/`MultiSelectField`는 자유 텍스트 입력란이 없고 고정 옵션 배열(중요도 3값·동적 유형 목록·반복 4종·알림 프리셋 5값)만 선택 가능 — 신규 입력 표면 없음. `assertValidScheduleInput` 등 기존 검증 로직 무변경(코드 대조 확인) |
+| 정보 노출 | 워치 헤더 요약은 이미 전송되던 `WatchSnapshot.summary.{done,notDone}`을 재계산해 표시 위치만 바꾼 것 — 신규 필드·조회·저장 없음. "다음 예정" 제거는 오히려 워치 페이로드에서 조회 자체가 사라져 노출 표면이 **축소**되는 방향(§17.3 "성능" 서술과 일치, 실제로 `findInRange(now, MAX, …)` 쿼리 1개가 사라짐을 코드로 확인) |
+| 위조/재생(Tampering) | 워치 → 폰 완료 토글 op 검증(`opId` UUID·`scheduleId` 재조회·dedup 원장·LWW)은 이번 변경에서 손대지 않음(diff 대조로 무변경 확인) — 기존 방어 그대로 유지 |
+| 의존성/설정 | 신규 npm/네이티브 의존성 0(git diff로 `package.json`/`Podfile` 무변경 확인). `SelectField`/`MultiSelectField`는 RN 내장 `Pressable`/`Modal`/`Text`만 사용 |
+| 비밀정보 | 해당 없음 — 5개 항목 모두 UI 위젯 전환·표시 위치 변경·아이콘 require 경로 문자열 교체로, 키/토큰/자격증명과 무관 |
+| 결론 | logic.md §13.3/§13.8의 "선택형 필드 셀렉트박스화·워치 헤더 요약·체크박스 좌측 배치·탭 아이콘 교체 — 보안 영향 해당 없음" 서술을 코드 대조로 독립 재확인. 미해결 취약점 **0** |
+
+## F. 회귀
+
+- 전체 회귀 스위트 303/303(신규 12건 전부 통과, 기존 291건 무손상) — §B.
+- 워치 동기화 핵심 경로(스냅샷 빌더·LWW·dedup·ack) 전부 무손상 — §D.
+- 탭 아이콘 교체는 캘린더 1개 탭에 한정, 나머지 3개 탭(오늘/통계/설정) require 경로 불변을 자동화 테스트(`rootNavigatorIcons.test.ts`)로 확인 — 다른 탭 회귀 없음.
+- 일정 작성/수정 화면의 값 도메인·검증·서비스 계약(4필드 포함)은 전혀 변경되지 않아 F-01/F-03/F-06/F-07/F-08/F-24 핵심 로직 회귀 없음(코드 대조).
+
+## Failure Category / Regression
+
+- 발견된 결함 없음 — FAIL 사유 없음.
+- 환경 제약(비차단, 기록용): 폰 측 `SelectField`/`MultiSelectField` 실측 UI 인터랙션은 시뮬레이터 터치 자동화 수단 부재로 미실행 — v1.15~v1.22와 동일 성격의 **ENVIRONMENT_ERROR**(코드 결함 아님), 단위테스트(§B)와 코드 리뷰(§D)로 대체 검증해 충분한 확신을 확보했다고 판단한다.
+- 회귀: 없음(303/303, 워치 핵심 경로·다른 3개 탭 아이콘·4필드 값 도메인 전부 무손상 — §F).
+
+## 판정 (v1.23)
+
+**PASS** — `알림앱.md` "### 20260913 추가요청" 5개 항목 모두 설계(overview/logic v1.17, nfr v1.15)와 구현이 정확히 대응함을 코드 대조로 확인했다(§A). 회귀 스위트 303/303(신규 12건 포함, 실패 0)을 직접 재현했고 `tsc` 신규 오류 0(§B). watchOS는 Xcode 빌드 성공 + 시뮬레이터 스크린샷 2장으로 헤더 요약("오늘 - 0/0"/"오늘 - 1/3", AC-91/E-19-8)·"다음 예정" 영역 부재(AC-92)·완료 체크박스 좌측 배치(P-69, AC-92)를 실기동으로 직접 실증했다(§C.1). iOS 폰은 캘린더 탭 아이콘 교체(AC-94)를 스크린샷으로 실증했고, 일정 작성 화면의 셀렉트박스 UI(AC-93)는 터치 자동화 환경 제약으로 실측하지 못해 코드 리뷰 + 단위테스트로 대체했다(§C.2, ENVIRONMENT_ERROR 비차단). 코드 리뷰에서 Critical/High/Medium 결함 0건(§D), 보안 점검에서 STRIDE/OWASP 관점 미해결 취약점 0건(§E)을 확인했다. 회귀 없음(§F). 다음 단계 진행을 차단할 문제가 없다. 다음 라우팅(Complete 처리 여부)은 Orchestrator 결정.

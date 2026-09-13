@@ -3,14 +3,15 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 비즈니스 로직 설계 (Logic) |
-| 버전 | v1.16 |
+| 버전 | v1.17 |
 | 상태 | 작성 완료 |
-| 근거 | `document/planner/plan.md` v1.9, `document/architect/overview.md` v1.16, `document/architect/database.md` v1.8 |
+| 근거 | `document/planner/plan.md` v1.10, `document/architect/overview.md` v1.17, `document/architect/database.md` v1.8 |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
+| v1.17 | 2026-09-13 | **설계 델타 — `알림앱.md` "### 20260913 추가요청" 5개 항목: F-19 개정(워치 다음일정 제거·헤더 요약 표시·체크박스 좌측 배치) / F-06·F-07·F-08·F-24 개정(선택형 필드 셀렉트박스화) / F-16 개정(캘린더 탭 아이콘 교체)** (plan.md v1.10, P-68~P-71, E-19-8, AC-91~94, §5.19, D-30~D-31 신규). 기획 재검증 **PASS** — 상세는 `overview.md` v1.17 "v1.17 재검증". 주요 결정: **(1) §17.3 갱신** — `WatchSyncService.pushSnapshot()` 이 다음 예정 조회를 중단하고 `buildWatchSnapshot(today, null, categories, clock)` 로 항상 `null` 전달(D-30(a)). 공유 타입(`WatchSnapshot.nextUpcoming`)은 무변경 유지 — 기존 `toPlistSafe()` null 키 제거가 이미 전송에서 배제하므로 Swift 변경 없이 충족(최소 침습). **(2) 신규 §17.12 "워치 화면 개정"** — `TodayView.swift` 가 "완료/미완료" 헤더·"다음 예정" 섹션을 제거하고 `NavigationStack`+`.navigationTitle("오늘")`+`.toolbar` 트레일링에 "오늘 - {완료}/{전체}" 렌더(P-68, E-19-8 자동 충족). `ScheduleRow.swift` 완료 토글을 좌측으로 이동(P-69). §17.9 예외 표에 E-19-8 추가, §17.10 AC 매핑에 AC-91/92 추가 + AC-47/53/54 문구 정정, §17.11.3 파일 책임 표 갱신. **(3) 신규 §16.3.1 소단락 "선택형 필드 셀렉트박스화"** — 신규 순수 프레젠테이션 컴포넌트 `SelectField<T>`/`MultiSelectField`(`src/app/components/`, 신규 의존성 0)로 `ScheduleEditorScreen` 의 중요도·유형·반복(신규 작성 + "반복 설정 변경" 양쪽)·사전 알림 4개 필드 위젯을 트리거+`Modal` 옵션 목록으로 교체(P-70, D-31(a)). 값 도메인·상태·검증·서비스 계약 전부 무변경(§16.3.1 필드 매핑 표 "입력 UI" 열만 갱신). **(4) §16.2 갱신** — 탭 아이콘 표 캘린더 행 `goal.png` → `calendar.png`(P-71) — 실제 코드(`RootNavigator.tsx`)가 여전히 `goal.png` 를 참조 중이던 구현 갭이므로 Developer 필수 반영으로 명시. `todo.png`/`statistics.png`/`settings.png` 행은 require 경로 불변. **(5) §13.3/§13.8 갱신** — 4개 항목 전부 "해당 없음"(이미 검증된 옵션 목록의 표시 위젯 교체, 이미 있던 `summary` 필드 재표시, require 경로 문자열 교체 — 신규 입력·신뢰 경계 없음). **§14/§15 갱신**. `overview.md` v1.17 / `database.md` v1.8(무변경) / `nfr.md` v1.15(§14.3 페이로드 구성 문구 정정) 동반 개정. 「API 설계」 섹션 미신설(신규/외부 API 없음) |
 | v1.16 | 2026-09-12 | **설계 델타 — F-24 반복 일정(신규) / F-10 완료 시 하단 이동(개정) / F-06 기본 유형 4종 시딩(개정) / F-25 완료된 일정 숨기기(신규) / F-26 캘린더 날짜 프리필(신규)** (plan.md v1.9, P-63~P-67, E-24-1~5·E-10-8·E-06-8·E-25-1~4·E-26-1~3, AC-82~90, D-25~D-29 신규, D-05/N-10 갱신). 기획 재검증 **PASS** — 상세는 `overview.md` v1.16 "v1.16 재검증". 주요 결정: **(1) 신규 §18 "반복 일정"** — `expandOccurrences`(v1.0부터 존재하되 미결선)를 최초로 결선. 가상 전개를 폐기하고 마스터 행(반복 규칙, 비표시)+회차 행(개별 표시·완료·알림 대상) 분리 실체화로 전환. 신규 `RecurrenceScheduler.sync()`(`ReminderScheduler` 와 동형, horizon 60일+상한 366) + `ScheduleService.create()` 재작성(회차#1 즉시 생성) + `deleteRecurrenceFollowing`/`updateRecurrenceRule`(신규 메서드) + `ScheduleRepository.findRecurringMasters`/`listOccurrenceStartTimes`(신규) + `ScheduleFilter.recurrenceParentId?`(신규) + 조회 3경로(`findInRange`/`findForDashboard`/`search`)에 `recurrence_rule IS NULL` 필터 결선. **(2) 신규 §7.4** "완료 시 목록 하단 이동" — `applyCompletionOrder`(안정 파티션, 순수 함수) 표시 계층 전용. **(3) 신규 §5.3** "기본 유형 4종 시딩" — 마이그레이션 DML(`database.md` §14.3), 서비스 코드 무변경. **(4) 신규 §7.5** "완료된 일정 숨기기" — `APP_SETTING` 키 `dashboard.hideCompleted` 공유 + `filterHideCompleted`, `getSummary` 무변경(집계 미반영). **(5) 신규 §7.6** "캘린더 날짜 프리필" — 신규 순수 `combineDateWithTimeOfDay`(`src/core/domain/time.ts`), `routes.ts` `presetDate?`(날짜만, +9h 고정) → `presetStartAt?`(완결 epoch)로 교체, 대시보드 FAB(구 OI-19)도 통일. **§16.3.1 갱신**(반복 필드 D-25(a) 4종·회차 편집 시맨틱 정정·`presetStartAt`), **§0.1/§0.2 갱신**(신규 포트 메서드·오류 코드), **§13.3/§13.8 갱신**(보안 영향 "해당없음"/"경계 내 정상" 5항목), **§14 갱신**(v1.4 "expandOccurrences 이미 구현" 서술 정정 + 일관성 8행), **§15 갱신**(D-05/N-10(2)/D-22 갱신 + D-25~D-29/N-16 신규). `database.md` v1.8(§3.2/§4/§8 갱신·§14 신설 — **최초 실제 스키마 변경**: 마이그레이션 002 DML + 003 `SCHEDULE.RECURRENCE_REMINDER_OFFSETS` 컬럼) / `nfr.md` v1.14(§1.2 갱신·§17 신설·§9 V-53~57·§12) 동반 개정. 「API 설계」 섹션 미신설(신규/외부 API 없음, 전부 로컬) |
 | v1.15 | 2026-09-11 | **설계 델타 — F-06 유형 색상 자동 배정 / F-07 우선순위 색상 매핑 / F-10 대시보드 리스트 우선순위·유형 표시 / F-08 사전 알림 프리셋 선택 UI** (plan.md v1.8, P-59~P-62, AC-77~AC-81, E-06-7, E-08-6, E-10-7, D-08 갱신, D-24 신규). 기획 재검증 **PASS** — 4개 항목 모두 실제 코드 갭(카테고리 고정 회색 1개, 우선순위·유형 미표시, 알림 오프셋 `[10]` 하드코딩) 해소가 목적이며 색상 팔레트·배정 알고리즘·정확한 헥스값·UI 형태는 plan 이 Architect 설계에 명시적으로 위임(P-59/P-60/P-61 원문). 신규 제품 요구사항 없음. 주요 결정: **(1) F-06 색상 자동 배정(§5.1 갱신)** — 신규 순수 모듈 `src/core/domain/categoryColor.ts`: 12색 고정 팔레트(`CATEGORY_COLOR_PALETTE`, P-60 우선순위 색(빨강/오렌지/연두) 색상환 60°+ 이격 대역에서만 선정) + `assignCategoryColor(existingColors)` — 기존 색상 중 **미사용 팔레트 색을 앞에서부터 탐색해 배정**(삭제로 생긴 빈 슬롯도 재사용), 12개 전부 사용 중이면 `existingCount % 12` 로 **순환 재사용**(P-59 "팔레트 초과 시 처리" — 정상 동작, 오류 아님). 계산 자체가 예외를 던지면 기존 고정값 `CATEGORY_COLOR_FALLBACK='#8E8E93'` 로 폴백(E-06-7, 유형 생성은 계속 성공). `CategoryService.create()` 가 `color` 인자 생략 시(현 `CategoryManagerScreen` 호출부) 이미 조회한 `list()` 결과의 색상 배열로 자동 배정 — **중복 쿼리 없음**. `color` 명시 시(예: `src/index.ts` 데모) 그대로 사용 — 후방 호환. **기존에 고정 회색으로 생성된 카테고리에 대한 소급 재배정/마이그레이션은 하지 않는다**(설계 결정 — 신규 생성분에만 전향 적용, DB 마이그레이션·일괄 UPDATE 없음, 사용자가 이미 보고 있던 색이 예고 없이 바뀌는 회귀를 피함; 필요 시 후속 일괄 재배정 기능은 별도 사이클). **(2) F-07 우선순위 색상(신규 §5.2)** — `src/core/domain/types.ts` `PRIORITY_COLORS: Record<Priority,string>` = `{ HIGH:'#D32F2F', NORMAL:'#E65100', LOW:'#689F38' }`. 흰 배경·다크 배경(#121212) 대비 각각 근사 계산해 비-텍스트 그래픽 요소 기준(WCAG 1.4.11 ≥3:1) 충족 확인(HIGH 백색 대비 ≈5.0:1/다크 ≈3.8:1, NORMAL ≈3.8:1/≈4.9:1, LOW ≈3.2:1/≈5.9:1) — `nfr.md` §7 반영. 팔레트와 상호 색상환 이격으로 F-10 동시 노출 시 혼동 최소화. **(3) F-10 리스트 아이템 표시(신규 §7.3)** — 대시보드 목록 행에 우선순위 점(8×8 원, `PRIORITY_COLORS`) + 유형 배지(pill, 배경 = 카테고리 색, 흰 텍스트)를 체크박스·시각·제목에 추가. 데이터 소스 = 이미 로드된 `Schedule.priority`(신규 조회 없음) + 신규로 `DashboardScreen` 이 마운트 시 `CategoryService.list()` 호출(요약/목록과 병렬, `bindings.ts` 갱신) 후 `categoryId → Category` 맵 파생. 삭제된 유형 참조(E-10-7)는 이미 E-06-2 로 `categoryId` 가 시스템 기본("기타")으로 재지정된 값을 그대로 조회하므로 별도 특수 처리 불필요, 맵에서 못 찾는 방어적 예외 상황만 폴백(회색/"기타"). 색만으로 구분하지 않도록(WCAG 1.4.1) 행 `accessibilityLabel` 에 우선순위·유형 텍스트 병기. **(4) F-08 프리셋 UI(§6.1 신설 + §16.3.1 갱신)** — `REMINDER_OFFSET_PRESETS`(5/10/30/60/1440분, "5분 전"~"하루 전") 다중 선택 칩. 기존 하드코딩 `effOffsets = notifGloballyOn ? [10] : []` 제거. 수정 모드 정확한 프리필을 위해 **신규 서비스 메서드 `ScheduleService.getReminderOffsets(scheduleId)`**(읽기 전용, 기존 포트 `ReminderRepository.findBySchedule` 재사용 — 포트 변경 없음) 추가 — `kind='PRE' && state!=='CANCELLED'` 행의 `offsetMinutes` 중복 제거·오름차순 반환. 화면은 이제 신규·수정 모두 체크박스 상태를 **항상 명시적으로 `reminderOffsets` 전송**(기존 "미전송=유지" 트릭 불필요, 0개 선택 시 빈 배열 그대로 전송 — E-08-6/AC-81). 전역 알림 off(P-32) 이면 프리셋 칩은 비활성 표시 + 전송값 `[]`(기존 `notifyAtStart` 스위치와 동일 패턴). 신규 작성 기본 선택값 = `[10]`(설계 결정 — 기존 하드코딩 기본 유지로 회귀 최소화, 사용자가 즉시 변경 가능; 비즈니스 정책 아님, overview 미결정에 정보성으로 기록). 코어 `buildReminderDrafts`/`assertValidScheduleInput`(P-10 최대 5개)/`ErrorCodes.VALIDATION_REMINDER_LIMIT` **전부 무변경** — 프리셋이 정확히 5종이라 상한과 자연히 일치. **보안 영향**: 해당 없음 — 색상은 코드 상수 배열에서만 선택(사용자 자유 입력 없음), 프리셋은 고정 5값 중 다중 선택(자유 텍스트 입력 없음, 기존 정수 검증 재사용), 배지·점은 이미 로드된 필드의 `<Text>`/`<View>` 렌더(§13.3/§13.8 갱신, 신규 신뢰 경계·저장·로그 표면 없음). **DB 스키마 영향 없음** — `CATEGORY.COLOR`(기존 컬럼) 값 다양화일 뿐 컬럼·제약·인덱스 변경 없음, `database.md` v1.7(§13 신설, 무변경 검토). **API 설계 섹션 미신설**(신규/외부 API 없음). `overview.md` v1.15 / `nfr.md` v1.13(§7 대비표 갱신, §9 V-50~V-52 추가) 동반 개정. §0.1 `ReminderRepository` 메서드 목록에 `findBySchedule` 추가(기존 포트 실체 반영, 개념표 정합). §14/§15 갱신 |
 | v1.14 | 2026-09-10 | **설계 델타 — F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수** (사용자 요청: "앱 내용을 Apple Watch(watchOS)에서도 표시 + 시뮬레이터로 워치 화면 확인"). 기획 재검증 **PASS** — F-19·R-19-1~7·E-19-1~7·P-36~P-44·AC-47~AC-56·D-09~D-11 이 plan v1.7 에 확정되어 있고, plan §F-19 "비범위 — 기술 선택: 워치 타깃 구성 방식·RN watchOS 지원 여부·브리지/WCSession 전송 방식·번들링 = 전부 Architect 설계 범위"로 명시 → 워치 앱 자체를 구현 수준으로 설계 가능(신규 제품 요구사항 없음). 폰 측(`src/core/watchSync/**` + `WatchSyncService` + `src/app/adapters/watch/**` + `composeNative` 배선)과 페이로드 계약(§17.3/§17.4)은 v1.9 에서 이미 설계·구현·검증 완료 — 이번 델타는 **누락된 watchOS 앱 본체**(Xcode 타깃 + SwiftUI UI + `WCSessionDelegate` + 워치 로컬 영속 + Swift LWW 재구현)에 한정. 변경점: (1) **신규 §17.11 "watchOS 앱 타깃 구성 — 구현 착수"** — 타깃 이름 `TodayWhatWatch`, **단일 타깃 watchOS 앱**(SwiftUI `App` 라이프사이클 + `WKApplicationDelegateAdaptor`; 레거시 WatchKit App+Extension 폐기), 번들 ID `kr.purpledog.todaywhat.watchkitapp` + `WKCompanionAppBundleIdentifier=kr.purpledog.todaywhat`, 배포 타깃 **watchOS 10.0**, Info.plist 키, iOS 앱에 "Embed Watch Content" 임베드, 시뮬레이터 코드사이닝(자동/none), `xcodebuild` 용 공유 스킴 `TodayWhatWatch`. **pbxproj 편집 방식** — 손편집 금지, `xcodeproj` Ruby gem 스크립트(`ios/scripts/add_watch_target.rb`, 멱등) 또는 Xcode GUI 1회 후 커밋. **CocoaPods 상호작용** — 워치 타깃은 Podfile 에 넣지 않음 = RN Pods(hermes/React-Core/RNSVG/op-sqlite…) 미링크, 시스템 프레임워크(`WatchConnectivity`/`SwiftUI`/`Foundation`, D-10 시 `WidgetKit`)만. 워크스페이스는 기존 `TodayWhat.xcworkspace` 공유. (2) **Swift 파일 레이아웃**(`ios/TodayWhatWatch/**`) — `TodayWhatWatchApp`(엔트리), `WatchConnectivityService`(`WCSessionDelegate`+`ObservableObject`), `Models`(`Codable` — `src/core/watchSync/types.ts` 미러), `SnapshotStore`/`PendingQueue`(JSON 파일 2개, `FileProtectionType.complete` — §13.9), `LWW`(§17.6 `resolveToggleLWW` Swift 미러 — 낙관적 로컬 판정용), 뷰(`TodayView`/`ScheduleRow`/`NotConfiguredView` — 오늘 목록·요약 헤더·다음 예정 1건·빈 상태 E-19-5·"최신 아님" E-19-1·"동기화 대기" D-11 배지·pull-to-refresh). (3) **페이로드 계약 바인딩** — 단일 출처 = `src/core/watchSync/types.ts`(`WatchSnapshot`/`WatchScheduleItem`/`WatchToggleOp`, 상수 `WATCH_SNAPSHOT_MAX_ITEMS=200` 등) + 직렬화/봉투 = `src/app/adapters/watch/watchMessage.ts`(`parseToggleOp`/`classifyInboundMessage`/`WATCH_UUID_RE`) + `WatchConnectivityGateway.native.ts`(`toPlistSafe` null 키 제거, 봉투 `{type:'snapshot'|'toggle'|'requestSnapshot'|'ack', payload}`). Swift `CodingKeys` 는 TS 필드명과 1:1, 시각은 **정수 epoch ms**(초 아님) + IANA `timeZone`(P-39), null 가능 키(`nextUpcoming`/`doneAt`)는 `decodeIfPresent`, `opId` = `UUID().uuidString.lowercased()`(RFC-4122), P-40 필드만 송신. (4) **검증 절차(이번 릴리스 범위)** — `xcodebuild -scheme TodayWhatWatch -destination 'platform=watchOS Simulator,…'` 빌드, 페어드 iPhone+Watch 시뮬레이터 부팅·설치·실행, `xcrun simctl io … screenshot` 으로 워치의 오늘 목록 캡처. Metro cwd-patch 는 iOS JS 번들 전용 — 순수 네이티브 워치 앱과 무관. 시뮬레이터 페어에서 `updateApplicationContext`/`sendMessage`/`transferUserInfo` 실왕복 동작 → 실제 라운드트립 스크린샷 가능(디버그 시딩 불필요, 다만 오늘 일정 0건이면 빈 상태만 보이므로 iOS 앱 UI 로 오늘자 일정 1건 생성 후 관찰). (5) **§13.9 워치 보안 델타** — 워치 로컬 파일 데이터 보호 클래스(`FileProtectionType.complete`), 시뮬레이터 빌드 코드사이닝(`CODE_SIGNING_ALLOWED=NO` 또는 자동·팀 없음), 워치 타깃 의존성 = 시스템 프레임워크만(신규 서드파티 0), `react-native-watch-connectivity` 는 iOS 앱 타깃에만. (6) **§17.1 표**·§14 일관성 표·§15 미결정(N-11 축소: 앱 타깃 빌드+시뮬레이터 설치/실행/라운드트립 = 이번 릴리스 검증, 실기기 WCSession 엣지·BOOT·배터리만 후속) 갱신. **`src/core/**`·`src/app/**`(TS)·공유 페이로드 계약·DB DDL·포트·`bindings.ts`·기존 폰 화면 전부 무변경** — 이번 델타의 산출물은 `ios/` 네이티브 타깃 + Swift 소스뿐. 「API 설계」 섹션 미신설(WCSession 은 OS IPC — 외부 제공/호출 API 아님) |
@@ -922,6 +923,7 @@ combineDateWithTimeOfDay(dateTs: number, timeOfDayTs: number, timeZone: string):
 - **유형 색상 자동 배정·우선순위 색상·대시보드 배지·사전 알림 프리셋(F-06/F-07/F-08/F-10, v1.15) — 보안 영향 해당 없음**: (1) 카테고리 색상(§5.1)은 코드에 하드코딩된 12색 배열(`CATEGORY_COLOR_PALETTE`)에서만 선택되며 사용자가 색상값을 직접 입력하는 경로가 없다 — 신규 입력 표면 없음. (2) 우선순위 색상(§5.2)은 이미 검증된 `Priority` 열거형(`HIGH`/`NORMAL`/`LOW`)에 대한 고정 상수 매핑이며 사용자 입력을 받지 않는다. (3) 대시보드 우선순위 점·유형 배지(§7.3)는 이미 로드되어 있던 `Schedule.priority`/`Category` 필드를 `<View>`(도형)·`<Text>`(유형명, 코어가 이미 길이 검증)로 렌더할 뿐이며 신규 조회·저장·로그 표면이 없다. (4) 사전 알림 프리셋(§6.1)은 고정 5값(`5/10/30/60/1440` 분) 중 다중 선택이며 자유 텍스트 입력란을 두지 않는다(D-24) — 전송되는 `reminderOffsets` 는 항상 이 5개 값의 부분집합이고, 코어 `assertValidScheduleInput`/`VALIDATION_REMINDER_LIMIT`(P-10, 기존 정수·상한 검증)이 그대로 재검증한다. 네 항목 모두 신규 신뢰 경계·비밀정보 취급·저장 스키마 변경이 없다(표면 축소 방향과 동일한 판정 — §13.8 위협표 참고).
 - **반복 회차 실체화(F-24, v1.16)**: `RecurrenceScheduler`(§18.3)가 생성하는 회차 행은 사용자가 이미 입력한 값(제목/메모/유형/우선순위/오프셋)을 서비스 계층이 그대로 복제한 것이며 신규 외부 입력 지점이 없다. 유일한 자원 고갈 우려는 "자기 자신에 대한 무한 증식"인데 `expandOccurrences` 절대 상한(366, 기존 [제안])과 `RecurrenceScheduler` horizon(60일 [제안])이 이를 경계짓는다(마스터별·`sync()` 호출당 상한). 마스터 행은 `REMINDER` 행을 갖지 않으므로 알림 노출면이 늘지 않는다. `RECURRENCE_REMINDER_OFFSETS`(신규 컬럼)는 `JSON.parse` 실패 시 빈 배열로 방어(§18.3 `safeParseJson`) — 파싱 예외가 회차 생성을 막지 않는다.
 - **완료된 일정 숨기기·완료 정렬·기본 유형 시딩·캘린더 프리필(F-25/F-10/F-06/F-26, v1.16) — 보안 영향 해당 없음**: 숨기기 토글은 `APP_SETTING` boolean 키 1개(자유 입력 아님, §7.5). 완료 정렬(§7.4)은 이미 로드된 배열의 순수 재배치. 기본 유형 시딩(§5.3)은 마이그레이션에 하드코딩된 3개 문자열·색상값(사용자 입력 없음). 캘린더 프리필(§7.6)은 이미 신뢰된 로컬 `Clock` 값의 결합이며 DB 조회·저장이 없다. 네 항목 모두 신규 신뢰 경계·저장·로그 표면이 없다.
+- **선택형 필드 셀렉트박스화·워치 헤더 요약·체크박스 좌측 배치·탭 아이콘 교체(F-06/F-07/F-08/F-16/F-19/F-24, v1.17) — 보안 영향 해당 없음**: (1) `SelectField`/`MultiSelectField`(§16.3.1)는 이미 검증된 고정 옵션 배열(중요도 3값·동적 유형 목록·반복 4종·알림 프리셋 5값)을 트리거+`Modal` 로 보여줄 뿐 자유 텍스트 입력란이 없다 — 값 도메인·검증(`assertValidScheduleInput` 등)은 완전히 무변경, 신규 입력 표면 없음. (2) 워치 헤더 요약(§17.12)은 이미 페이로드에 있던 `summary.done/notDone` 을 재계산해 표시 위치만 바꾼 것이며 신규 필드·조회·저장이 없다. (3) 워치 체크박스 좌측 배치는 순수 레이아웃 순서 변경. (4) 탭 아이콘 교체(§16.2)는 빌드 타임 번들 require 경로 문자열만 바꾼다(P-21, 런타임 주입 표면 없음). 네 항목 모두 신규 신뢰 경계·비밀정보 취급·저장 스키마 변경이 없다.
 
 ### 13.4 민감정보 식별과 보호 (Cryptographic Failures, Information Disclosure)
 
@@ -975,7 +977,8 @@ combineDateWithTimeOfDay(dateTs: number, timeOfDayTs: number, timeZone: string):
 | 외부 캘린더 오염 데이터 저장 | Data Integrity | 길이·타입·제어문자 검증, 로컬 편집 우선 병합 | 사용자 혼동(중복 표시) → 수동 병합 UI |
 | 취약 서드파티 | Vulnerable Components | 버전 고정 + 주기 audit | 신규 CVE 대응 지연 |
 | 로그에 민감정보 노출 | Info Disclosure / Logging Failures | 마스킹 유틸, 릴리스 로그 축소 | 서드파티 내부 로그 |
-| 워치로 일정 제목 노출면 확대 (F-19) | Info Disclosure | 페이로드 최소화(오늘 + 다음 1건, 제목·시각·유형·완료상태만 — 메모·이력·토큰·알림·계정 미포함, P-40), OS 암호화 채널, 워치 스냅샷 파일 데이터 보호 | 잠금 해제된 분실 워치에서 오늘 제목 열람 → §13.9 residual |
+| 워치로 일정 제목 노출면 확대 (F-19) | Info Disclosure | 페이로드 최소화(**v1.17부터 오늘 일정만** — "다음 예정 1건" 미전송, D-30/P-40, 제목·시각·유형·완료상태만 — 메모·이력·토큰·알림·계정 미포함), OS 암호화 채널, 워치 스냅샷 파일 데이터 보호 | 잠금 해제된 분실 워치에서 오늘 제목 열람 → §13.9 residual |
+| 선택형 필드 셀렉트박스화·워치 헤더 요약·체크박스 좌측·탭 아이콘 교체(F-06/F-07/F-08/F-16/F-19/F-24, v1.17) | Tampering / Injection / Info Disclosure | 셀렉트박스는 고정 옵션 배열만 선택(자유 입력 없음, §16.3.1), 워치 헤더는 이미 전송된 `summary` 재계산·재배치(§17.12), 체크박스 배치는 순수 레이아웃, 탭 아이콘은 require 경로 문자열(§16.2) | 없음(해당 없음 — 신규 신뢰 경계·비밀정보 없음) |
 | 위조·재생된 워치 완료 토글 op (F-19) | Tampering / Elevation | op = `{opId, scheduleId(정수), done(bool), watchChangedAt, baseUpdatedAt}` 만; `scheduleId` 재조회 + `opId` dedup 원장 + LWW; `toggleDone` 외 경로 없음(P-43); WCSession 은 동일 team ID 페어드 확장으로 OS 제한 | 낮음(§13.9) |
 | 워치 op 폭주로 폰 처리 부하 (F-19) | DoS | 수신 처리 상한(배치·순차), dedup 원장 링버퍼(최근 50), `updateApplicationContext` 병합으로 스냅샷 재전송 코알레싱 | 낮음 |
 
@@ -1125,8 +1128,17 @@ combineDateWithTimeOfDay(dateTs: number, timeOfDayTs: number, timeZone: string):
 | (v1.16) 보안 위협 모델 영향 | 없음(표면 없음/경계 내 정상) — §13.3/§13.8 신규 2항목("반복 회차 무한 증식"=경계 내 정상, "완료 정렬·숨기기·시딩·프리필"=해당 없음) |
 | (v1.16) 「API 설계」 섹션 | 미신설 — 5개 항목 전부 로컬 서비스·DB·UI 변경. 신규/외부 API 없음 |
 | **(v1.16 재검증 보완)** §5(구 "ScheduleService.findInRange / CategoryService") 마지막 문단이 §18 신설분과 모순 | **발견·수정** — §5 말미에 "반복 일정: `recurrence_parent_id`로 가상 회차 확장은 조회 시점에 `RecurrenceExpander`(순수 함수)가 범위 내 발생만 계산해 병합. …" 이라는 v1.4 당시 서술이 §18 작성 후에도 그대로 남아 있었다(§18 은 이를 폐기하고 마스터/회차 실체화로 대체했으나, §5 문단을 갱신하지 않아 최초 v1.16 작성 시점의 자체 일관성 점검에서 누락됨 — 실존하지 않는 함수명 `RecurrenceExpander`, 실제 구현과 다른 "예외 인스턴스 행"/"`recurrence_end_at` 조정 + 새 규칙 행" 서술 포함). §5 문단을 §18 를 가리키는 요약으로 교체해 해소했다(위 §5 참조) |
+| (v1.17) §17.3 페이로드 빌더 개정이 `WatchSyncService`·`buildWatchSnapshot` 시그니처와 일치 | OK — `pushSnapshot()` 은 여전히 `buildWatchSnapshot(today, nextUpcomingSchedule, categories, clock)` 4-인자 시그니처를 그대로 호출하며 두 번째 인자 값만 `null` 로 고정. 함수 내부 로직·`WatchSnapshot`/`WatchScheduleItem` 타입 정의 무변경(§0.1 포트 목록·§17.3 코드 블록과 일치) |
+| (v1.17) §17.3 `nextUpcoming` 상시 null 이 §17.11.4 페이로드 바인딩·Swift `Models.swift` 와 일치 | OK — `toPlistSafe()`(§17.11.4)가 null 키를 재귀 제거하는 기존 동작을 그대로 재사용하므로 Swift `UpcomingRef?`·`decodeIfPresent` 코드는 무변경. 워치는 이전에도 `nextUpcoming` 이 없을 수 있었던 optional 필드를 그대로 다룰 뿐 — 신규 디코딩 케이스 없음 |
+| (v1.17) §17.12 헤더 요약·체크박스 배치가 §17.9/§17.10 예외·AC 매핑과 일치 | OK — E-19-8(신규)·AC-91/92(신규)가 §17.9/§17.10 표에 반영됨. 기존 AC-47/53/54 문구도 "다음 예정 1건"→"오늘 일정만"/"헤더 카운트"→"헤더 요약"으로 정정되어 §17.12 서술과 모순 없음 |
+| (v1.17) §16.3.1 `SelectField`/`MultiSelectField` 도입이 §0.1 포트·`bindings.ts`·기존 서비스 시그니처와 일치 | OK — 신규 컴포넌트는 `src/app/components/**`(프레젠테이션 계층)에 한정. `ScheduleService.create/update`·`CategoryService.list`·상태 변수(`priority`/`categoryId`/`recurrenceRule`/`reminderOffsets`)·저장 로직 전부 무변경. `bindings.ts` 갱신 없음(신규 서비스 호출 없음) |
+| (v1.17) §16.3.1 필드 매핑 표(중요도/유형/반복/사전 알림) 갱신이 §1(`ScheduleService.create`)·§18.4(반복 생성)·§6.1(프리셋)과 일관 | OK — "입력 UI" 열만 "셀렉트박스"로 교체, "서비스 입력 키"·"코어 검증(오류 코드)"·"기본값/비고" 열은 전부 기존 값 그대로 — F-01/F-24/F-08 처리 흐름과 모순 없음 |
+| (v1.17) §16.2 캘린더 탭 아이콘 교체 지시가 실제 코드(`RootNavigator.tsx`)와 일치 | OK — 조사 결과 `TAB_ICONS[TAB_ROUTES.Calendar]` 가 여전히 `require('../../assets/icons/goal.png')` 를 참조 중이며 `calendar.png` 파일은 존재하나 미참조 상태(구현 갭). §16.2 지시가 정확히 이 한 줄만 교체하도록 명시 — AC-94/P-71 과 일치 |
+| (v1.17) DB 스키마 영향 | 없음 — `database.md` v1.8 유지(값 도메인·데이터 구조·페이로드 필드 구성 전부 기존 컬럼/기존 타입 재사용) |
+| (v1.17) 보안 위협 모델 영향 | 없음(표면 없음) — §13.3/§13.8 신규 항목(모두 "해당 없음") |
+| (v1.17) 「API 설계」 섹션 | 미신설 — 5개 항목 전부 로컬 UI·서비스·페이로드 계산 변경. 신규/외부 API 없음 |
 
-발견된 불일치: 위 1건(§5 잔존 서술) — **이번 재검증에서 발견·수정 완료**. 그 외 문서 전체 재스캔(`RecurrenceExpander`/"가상 회차"/"가상 전개"/"예외 인스턴스"/"규칙 1행" 등 폐기 용어 grep) 결과 추가 잔존 서술 없음. (위 v1.4 §14 행 1건은 "정정" — 반려가 아니라 이후 확정 요구사항(F-24, v1.9 plan)에 따라 원 설계 전제가 폐기·대체된 정상적 설계 델타). (DASH-01 은 v1.11 에서 문서 정정 완료. DASH-02/DASH-03 은 이번 델타 범위 밖 캐리오버로 §15 에 명시. v1.13 은 F-23 시각화 프레젠테이션 한정 델타. v1.14 는 F-19 watchOS 앱 타깃 구현 착수 — 공유 계약·집계·DB·보안 위협 모델·폰 코드 무변경, `ios/` 네이티브 타깃 + Swift 소스만 추가. v1.15 는 F-06/F-07/F-08/F-10 색상·표시 개정 — DB·포트·보안 위협 모델 무변경, `src/core/domain` 순수 모듈 2개 + 서비스 메서드 1개 + 셸 UI만 추가. v1.16 은 F-24/F-10 개정/F-06 개정/F-25/F-26 — 반복은 가상 전개→경계 내 실체화로 설계 대체, DB 신규 컬럼 1개 + 마이그레이션 2건, 나머지 4항목은 표시 계층·`APP_SETTING` 키·순수 함수 추가로 DB 무영향.)
+발견된 불일치: 위 1건(§5 잔존 서술) — **이번 재검증에서 발견·수정 완료**. 그 외 문서 전체 재스캔(`RecurrenceExpander`/"가상 회차"/"가상 전개"/"예외 인스턴스"/"규칙 1행" 등 폐기 용어 grep) 결과 추가 잔존 서술 없음. (위 v1.4 §14 행 1건은 "정정" — 반려가 아니라 이후 확정 요구사항(F-24, v1.9 plan)에 따라 원 설계 전제가 폐기·대체된 정상적 설계 델타). (DASH-01 은 v1.11 에서 문서 정정 완료. DASH-02/DASH-03 은 이번 델타 범위 밖 캐리오버로 §15 에 명시. v1.13 은 F-23 시각화 프레젠테이션 한정 델타. v1.14 는 F-19 watchOS 앱 타깃 구현 착수 — 공유 계약·집계·DB·보안 위협 모델·폰 코드 무변경, `ios/` 네이티브 타깃 + Swift 소스만 추가. v1.15 는 F-06/F-07/F-08/F-10 색상·표시 개정 — DB·포트·보안 위협 모델 무변경, `src/core/domain` 순수 모듈 2개 + 서비스 메서드 1개 + 셸 UI만 추가. v1.16 은 F-24/F-10 개정/F-06 개정/F-25/F-26 — 반복은 가상 전개→경계 내 실체화로 설계 대체, DB 신규 컬럼 1개 + 마이그레이션 2건, 나머지 4항목은 표시 계층·`APP_SETTING` 키·순수 함수 추가로 DB 무영향. v1.17 은 F-19 개정(워치 헤더 요약·다음일정 제거·체크박스 좌측)/F-06·F-07·F-08·F-24 개정(선택형 필드 셀렉트박스화)/F-16 개정(캘린더 아이콘) — 전부 표시 계층·페이로드 계산 한정, 공유 타입·DB·서비스 계약·포트 무변경, 신규 위젯 컴포넌트 2개(`SelectField`/`MultiSelectField`)만 추가.)
 
 ---
 
@@ -1174,6 +1186,8 @@ combineDateWithTimeOfDay(dateTs: number, timeOfDayTs: number, timeZone: string):
 | D-28 | 완료된 일정 숨기기 — 대시보드·설정 공유 여부 및 집계 반영 여부 (F-25, plan v1.9) — **(a) 단일 공유 상태 + 집계 미반영** 채택(가정값). 단일 `APP_SETTING` 키 `dashboard.hideCompleted`(§7.5) — `DashboardService.getSummary` 무변경. (c) "숨김 반영 재계산" 확정 시 진행률 한 줄 산식만 국소 변경(코어 무영향, 화면 파생값 재계산). 게이트 형식상 OPEN, 비차단 |
 | D-29 | 캘린더 "+" 버튼 프리필 시각(시:분) 기본값 (F-26, plan v1.9) — **(a) 화면을 여는 시점의 현재 시각** 채택(가정값). `combineDateWithTimeOfDay`(§7.6, §18) — 대시보드 FAB(구 OI-19)도 동일 규칙으로 통일. (b) 고정 시각 확정 시 두 번째 인자만 고정 상수로 교체(국소 변경). 게이트 형식상 OPEN, 비차단 |
 | N-16 | (신규, v1.16, 비차단) 반복 규칙 자체의 사후 변경("이후 모두" 규칙/시각 변경, E-24-1) UI 세부 — 이번 설계는 §18.5 `updateRecurrenceRule` 로 **기능 수준만 지원**(마스터 규칙 갱신 + 미래 활성 회차 삭제 후 재생성, 과거·완료 회차 보존). AC-82~84 가 이 흐름을 직접 검증하지 않으므로 마법사/확인 대화상자 등 세부 UX(plan 이 Architect 위임한 영역)는 후속 사이클에서 구체화 |
+| D-30 | 워치 "다음 예정 1건" 페이로드 전송 지속 여부 (F-19, plan v1.10) — **(a) 화면 표시 제거와 함께 전송도 중단** 채택(가정값). `WatchSyncService.pushSnapshot()` 이 다음 예정 조회를 하지 않고 `nextUpcoming=null` 고정 전달(§17.3). `WatchSnapshot.nextUpcoming` 타입은 유지(Swift 무변경) — `toPlistSafe()` null 키 제거로 전송 바이트에서도 배제. (b) "전송 유지" 확정 시 조회 라인만 복원(국소 변경). 게이트 형식상 OPEN, 비차단 |
+| D-31 | 사전 알림(F-08) 다중 선택 셀렉트박스의 구체 컴포넌트 형태 (F-08, plan v1.10) — **바텀시트형 다중 선택 목록(`MultiSelectField`)** 채택(§16.3.1). 드롭다운 내 체크 표시 형태도 동일 컴포넌트가 흡수 가능. 다중 선택(0개 이상) 기능 요건(P-62)·자유 입력 제외(D-24) 그대로. 순수 UI 구현 세부로 완전히 Architect 재량, 비차단 |
 
 ---
 
@@ -1245,9 +1259,11 @@ RootStack
 | 탭 | 에셋 파일 | require 경로 |
 | --- | --- | --- |
 | 오늘 (DashboardTab) | `todo.png` | `../../assets/icons/todo.png` |
-| 캘린더 (CalendarTab) | `goal.png` | `../../assets/icons/goal.png` |
+| 캘린더 (CalendarTab) — **v1.17 개정**: `goal.png` → `calendar.png` (F-16, P-71, AC-94) | `calendar.png` | `../../assets/icons/calendar.png` |
 | 통계 (StatisticsTab) — v1.12: "검색" 탭 교체, 아이콘 파일 매핑 유지 (F-16, AC-26) | `statistics.png` | `../../assets/icons/statistics.png` |
 | 설정 (SettingsTab) | `settings.png` | `../../assets/icons/settings.png` |
+
+- **v1.17 구현 필수 지시 (F-16 개정, P-71, AC-94)**: `src/app/navigation/RootNavigator.tsx` 의 `TAB_ICONS` 상수(현재 `[TAB_ROUTES.Calendar]: require('../../assets/icons/goal.png')`)를 `require('../../assets/icons/calendar.png')` 로 **반드시 교체**한다. 실사용 코드 조사 결과 `calendar.png` 파일은 이미 `src/assets/icons/`에 존재하지만 어떤 코드에서도 참조되지 않았고, `RootNavigator.tsx` 는 여전히 `goal.png` 를 require 하고 있었다(구현 갭 — plan v1.10 §5.19 P-71 원문 참고). 이 한 줄(require 경로 문자열) 교체만으로 AC-94 를 충족한다. **`todo.png`/`statistics.png`/`settings.png` 3개는 require 경로 문자열을 바꾸지 않는다** — 세 파일은 내용만 갱신됐을 뿐(파일명·경로 불변), 코드 변경이 필요 없다.
 
 - **렌더 방식**: `Tab.Navigator`의 `screenOptions` 또는 각 `Tab.Screen`의 `options.tabBarIcon` 콜백에서 `<Image source={icon} style={{ width: 24, height: 24, opacity: focused ? 1 : 0.4 }} />` 렌더 (P-19: 단일 파일, 투명도 기반 활성/비활성 구분).
   - 활성 탭: `opacity: 1`, 비활성 탭: `opacity: 0.4` (P-19, AC-27).
@@ -1301,15 +1317,65 @@ RootStack
 | 제목 | 단일 행 `TextInput` | `title` | `VALIDATION_TITLE_REQUIRED`(빈값·공백만, AC-02), `VALIDATION_TITLE_TOO_LONG`(>200) | `title` | 필수 |
 | 시작 일시 | `DateTimePickerModal` (mode='date' 선택 후 mode='time' 2단계, 또는 단일 'datetime') — 선택된 `Date` 객체의 `.getTime()` 으로 epoch ms 직접 추출(P-16). 날짜·시각 버튼을 각각 표시하고 탭 시 피커 열림 | `startAt` | `VALIDATION_START_REQUIRED`(미선택 시 기본값 "현재 시각 + 1시간 정각" 자동 적용하므로 실질적 미선택 없음. `Number.isInteger(startAt)` 방어 검증 유지 — AC-02) | `startAt` | 필수. 기본값 = 다음 정시(`Date.now() + 3600000`, 분/초/ms 0으로 정규화). E-01-2: 피커는 항상 유효한 Date를 반환하므로 파싱 실패 없음; 기본값이 있으므로 미선택도 없음 |
 | 종료 일시 | 시작과 동일 DateTimePicker. 비우려면 "종료 없음" 토글(Switch) — OFF 시 `null` 전송 | `endAt` | `VALIDATION_END_BEFORE_START`(endAt<startAt, AC-03), `VALIDATION_END_INVALID` | `endAt` | 선택. 기본 OFF(null) |
-| 유형(카테고리) | 피커 — 옵션 = `CategoryService.list()` (마운트 1회, `categories` 캐시) | `categoryId` | 없음 — 미지정/미존재 시 코어가 시스템 기본("기타")으로 대체(E-06-1) | — | 선택. "유형 추가" = `CategoryService.create(name)` |
-| 우선순위 | 3-세그먼트 `HIGH / NORMAL / LOW` (D-04) | `priority` | 없음 — 미지정 시 코어 기본 `NORMAL`(E-07-1) | — | 기본 선택 표시 `NORMAL` |
+| 유형(카테고리) | **v1.17 개정 — 셀렉트박스**(`SelectField<number\|undefined>`, P-70) — 옵션 = `CategoryService.list()` (마운트 1회, `categories` 캐시)를 `{value:c.id,label:c.name}` 로 매핑. 기존 "칩 wrap 선택" 위젯을 대체 | `categoryId` | 없음 — 미지정/미존재 시 코어가 시스템 기본("기타")으로 대체(E-06-1) | — | 선택. "유형 추가" = `CategoryService.create(name)`. 옵션 목록·미선택 시 활성 표시 로직(시스템 유형)은 무변경 |
+| 우선순위 | **v1.17 개정 — 셀렉트박스**(`SelectField<Priority>`, P-70) — 옵션 = `PRIORITY_OPTIONS`(`HIGH`/`NORMAL`/`LOW`, D-04). 기존 3-세그먼트 위젯을 대체 | `priority` | 없음 — 미지정 시 코어 기본 `NORMAL`(E-07-1) | — | 기본 선택 표시 `NORMAL` |
 | 메모 | 멀티라인 `TextInput` | `memo` | `VALIDATION_MEMO_TOO_LONG`(>5000) | `memo` | 선택. 비우면 `null` |
-| 반복 (v1.16 갱신, F-24) | rule 세그먼트 `없음 / DAILY / MONTHLY / YEARLY`(D-25(a) — "WEEKLY" 는 코어·DB 상 유효하나 UI 비노출) + 종료조건 `종료일(date) \| 종료 없음(무기한)`(P-01 재사용, E-24-3) | `recurrence` (`{ rule, endAt?, count? }` 또는 `null`) | `VALIDATION_RECURRENCE_RULE_INVALID`, `VALIDATION_RECURRENCE_CONFLICT`(endAt·count 동시), `VALIDATION_RECURRENCE_COUNT_INVALID`(≤0), `VALIDATION_RECURRENCE_END_BEFORE_START`(종료일<시작일, E-24-2/AC-83) | `recurrence` | **신규 생성 경로만**. "없음" → `null`/미전송. 저장 시 마스터 행 + 회차 행(첫 회차)이 동시 생성되고 `RecurrenceScheduler.sync(masterId)` 가 horizon 내 나머지 회차를 실체화한다(§18) |
-| 사전 알림 오프셋 (v1.15 갱신) | 5개 프리셋 다중 선택 칩("5분 전/10분 전/30분 전/1시간 전/하루 전", §6.1 `REMINDER_OFFSET_PRESETS`). 자유 입력란 없음(D-24) | `reminderOffsets` / `notifyAtStart` | `VALIDATION_REMINDER_LIMIT`(>5, P-10 — 프리셋이 5종이라 사실상 도달 불가) | `reminderOffsets` | 신규: 기본 선택 = `[10]`(설계 결정, 회귀 최소화 — 정책 아님). 수정: 마운트 시 `ScheduleService.getReminderOffsets(id)`(§6.1)로 정확히 프리필. **신규·수정 모두 저장 시 체크박스 상태를 그대로 `reminderOffsets` 로 항상 명시 전송**(0개 선택 포함, E-08-6/AC-81) — 기존 "미전송=유지" 관례 폐기(§6.1 참고) |
+| 반복 (v1.16 갱신, F-24 / **v1.17 개정 — 셀렉트박스**) | `SelectField<RecurrenceRule\|null>`(P-70) — 옵션 = `없음 / DAILY / MONTHLY / YEARLY`(D-25(a) — "WEEKLY" 는 코어·DB 상 유효하나 UI 비노출). 기존 rule 세그먼트 위젯을 대체(신규 작성 섹션·"반복 설정 변경" 보조 액션 양쪽 모두) + 종료조건 `종료일(date) \| 종료 없음(무기한)`(P-01 재사용, E-24-3, 위젯 무변경) | `recurrence` (`{ rule, endAt?, count? }` 또는 `null`) | `VALIDATION_RECURRENCE_RULE_INVALID`, `VALIDATION_RECURRENCE_CONFLICT`(endAt·count 동시), `VALIDATION_RECURRENCE_COUNT_INVALID`(≤0), `VALIDATION_RECURRENCE_END_BEFORE_START`(종료일<시작일, E-24-2/AC-83) | `recurrence` | **신규 생성 경로만**. "없음" → `null`/미전송. 저장 시 마스터 행 + 회차 행(첫 회차)이 동시 생성되고 `RecurrenceScheduler.sync(masterId)` 가 horizon 내 나머지 회차를 실체화한다(§18) |
+| 사전 알림 오프셋 (v1.15 갱신 / **v1.17 개정 — 셀렉트박스**) | `MultiSelectField`(P-70, D-31(a)) — 옵션 = 5개 프리셋("5분 전/10분 전/30분 전/1시간 전/하루 전", §6.1 `REMINDER_OFFSET_PRESETS`). 기존 다중 선택 칩 위젯을 대체(트리거+`Modal` 옵션 목록, 각 행 체크 토글). 자유 입력란 없음(D-24) | `reminderOffsets` / `notifyAtStart` | `VALIDATION_REMINDER_LIMIT`(>5, P-10 — 프리셋이 5종이라 사실상 도달 불가) | `reminderOffsets` | 신규: 기본 선택 = `[10]`(설계 결정, 회귀 최소화 — 정책 아님). 수정: 마운트 시 `ScheduleService.getReminderOffsets(id)`(§6.1)로 정확히 프리필. **신규·수정 모두 저장 시 체크박스 상태를 그대로 `reminderOffsets` 로 항상 명시 전송**(0개 선택 포함, E-08-6/AC-81) — 기존 "미전송=유지" 관례 폐기(§6.1 참고) |
 
 - **검증·오류 표시 규약**: 저장 클릭 → `create`/`update` 호출 → `ValidationError`(또는 `AppError`) catch → `err.field` 로 해당 입력 하단 문구, `field` 없으면 폼 상단. `ValidationError.errors[]` 가 다건이면 첫 건만 쓰지 말고 각 `field` 별로 표시. 실패해도 입력값 폐기 금지(§0.2). 저장 이전 실패는 저장소 변경 없음.
 - **저장 성공 후**: `invalidate('list', 'dashboard', 'search', 'categories')` → `navigation.goBack()`. (기존 스켈레톤·`src/app/state/bindings.ts` 와 동일한 4-슬라이스 집합.)
 - **수정 모드의 반복 (v1.16 갱신)**: 편집 대상이 반복 시리즈의 **회차 행**(`recurrenceParentId !== null`)이면, "반복" 섹션은 입력 불가 읽기 전용 표시(예: "반복: 매월 (연결된 반복 일정)")로 바뀌고 제목·시각·유형·우선순위·메모 등 나머지 필드는 **그 회차 행 자체**에 대한 일반 `update(occurrenceId, {...})`(§18.4 "이 일정만")로 저장된다 — 회차는 실체화된 정식 `SCHEDULE` 행이므로 편집 진입이 정상 성립한다(v1.14 이전 가정과 달리 "가상 회차"가 아님). 반복 규칙 자체(주기/종료조건)를 바꾸려면 별도 "반복 설정 변경" 진입점 → `ScheduleService.updateRecurrenceRule(occurrenceId, recurrence, now)`(§18.5, E-24-1 스코프 한정 지원)를 사용한다. 편집 대상이 비반복 일정이면 기존 동작 그대로.
+
+#### 선택형 필드 셀렉트박스화 (F-06/F-07/F-08/F-24, P-70, D-31, AC-93) — v1.17 신설
+
+`알림앱.md` "### 20260913 추가요청" 원문: "휴대폰에서 일정 추가시 특정 항목은 셀렉트 박스로 표시 — 중요도/유형/반복/알림". 일정 작성(F-01)/수정(F-03) 화면의 **중요도·유형·반복·사전 알림** 4개 필드는 모두 트리거 + 옵션 목록 모달 형태의 "셀렉트박스" 위젯으로 표시한다. **옵션 값 도메인·상태·검증·서비스 계약은 전혀 변경하지 않는다** — 오직 위젯 종류만 바꾼다(§16.3.1 필드 매핑 표 참고).
+
+- **신규 컴포넌트 (순수 프레젠테이션, `src/app/components/**` — `src/core/**`·서비스·`bindings.ts` 무의존, F-17 `BrandLoadingIndicator` 와 동일 원칙)**:
+
+  ```ts
+  // src/app/components/SelectField.tsx — 단일 선택
+  interface SelectOption<T> { value: T; label: string }
+  interface SelectFieldProps<T> {
+    label: string;
+    value: T;
+    options: SelectOption<T>[];
+    onChange: (value: T) => void;
+    disabled?: boolean;
+  }
+  // 렌더: <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${선택라벨}`}>
+  //         <Text>{선택라벨} ▾</Text>
+  //       </Pressable>
+  //       <Modal transparent visible={open} animationType="fade" onRequestClose={닫기}>
+  //         {options.map(o => (
+  //           <Pressable accessibilityRole="radio" accessibilityState={{checked: o.value===value}}
+  //                      onPress={() => { onChange(o.value); 닫기(); }}>
+  //             <Text>{o.value===value ? '✓ ' : ''}{o.label}</Text>
+  //           </Pressable>
+  //         ))}
+  //       </Modal>
+
+  // src/app/components/MultiSelectField.tsx — 다중 선택(D-31(a))
+  interface MultiSelectFieldProps {
+    label: string;
+    values: number[];
+    options: SelectOption<number>[];
+    onChange: (values: number[]) => void;
+    disabled?: boolean;
+  }
+  // 렌더: 트리거 = values.length===0 ? '없음' : `${values.length}개 선택 (${라벨들.join(', ')})` + '▾'
+  //       옵션 행 = accessibilityRole="checkbox" + accessibilityState={{checked}}, 탭해도 모달이 자동으로
+  //       닫히지 않음(다중 선택이므로) — 모달 하단 "닫기" 액션으로 확정.
+  ```
+
+- **4개 필드 배선** (상태·핸들러는 기존 그대로, 위젯만 교체):
+  - 중요도: `<SelectField<Priority> label="중요도" value={priority} options={PRIORITY_OPTIONS} onChange={setPriority} />`
+  - 유형: `<SelectField<number|undefined> label="유형" value={categoryId} options={cats.map(c=>({value:c.id,label:c.name}))} onChange={setCategoryId} />`
+  - 반복: `<SelectField<RecurrenceRule|null> label="반복" value={recurrenceRule} options={RECURRENCE_RULE_OPTIONS} onChange={setRecurrenceRule} />` — 신규 작성 섹션과 §18.5 "반복 설정 변경" 보조 액션(옵션에서 `null` 제외) 양쪽에 동일 컴포넌트 사용.
+  - 사전 알림: `<MultiSelectField label="사전 알림" values={reminderOffsets} options={REMINDER_OFFSET_PRESETS.map(p=>({value:p.minutes,label:p.label}))} onChange={setReminderOffsets} disabled={!notifGloballyOn} />`
+- **신규 의존성 판정**: **없음**. `Pressable`/`Modal`/`Text` 는 RN 내장이며, `ScheduleEditorScreen` 이 이미 iOS `DateTimePicker` 를 `Modal` 트리거로 렌더하는 동일 패턴을 쓰고 있다(§16.3.1 위 "날짜/시간 입력 방식 결정"). 검토한 대안: `@react-native-picker/picker`(네이티브 모듈 추가 + `pod install`, iOS `UIPickerView`/Android `Spinner` 로 플랫폼별 외형 상이, 다중 선택 미지원이라 사전 알림 필드에 별도 컴포넌트가 또 필요) — 기각. `ActionSheetIOS`(iOS 전용, Android 미대응, 다중 선택 UX 열위) — 기각.
+- **접근성**: 트리거 `accessibilityRole="button"` + `accessibilityLabel`(필드명+현재 선택값), 옵션 행은 단일 선택 `accessibilityRole="radio"`/다중 선택 `"checkbox"` + `accessibilityState`. 기존 사전 알림 칩의 `accessibilityRole="checkbox"` 패턴(§16.3.1 이전 버전)을 그대로 계승.
+- **DB·API·서비스 영향**: 없음 — 저장 로직(`create`/`update` 호출, `effOffsets`/`recurrenceInput` 계산)은 완전히 무변경.
 
 #### 날짜/시간 입력 방식 결정 (v1.6 — N-10 해소)
 
@@ -1331,12 +1397,12 @@ RootStack
 - `DashboardScreen` / `CalendarScreen` / `ScheduleDetailScreen` 은 `@react-navigation/native` 의 `useNavigation()`(이미 의존성 포함)으로 navigate 함수를 얻고 `navigation.setOptions({ headerRight })`(또는 `Tab.Screen`/`Stack.Screen` `options`)로 「+」/「편집」 버튼을 노출한다. Tab 화면의 헤더는 `Tab.Navigator`(이미 `headerShown: true`)에 렌더되며 `navigate('ScheduleEditor')` 는 부모 `RootStack` 으로 버블링된다.
 - `DashboardScreen` 빈 상태 브랜치에 「일정 추가」버튼을 추가한다(AC-15 · E-10-1 — 동일한 navigate 호출).
 
-#### 사전 알림 프리셋 다중 선택 (F-08, P-62, D-24, E-08-6, AC-80, AC-81) — v1.15
+#### 사전 알림 프리셋 다중 선택 (F-08, P-62, D-24, E-08-6, AC-80, AC-81) — v1.15 / **v1.17 개정 — `MultiSelectField` 셀렉트박스**
 
-- **UI**: `REMINDER_OFFSET_PRESETS`(§6.1, 5개 고정)를 가로 칩 5개로 렌더(기존 우선순위 3-세그먼트·유형 칩과 시각적 통일). 각 칩은 독립 토글(다중 선택, 0~5개) — 라디오/단일선택 아님. 자유 오프셋 입력 `TextInput` 은 렌더하지 않는다(D-24, AC-80).
-- **상태**: `const [reminderOffsets, setReminderOffsets] = useState<number[]>([10])`(신규 작성 기본값 — §6.1 "신규 작성 기본 선택값" 참고, 언제든 사용자가 칩을 눌러 0~5개로 바꿀 수 있음). 칩 탭 → `setReminderOffsets(prev => prev.includes(m) ? prev.filter(x=>x!==m) : [...prev, m])`.
+- **UI (v1.17 개정, P-70/D-31(a))**: `REMINDER_OFFSET_PRESETS`(§6.1, 5개 고정)를 `MultiSelectField`(아래 신설 소단락 참고)의 옵션 목록으로 전달 — 트리거(선택 개수/라벨 요약 + "▾")를 탭하면 `Modal` 옵션 목록이 열리고 각 행이 독립 토글(다중 선택, 0~5개, 체크 아이콘)된다 — 라디오/단일선택 아님. 기존 "가로 칩 5개" 위젯을 대체(값 도메인·다중 선택 규칙은 무변경). 자유 오프셋 입력 `TextInput` 은 렌더하지 않는다(D-24, AC-80).
+- **상태**: `const [reminderOffsets, setReminderOffsets] = useState<number[]>([10])`(신규 작성 기본값 — §6.1 "신규 작성 기본 선택값" 참고, 언제든 옵션 행을 눌러 0~5개로 바꿀 수 있음). 옵션 행 탭 → `setReminderOffsets(prev => prev.includes(m) ? prev.filter(x=>x!==m) : [...prev, m])`(핸들러 무변경, `MultiSelectField.onChange` 콜백에 그대로 연결).
 - **수정 모드 프리필**: 마운트 시 `getById(id)` 와 함께(또는 직후) `schedules.getReminderOffsets(id)`(§6.1) 를 호출해 `reminderOffsets` 를 그 반환값으로 설정한다. `bindings.ts` `ScheduleEditorScreen.reads` 에 `{ service: 'schedules', method: 'getReminderOffsets' }` 추가(아래 §16.3 표 갱신).
-- **전역 알림 off 상태(P-32)**: 기존 "시작 시 알림" `Switch` 와 동일하게 5개 칩 전부 `disabled` + 흐림 처리(대략 50% opacity), 안내 문구("설정에서 알림 사용이 꺼져 있어…")를 그대로 공유한다. 이 상태에서 저장 시 최종 전송값은 `[]`(기존 `effOffsets` 로직과 동일한 자리에서 계산 — 아래 「저장」).
+- **전역 알림 off 상태(P-32)**: 기존 "시작 시 알림" `Switch` 와 동일하게 `MultiSelectField` 전체를 `disabled` + 흐림 처리(대략 50% opacity), 안내 문구("설정에서 알림 사용이 꺼져 있어…")를 그대로 공유한다. 이 상태에서 저장 시 최종 전송값은 `[]`(기존 `effOffsets` 로직과 동일한 자리에서 계산 — 아래 「저장」).
 - **저장(§16.3.1 갱신)**: `effOffsets = notifGloballyOn ? reminderOffsets : []`. `create`/`update` 호출 모두 `reminderOffsets: effOffsets` 를 **항상 명시적으로** 전달한다(§6.1 — 기존 update 의 "미전송 시 기존 유지" 분기에 의존하지 않음). `assertValidScheduleInput`/`VALIDATION_REMINDER_LIMIT`(P-10 최대 5) 는 코어에서 그대로 검증하지만 프리셋이 5종이라 상한 초과가 UI 상 발생하지 않는다.
 - **AC-81 다중 프리셋 발송**: 저장 로직 변경 없이 코어 `buildReminderDrafts(startAt, effOffsets, notifyAtStart)`(§1.3, 무변경)가 오프셋 개수만큼 독립 `REMINDER` 행을 생성 — UI 는 배열만 정확히 구성하면 된다.
 
@@ -1970,7 +2036,7 @@ mode='spinner'    : <ActivityIndicator/>  (OS 표준)
 
 ---
 
-## 17. 애플워치 워치 동기화 (F-19, AC-23·AC-47~AC-56, P-36~P-44, NFR-10·NFR-12) — v1.9
+## 17. 애플워치 워치 동기화 (F-19, AC-23·AC-47~AC-56·AC-91~92, P-36~P-44·P-68~69, NFR-10·NFR-12) — v1.9 / v1.17 개정
 
 로고 오리 로딩(§16.9)과 달리 워치는 **별도 네이티브 타깃**이다. 폰(RN/TS) 측이 스냅샷을 파생·전송하고 워치의 완료 토글을 수신·조정한다. **코어 도메인/서비스(아래 신규분 제외)·DB 스키마·기존 셸 화면·`ReminderScheduler` 무변경.**
 
@@ -1981,7 +2047,7 @@ mode='spinner'    : <ActivityIndicator/>  (OS 표준)
 | RN 의 watchOS 지원 | RN 은 watchOS UI 를 렌더하지 않음. `react-native-watch-connectivity` 는 **iOS 쪽 `WCSession` 브리지만** 제공(워치에 JS 런타임 없음) | 커뮤니티 현황. Hermes-on-watchOS 임베드는 비표준·중량 → 폐기 |
 | `src/core` 재사용 | watchOS 확장에서 순수 TS 실행 불가 → **코드 공유 아님**. 워치 앱은 Swift 로 축소 읽기 모델 재구현 | watchOS 런타임 제약 |
 | 공유 자산 | (1) 페이로드 스키마(§17.3), (2) 시각 표현 `epoch ms + IANA tz`(P-39), (3) 상태 표시 규칙(§7.6 — 지남/미완료 구분) | NFR-10 "스키마·동기화 규약을 코어 계층에서 공유" = 계약 수준으로 충족 |
-| 워치 앱 구현 | `ios/TodayWhatWatch` — **단일 타깃 watchOS 앱**(SwiftUI `App` 라이프사이클, watchOS 10.0+): 오늘 목록·완료 토글·요약 헤더·다음 예정 1건·빈 상태(E-19-5)·"최신 아님"(E-19-1)·"동기화 대기"(D-11) 배지 / `WCSessionDelegate` / 로컬 스냅샷·보류 큐 파일 / LWW(§17.6). **v1.14 에서 구현 착수** — 타깃·Info.plist·임베드·스킴·Swift 파일 레이아웃은 §17.11 | F-19 표시 요소·상호작용 |
+| 워치 앱 구현 | `ios/TodayWhatWatch` — **단일 타깃 watchOS 앱**(SwiftUI `App` 라이프사이클, watchOS 10.0+): 오늘 목록·**좌측 완료 토글(v1.17, P-69)**·**헤더 요약 "오늘 - M/N"(v1.17, P-68 — 다음 예정 1건 표시 제거)**·빈 상태(E-19-5)·"최신 아님"(E-19-1)·"동기화 대기"(D-11) 배지 / `WCSessionDelegate` / 로컬 스냅샷·보류 큐 파일 / LWW(§17.6). **v1.14 에서 구현 착수, v1.17 에서 헤더·배치 개정** — 타깃·Info.plist·임베드·스킴·Swift 파일 레이아웃은 §17.11, 헤더·배치 개정은 §17.12 | F-19 표시 요소·상호작용 |
 | 워치 상호작용 범위 | (a) 오늘 목록 조회, (b) 개별 최소 상세, (c) 완료/미완료 토글, (d) 수동 새로고침 **4종만**(P-43). 생성·수정·삭제·스누즈·검색·유형 관리·설정/테마/캘린더 변경 진입점 없음 — 있으면 "폰에서 계속" 안내만(§17.9 E-19-2) | P-43, AC-51 |
 | 번들링/브리지 경계 | 폰: `src/core/watchSync/**`(순수) + `WatchSyncService`(폰측 조정) + `WatchSyncGateway` 포트 ↔ `WatchConnectivityGateway`(iOS 어댑터) ↔ **WCSession** ↔ 워치 Swift 앱. `src/core/watchSync` 는 `react-native` 미import(테스트는 `node:test`) | §16.9.2 계층 규칙과 동일 원칙 |
 
@@ -2024,26 +2090,34 @@ interface WatchSnapshot {
   dayStart: number; dayEnd: number;      // 로컬 자정 경계 (P-17)
   today: WatchScheduleItem[];            // 시작 시각 오름차순, 최대 200건 (초과 시 절단 + truncated=true)
   truncated: boolean;
-  nextUpcoming: { id: number; title: string; startAt: number; timeZone: string } | null;  // 다음 예정 1건 (당일 밖 가능)
-  summary: { done: number; notDone: number };   // 목록 헤더 카운트 (컴플리케이션 D-10 도 이 값 사용)
+  nextUpcoming: { id: number; title: string; startAt: number; timeZone: string } | null;  // 다음 예정 1건 (당일 밖 가능). v1.17부터 항상 null(D-30(a), §17.3 "v1.17 개정" 참고) — 타입은 유지, 값만 상시 null
+  summary: { done: number; notDone: number };   // 목록 헤더 카운트. v1.17부터 워치 헤더 요약("오늘 - done/(done+notDone)")의 산출 소스(§17.12)
   ackedOpIds: string[];                  // 폰이 처리 완료한 op (transferUserInfo 경로 ack)
 }
 ```
 
-- **분리**: `buildWatchSnapshot(todaySchedules, nextUpcomingSchedule, categories, clock)` 는 **순수 매핑 함수**(저장소 미접근, `node:test`). 데이터 fetch 는 `WatchSyncService.pushSnapshot()` 가 수행한 뒤 이 함수에 넘긴다.
+- **분리**: `buildWatchSnapshot(todaySchedules, nextUpcomingSchedule, categories, clock)` 는 **순수 매핑 함수**(저장소 미접근, `node:test`). 데이터 fetch 는 `WatchSyncService.pushSnapshot()` 가 수행한 뒤 이 함수에 넘긴다. **시그니처는 v1.17 에서도 무변경**(아래 「v1.17 개정」 참고 — 호출부가 넘기는 두 번째 인자 값만 바뀐다).
 - **`WatchSyncService.pushSnapshot()` fetch 규칙(= `DashboardService.getSummary` 와 동일 소스)**:
   - `dayStart = startOfLocalDay(clock.now(), clock.timeZone())`, `dayEnd = dayStart + DAY_MS` (P-17).
   - `todaySchedules` = `ScheduleRepository.findForDashboard(dayStart, dayEnd)`.
-  - `nextUpcomingSchedule` = `ScheduleRepository.findInRange(clock.now(), MAX, { isDone:false }, 'startAt', 1)` 의 첫 항목(당일 범위 밖일 수 있음 — P-40 "다음 예정 1건") 또는 null.
+  - `nextUpcomingSchedule` = **`null` 고정(v1.17 개정, 아래 참고)**.
   - `categories` = `CategoryRepository.list()`.
   - > `WatchSyncService` 의존성 = `ScheduleRepository` + `CategoryRepository` + `SettingRepository`(dedup 원장) + `Clock` + `ScheduleService`(`toggleDone` 전용) + `WatchSyncGateway` + `Logger`. `DashboardService` 와 동일하게 저장소에 직접 의존한다(읽기), 쓰기만 `ScheduleService` 경유.
 - **`buildWatchSnapshot` 매핑 규칙(순수)**:
   - `today` = `todaySchedules` → `WatchScheduleItem` 매핑 + `startAt` 오름차순 정렬. `categoryLabel/Color` 는 `categories` 조인(삭제·미존재 유형 → 시스템 "기타" 라벨·색, E-19-4).
   - `summary.done/notDone` = `today` 에서 계산(`DashboardSummary` 와 일치).
   - `today.length > 200` → 앞 200건 + `truncated=true` + (`WatchSyncService` 가) `metric('watch.snapshot.truncated')`.
-- **범위 제한(P-40, E-19-6)**: 오늘 + 다음 1건만. 과거 전체 이력·검색 인덱스·전체 유형 정의 미러링 안 함. `today` 200건 초과 시 앞 200건 + `truncated=true` + `metric('watch.snapshot.truncated')`.
+  - `nextUpcoming` = `nextUpcomingSchedule` 이 `null` 이면 `null`(v1.17 부터 항상 이 경로 — 아래 참고).
+- **범위 제한(P-40, E-19-6)**: 오늘 일정만. 과거 전체 이력·검색 인덱스·전체 유형 정의 미러링 안 함. `today` 200건 초과 시 앞 200건 + `truncated=true` + `metric('watch.snapshot.truncated')`.
 - **알림 데이터 미포함**(P-41, §17.7): REMINDER 관련 필드 없음.
 - **크기**: 항목당 ~120B → 200건 ≈ 24KB. `updateApplicationContext` 실무 상한(수십 KB) 내. 초과 위험 시 `title` 을 120자로 절단.
+
+**v1.17 개정 — 워치 "다음 예정 1건" 전송 중단 (F-19, P-68, D-30(a), `알림앱.md` "20260913 추가요청")**:
+
+- `WatchSyncService.pushSnapshot()` 이 기존에 수행하던 다음 예정 조회(`this.d.schedules.findInRange(now, Number.MAX_SAFE_INTEGER, { isDone:false }, 'startAt', 1, null)`)와 `nextUpcoming = nextPage.items[0] ?? null` 계산을 **제거**한다. 대신 `buildWatchSnapshot(today, null, categories, this.d.clock)` 로 두 번째 인자에 항상 `null` 을 전달한다.
+- **공유 페이로드 스키마(`WatchSnapshot.nextUpcoming: {...} | null`)는 타입 그대로 유지한다** — 필드를 스키마에서 제거하지 않는다. 근거: (1) `buildWatchSnapshot` 이 `nextUpcomingSchedule=null` 을 받으면 이미 `nextUpcoming: null` 을 반환하도록 되어 있어 함수 로직 변경이 불필요하고, (2) `WatchConnectivityGateway.native.ts` 의 `toPlistSafe()`(§17.11.4)가 송신 직전 null/undefined 키를 재귀적으로 제거하므로 `nextUpcoming: null` 은 **실제 전송 바이트에서 완전히 빠진다** — D-30(a) "전송도 함께 중단"이 필드 삭제 없이도 그대로 충족된다. (3) Swift `Models.swift`/`UpcomingRef` 는 **변경할 필요가 없다** — `decodeIfPresent` 로 키 부재 시 `nil` 로 디코드되는 기존 동작 그대로다. 이는 스키마 안정성(향후 D-30 이 (b)"표시만 제거, 전송 유지"로 재확정돼도 조회 라인만 복원하면 되는 최소 변경)과 구현 리스크(Swift 코드 무변경) 를 모두 만족하는 설계 선택이다.
+- **성능**: 폰이 실행하던 조회 쿼리 1개(`findInRange(now, MAX, …)`)가 사라져 `pushSnapshot()` 비용이 오히려 감소한다(`nfr.md` §14.3 갱신).
+- **UI 반영**: §17.12(신설) — 워치 화면에서 "다음 예정" 표시 영역 자체를 제거한다.
 
 ### 17.4 완료 토글 역전파 (`WatchSyncService.applyIncomingToggle`) — AC-23 확장, AC-48, P-36
 
@@ -2136,21 +2210,24 @@ function resolveToggleLWW(op: WatchToggleOp, schedule: Schedule):
 | E-19-5 오늘 일정 0건 | 스냅샷 `today=[]` → 워치 "오늘 일정이 없습니다" 빈 상태. **일정 추가 버튼 없음**(생성 폰 전용) |
 | E-19-6 동기화 대상 과다 | `today` 200건 절단 + `truncated=true` + `metric('watch.snapshot.truncated')`. 과거 이력·검색 인덱스·전체 유형 미러링 안 함(P-40) |
 | E-19-7 워치 알림 표시 | §17.7 — 폰이 예약, iOS 미러링. 전역 알림 off 면 워치에도 없음 |
+| E-19-8 (v1.17 신규) 연결 불가로 마지막 스냅샷을 "최신 아님"으로 표시 중(E-19-1)일 때 헤더 요약 | 별도 갱신을 시도하지 않는다 — 헤더 요약("오늘 - {완료}/{전체}")도 그 마지막 스냅샷의 `summary` 값을 그대로 계산해 표시(§17.12). 신규 분기 코드 없이 §17.3 `summary` 재사용만으로 자동 충족 |
 
 ### 17.10 AC 매핑
 
 | AC | 구현 지점 |
 | --- | --- |
 | AC-23 / AC-48 워치 완료 토글이 폰 대시보드 집계에 반영 | §17.4 `applyIncomingToggle` → `ScheduleService.toggleDone` → `dashboard` store 무효화 |
-| AC-47 워치 오늘 목록 표시(시각순·최소 상세·헤더 카운트) | §17.3 `buildWatchSnapshot.today`(정렬·필드)·`summary` |
+| AC-47 워치 오늘 목록 표시(시각순·최소 상세·헤더 요약) | §17.3 `buildWatchSnapshot.today`(정렬·필드)·`summary`. **v1.17 정정**: 헤더는 "완료/미완료" 개별 카운트가 아니라 "오늘 - {완료}/{전체}" 형식(§17.12), 다음 예정 표시 없음 |
 | AC-49 오프라인 조회 + 보류 큐 | §17.5 "최신 아님" 표시 + 보류 큐 + 재연결 flush |
 | AC-50 오프라인 충돌 LWW | §17.6 `resolveToggleLWW` |
 | AC-51 워치 비범위 동작 차단 | §17.1 — 4종 상호작용만, 그 외 진입점 없음/"폰에서 계속" |
 | AC-52 알림 예약 주체 = 폰 | §17.7 — 워치 무예약, iOS 미러링, off 시 없음 |
-| AC-53 워치 페이로드 범위 | §17.3 오늘 + 다음 1건, 과거/검색 미전송 |
-| AC-54 워치 빈 상태 | §17.9 E-19-5 — 안내만, 추가 버튼 없음 |
+| AC-53 워치 페이로드 범위 | §17.3 오늘 일정만(**v1.17 정정**: 다음 예정 1건 미전송, D-30), 과거/검색 미전송 |
+| AC-54 워치 빈 상태 | §17.9 E-19-5 — 안내만, 추가 버튼 없음. **v1.17 정정**: 헤더 요약은 "오늘 - 0/0"(§17.12, E-19-8) |
 | AC-55 Wear OS 제외 | Android 어댑터 no-op, Wear 모듈 미생성(P-44). overview 영향 범위 |
 | AC-56 워치 컴플리케이션(D-10 결정 시) | §17.8 조건부 섹션 — "포함" 시 "오늘 남은 일정 수" 1종, 탭 시 앱 실행 |
+| AC-91 (v1.17 신규) 워치 헤더 요약 표시 | §17.12 — `NavigationStack`/`.navigationTitle("오늘")` + `.toolbar` 트레일링 "오늘 - {done}/{done+notDone}", 토글 시 즉시 갱신 |
+| AC-92 (v1.17 신규) 워치 다음일정 미표시 및 체크박스 좌측 배치 | §17.12 — "다음 예정" `Section` 제거(P-68), `ScheduleRow` 완료 토글 `HStack` 좌측 배치(P-69) |
 
 ---
 
@@ -2193,8 +2270,8 @@ function resolveToggleLWW(op: WatchToggleOp, schedule: Schedule):
 | `SnapshotStore.swift` | 마지막 `WatchSnapshot` 을 앱 컨테이너(`FileManager` `Application Support`) JSON 파일 1개로 저장/로드. 쓰기 시 `try data.write(to:, options: [.atomic, .completeFileProtection])`. 앱 실행 시 로드 → 오프라인 초기 렌더(E-19-1) |
 | `PendingQueue.swift` | `WatchToggleOp` FIFO 큐를 JSON 파일 1개로 영속(`.completeFileProtection`). `enqueue(op)`(낙관적 토글 시), `remove(opId:)`(ack 수신 시), `all()`(재전송·배지 카운트). 앱 재시작에도 유지(E-19-1) |
 | `LWW.swift` | `resolveToggleLWW(op:schedule:)` 의 **Swift 미러**(§17.6, 3줄 로직). 용도 = 새 스냅샷 수신 시 아직 ack 안 된 보류 op 에 대해 "스냅샷이 이미 반영/추월했는지" 낙관적 판정(폰이 최종 권위 — 워치는 표시 일관성용). `schedule.updatedAt <= op.baseUpdatedAt` → 유지, 그 외 `op.watchChangedAt > schedule.updatedAt` 비교 |
-| `TodayView.swift` | 루트 화면. 요약 헤더(완료/미완료 카운트 = `snapshot.summary`), 다음 예정 1건 행(`snapshot.nextUpcoming`), 오늘 목록(`snapshot.today`, 시작시각 오름차순 = 이미 정렬됨), 빈 상태(`today.isEmpty` → "오늘 일정이 없습니다", **추가 버튼 없음** E-19-5), `isStale` → 목록 흐리게 + "최신 아님" 배지(E-19-1), `pendingCount > 0` → 상단 "동기화 대기" 배지(D-11). `.refreshable { connectivity.requestSnapshot() }`(수동 새로고침 P-43(d)). `snapshot == nil && 페어링만 됨` → `NotConfiguredView`(E-19-2) |
-| `ScheduleRow.swift` | 1행: 제목, 시작 시각(= `Date(timeIntervalSince1970: startAt/1000)` 를 `TimeZone(identifier: item.timeZone)` 로 로컬 포맷 — P-39 "표시 시점에만 변환"), 유형 색 점 + 라벨, `isHighPriority` 표식, 완료 토글 버튼. 탭 시 **낙관적** 로컬 토글(`item.isDone` 반전) + `PendingQueue.enqueue` + `connectivity.sendToggle(op)`. §7.6 지남/미완료 표시 규칙 재현(시작 경과 & 미완료 → 구분 스타일) |
+| `TodayView.swift` | 루트 화면. **(v1.17 개정, §17.12)** `NavigationStack` 로 감싸고 `.navigationTitle("오늘")` + `.toolbar(placement:.topBarTrailing)` 에 헤더 요약 텍스트("오늘 - {완료}/{전체}" = `snapshot.summary` 재계산, P-68) 렌더 — 기존 "완료/미완료" `Section` 헤더와 "다음 예정" `Section`(`snapshot.nextUpcoming`)은 **제거**. 오늘 목록(`snapshot.today`, 시작시각 오름차순 = 이미 정렬됨), 빈 상태(`today.isEmpty` → "오늘 일정이 없습니다", **추가 버튼 없음** E-19-5, 헤더는 "오늘 - 0/0" E-19-8), `isStale` → 목록 흐리게 + "최신 아님" 배지(E-19-1), `pendingCount > 0` → 상단 "동기화 대기" 배지(D-11). `.refreshable { connectivity.requestSnapshot() }`(수동 새로고침 P-43(d)). `snapshot == nil && 페어링만 됨` → `NotConfiguredView`(E-19-2) |
+| `ScheduleRow.swift` | 1행: **(v1.17 개정, P-69, §17.12)** 완료 토글 버튼을 `HStack` **최선두(좌측)** 로 배치, 이어서 유형 색 점, 제목·시작 시각(= `Date(timeIntervalSince1970: startAt/1000)` 를 `TimeZone(identifier: item.timeZone)` 로 로컬 포맷 — P-39 "표시 시점에만 변환")·`isHighPriority` 표식. 탭 시 **낙관적** 로컬 토글(`item.isDone` 반전) + `PendingQueue.enqueue` + `connectivity.sendToggle(op)` — 로직 무변경, 배치 순서만 변경. §7.6 지남/미완료 표시 규칙 재현(시작 경과 & 미완료 → 구분 스타일) |
 | `NotConfiguredView.swift` | E-19-2 — "폰 앱에서 설정을 완료해 주세요" 안내만. 목록·토글 UI 미표시 |
 | `Assets.xcassets` | 워치 앱 아이콘 세트 + AccentColor. 브랜드 오리 로딩 애니메이션 **미포함**(E-17-6 — 워치 표준 로딩) |
 | `AppDelegate.swift` | `WKApplicationDelegate` — `applicationDidBecomeActive` 에서 `connectivity.requestSnapshot()`(D-09 (b) 포그라운드 진입) |
@@ -2279,6 +2356,27 @@ function resolveToggleLWW(op: WatchToggleOp, schedule: Schedule):
 - **의존성 표면**: 워치 타깃은 **서드파티 0** — 시스템 프레임워크만. `npm audit`(§13.6) 대상에 워치 추가분 없음. `react-native-watch-connectivity` 1.x 는 iOS 앱 타깃에만(기존).
 - **신뢰 경계 불변**: 워치→폰 op 은 여전히 `parseToggleOp`(§13.9 정수·UUID 계약) + `WatchSyncService` 재조회·dedup·LWW 를 통과. 워치 앱이 Swift 로 재구현되어도 폰 측 검증 지점은 그대로 — 워치를 신뢰하지 않는다.
 - **잔여 위험**: §13.9 표 그대로(잠금 미설정 워치에서 오늘 제목 열람, LWW 근사 유실 N-12). 신규 위협 없음 — 페이로드 범위·전송 채널·검증 지점 모두 v1.9 와 동일.
+
+---
+
+### 17.12 워치 화면 개정 — 다음일정 제거 · 헤더 요약 표시 · 체크박스 좌측 배치 (F-19, P-68/P-69, E-19-8, AC-91/92, D-30) — v1.17 신설
+
+`알림앱.md` "### 20260913 추가요청" 원문: "워치에서 다음일정 제거" / "워치에서 오늘이라는 타이틀 오른편에 남은일정/오늘일정으로 간단하게 표시(예: 오늘일정 3건중 2건 완료 시 -> 오늘 - 2/3)" / "워치에서 체크박스는 왼쪽에 위치". §17.3(페이로드)·§17.11.3(Swift 파일 레이아웃)의 v1.17 갱신 위에 화면 표시 변경만 정의한다 — **공유 페이로드 계약·`WatchSnapshot`/`WatchScheduleItem` 타입·전송 메커니즘·LWW·보류 큐는 전부 무변경**.
+
+**변경 대상**: `ios/TodayWhatWatch/TodayView.swift`, `ios/TodayWhatWatch/ScheduleRow.swift` 2개 파일뿐.
+
+- **헤더 요약 (P-68, AC-91)**: 루트 뷰를 `NavigationStack` 으로 감싸고 `.navigationTitle("오늘")`을 적용, `.toolbar { ToolbarItem(placement: .topBarTrailing) { Text(headerSummaryText) } }` 로 타이틀 오른쪽에 요약을 렌더한다.
+  - `let done = snapshot?.summary.done ?? 0`, `let total = done + (snapshot?.summary.notDone ?? 0)`, `headerSummaryText = "오늘 - \(done)/\(total)"`.
+  - **신규 필드 없음** — `WatchSnapshot.summary`(기존 `{done, notDone}`)만으로 산출. {완료}=`summary.done`, {전체}=`summary.done + summary.notDone`(오늘 전체 일정 수).
+  - 오늘 일정 0건(E-19-5)이면 `done=0, notDone=0` → `headerSummaryText="오늘 - 0/0"` 이 **분기 없이 자동 산출**된다.
+  - 워치가 폰과 연결 불가해 마지막 스냅샷을 "최신 아님"으로 보여주는 상태(E-19-1)에서도 `headerSummaryText` 는 그 스냅샷의 `summary` 를 그대로 사용한다 — 별도 갱신 시도 없음(E-19-8, 신규 분기 불필요).
+  - 완료 토글 시 `snapshot`(`@Published`)이 갱신되면 `headerSummaryText` 는 SwiftUI 재계산으로 즉시 갱신된다(추가 코드 없음).
+  - 기존 "완료 X / 미완료 Y" `HStack` `Section`(§17.11.3 구 버전)은 **제거**한다 — 헤더 요약이 이를 대체(P-68).
+- **다음일정 제거 (P-68)**: 기존 `if let upcoming = snapshot?.nextUpcoming { Section("다음 예정") { ... } }` 블록을 **완전히 제거**한다. `buildWatchSnapshot` 이 이제 항상 `nextUpcoming: null` 을 반환하므로(§17.3 v1.17 개정) 이 블록은 어차피 항상 스킵되지만, 죽은 코드로 남기지 않고 제거해 AC-92("다음 예정 일정을 별도로 요약하는 영역이 존재하지 않고")를 명시적으로 충족한다.
+- **체크박스 좌측 배치 (P-69, AC-92)**: `ScheduleRow` 의 `HStack` 순서를 `[완료 토글 Button] → [카테고리 색 Circle] → [제목/시각 VStack]` 으로 재배치한다(기존은 `[Circle] → [VStack] → [Spacer] → [Button]`). 나머지 정보 요소(제목·시작 시각·유형·`isHighPriority` 표식)의 상대 순서는 Architect 재량으로 색 점 다음에 그대로 둔다. 토글 로직(`onToggle` 클로저, 낙관적 반전, `PendingQueue.enqueue`, `connectivity.sendToggle`)은 **완전히 무변경**.
+- **AC 매핑**: AC-91(§17.10), AC-92(§17.10).
+- **보안 영향**: 해당 없음 — 이미 페이로드에 있던 `summary` 필드를 재계산해 표시 위치만 바꾸고, 레이아웃 순서 변경은 신규 입력·저장·로그 표면을 만들지 않는다(§13.3/§13.8 갱신 참고).
+- **DB·API 영향**: 없음.
 
 ---
 
@@ -2414,7 +2512,7 @@ create(input):
 
 ### 18.6 UI 개요 (상세는 §16.3.1)
 
-- **신규 작성**: "반복" 섹션 — 주기 세그먼트(없음/매일/매월/매년, D-25(a)) + 종료조건(종료일/종료 없음).
+- **신규 작성**: "반복" 섹션 — 주기 선택 **셀렉트박스**(`SelectField`, v1.17 개정 P-70 — 없음/매일/매월/매년, D-25(a)) + 종료조건(종료일/종료 없음).
 - **삭제(Dashboard 스와이프, ScheduleDetail 삭제 버튼)**: 대상의 `recurrenceParentId !== null` 이면 기존 2-옵션(취소/삭제) 대신 3-옵션 액션시트("취소" / "이 일정만 삭제" / "이후 모두 삭제")로 분기(RN 내장 `Alert.alert`, 신규 의존성 없음).
 - **수정**: 회차 행이면 "반복" 섹션은 읽기 전용 표시 + "반복 설정 변경" 보조 액션(§18.5 후반). 나머지 필드는 일반 편집.
 
