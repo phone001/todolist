@@ -1,8 +1,9 @@
 /**
  * 루트 네비게이터 — Tab(대시보드/캘린더/통계/설정) + Stack(상세/편집/검색/권한).
  * 알림 탭 → payload 재조회 검증 후 상세 이동(logic v1.1 §16.2, §6, 13.3).
- * 탭 아이콘: todo/goal/statistics/settings.png, opacity 활성1/비활성0.4, onError 폴백(logic v1.5 §16.2).
+ * 탭 아이콘: todo/calendar/statistics/settings.png, opacity 활성1/비활성0.4, onError 폴백(logic v1.5 §16.2).
  * v1.12: 세 번째 탭 "검색" → "통계"(F-23) 교체. 전역 검색(F-11)은 Stack 화면으로 이전(D-20(a), P-54).
+ * v1.17: 캘린더 탭 아이콘 goal.png → calendar.png 교체(F-16, P-71, logic §16.2).
  * 환경 제약: react-navigation / react 의존 → 파이프라인 미실행(정적 리뷰).
  */
 import React, { useEffect, useRef, useState } from 'react';
@@ -26,9 +27,10 @@ import { PermissionsScreen } from '../screens/PermissionsScreen.tsx';
 
 // 탭 아이콘 에셋 (logic v1.5 §16.2, P-21: 빌드 타임 번들 포함, 런타임 경로 주입 없음)
 // v1.12: 세 번째 탭 키가 Search → Statistics 로 바뀌었을 뿐, 아이콘 파일 매핑(statistics.png)은 유지(F-16, AC-26).
+// v1.17: 캘린더 탭 아이콘을 goal.png → calendar.png 로 교체(F-16, P-71, logic §16.2).
 const TAB_ICONS = {
   [TAB_ROUTES.Dashboard]: require('../../assets/icons/todo.png') as number,
-  [TAB_ROUTES.Calendar]: require('../../assets/icons/goal.png') as number,
+  [TAB_ROUTES.Calendar]: require('../../assets/icons/calendar.png') as number,
   [TAB_ROUTES.Statistics]: require('../../assets/icons/statistics.png') as number,
   [TAB_ROUTES.Settings]: require('../../assets/icons/settings.png') as number,
 } as const;
