@@ -6,7 +6,7 @@
  *   (overview v1.1 §"조립 지점 리팩터", v1.9 워치 배선, logic §16.1 / §17.2).
  * - `buildApp(options)` — 인메모리/Fake 어댑터로 조립하는 기존 진입점. 후방 호환 유지.
  *
- * 설계 근거: document/architect/overview.md v1.9 "전체 구조", logic.md 0.1, §16.1, §17.
+ * 설계 근거: document/architect/overview.md v1.9 "전체 구조", logic.md 0.1, §16.1, §17, §18(F-24).
  */
 import { SystemClock } from './domain/clock.ts';
 import type { Clock } from './domain/clock.ts';
@@ -31,6 +31,7 @@ import { AuthService } from './services/authService.ts';
 import { CalendarSyncService } from './services/calendarSyncService.ts';
 import { CategoryService } from './services/categoryService.ts';
 import { DashboardService } from './services/dashboardService.ts';
+import { RecurrenceScheduler } from './services/recurrenceScheduler.ts';
 import { ReminderScheduler } from './services/reminderScheduler.ts';
 import { ScheduleService } from './services/scheduleService.ts';
 import { SearchService } from './services/searchService.ts';
@@ -86,6 +87,8 @@ export interface CoreServices {
   logger: Logger;
   schedules: ScheduleService;
   scheduler: ReminderScheduler;
+  /** F-24(v1.9 신규). 반복 회차 실체화(logic §18.3) — 부트스트랩/AppState active 시점에 함께 호출한다. */
+  recurrenceScheduler: RecurrenceScheduler;
   dashboard: DashboardService;
   search: SearchService;
   categories: CategoryService;
@@ -114,6 +117,15 @@ export function assembleServices(ports: CorePorts): CoreServices {
     logger,
   });
 
+  const recurrenceScheduler = new RecurrenceScheduler({
+    clock,
+    uow,
+    schedules: repo.schedules,
+    reminders: repo.reminders,
+    reminderScheduler: scheduler,
+    logger,
+  });
+
   const schedules = new ScheduleService({
     clock,
     uow,
@@ -122,6 +134,7 @@ export function assembleServices(ports: CorePorts): CoreServices {
     categories: repo.categories,
     notifications: ports.notifications,
     scheduler,
+    recurrenceScheduler,
     logger,
   });
 
@@ -155,6 +168,7 @@ export function assembleServices(ports: CorePorts): CoreServices {
     logger,
     schedules,
     scheduler,
+    recurrenceScheduler,
     dashboard,
     search,
     categories,

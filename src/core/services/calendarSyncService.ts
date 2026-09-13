@@ -111,6 +111,7 @@ export class CalendarSyncService {
         recurrenceEndAt: null,
         recurrenceCount: null,
         recurrenceParentId: null,
+        recurrenceReminderOffsets: null,
         source: 'CALENDAR',
         notifyAtStart: false,
         createdAt: now,

@@ -28,7 +28,10 @@ export interface ScheduleRepository {
   softDelete(id: number, at: number): Promise<void>;
   restore(id: number): Promise<Schedule>;
   findById(id: number): Promise<Schedule | null>;
-  /** deleted 제외, [fromTs, toTs) 와 겹치는 일정. 필터/정렬/keyset 페이지네이션. */
+  /**
+   * deleted 제외, [fromTs, toTs) 와 겹치는 일정. 필터/정렬/keyset 페이지네이션.
+   * F-24(v1.8): 반복 마스터 행(`recurrenceRule` NOT NULL)은 항상 제외한다(logic §18.2, database §14.2).
+   */
   findInRange(
     fromTs: number,
     toTs: number,
@@ -37,9 +40,15 @@ export interface ScheduleRepository {
     limit?: number,
     cursor?: string | null,
   ): Promise<Page<Schedule>>;
-  /** 대시보드용: deleted 제외, startAt 이 [dayStart, dayEnd) 인 일정. */
+  /**
+   * 대시보드용: deleted 제외, startAt 이 [dayStart, dayEnd) 인 일정.
+   * F-24(v1.8): 반복 마스터 행은 항상 제외한다(logic §18.2).
+   */
   findForDashboard(dayStart: number, dayEnd: number): Promise<Schedule[]>;
-  /** 제목/메모/유형명 검색. mode 에 따라 어댑터가 FTS 또는 LIKE 를 사용. */
+  /**
+   * 제목/메모/유형명 검색. mode 에 따라 어댑터가 FTS 또는 LIKE 를 사용.
+   * F-24(v1.8): 반복 마스터 행은 항상 제외한다(logic §18.2).
+   */
   search(params: {
     query: string;
     mode: Exclude<SearchMode, 'empty'>;
@@ -48,6 +57,18 @@ export interface ScheduleRepository {
   }): Promise<{ items: Schedule[]; limited: boolean }>;
   /** 카테고리 삭제 시 소속 일정을 fallback 카테고리로 재지정(E-06-2). 재지정 건수 반환. */
   reassignCategory(fromCategoryId: number, toCategoryId: number): Promise<number>;
+  /**
+   * F-24(v1.8 신규, logic §18.2). 반복 마스터 행 전체
+   * (`recurrenceRule IS NOT NULL AND recurrenceParentId IS NULL AND deletedAt IS NULL`).
+   * `RecurrenceScheduler.sync()` 가 회차 실체화 대상을 찾는 데 사용한다.
+   */
+  findRecurringMasters(): Promise<Schedule[]>;
+  /**
+   * F-24(v1.8 신규, logic §18.2). 지정 마스터의 회차 시작 시각 전체
+   * (`recurrenceParentId = masterId`, soft-deleted 포함) — 이미 생성된(또는 "이 일정만" 삭제된)
+   * 회차를 재생성하지 않도록 `RecurrenceScheduler` 가 사용한다.
+   */
+  listOccurrenceStartTimes(masterId: number): Promise<number[]>;
 }
 
 export interface ReminderRepository {

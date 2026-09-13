@@ -1,6 +1,8 @@
 /**
  * 인메모리 저장소 포트 구현. 모든 변경은 원소 교체(immutable)로 수행한다.
  * 설계 근거: document/architect/logic.md 0.1, database.md 3~4, domain/search.ts.
+ * F-24(v1.8): 반복 마스터 행 표시 제외(`recurrenceRule IS NULL`) 필터 + `findRecurringMasters`/
+ * `listOccurrenceStartTimes` (logic §18.2, database §14.2).
  */
 import { AppError, ErrorCodes } from '../../domain/errors.ts';
 import { ftsLikeMatch } from '../../domain/search.ts';
@@ -38,6 +40,9 @@ function matchesFilter(schedule: Schedule, filter?: ScheduleFilter): boolean {
   if (filter.isDone !== undefined && schedule.isDone !== filter.isDone) return false;
   if (filter.fromTs !== undefined && (schedule.endAt ?? schedule.startAt) < filter.fromTs) return false;
   if (filter.toTs !== undefined && schedule.startAt >= filter.toTs) return false;
+  if (filter.recurrenceParentId !== undefined && schedule.recurrenceParentId !== filter.recurrenceParentId) {
+    return false;
+  }
   return true;
 }
 
@@ -135,6 +140,7 @@ export class InMemoryScheduleRepository implements ScheduleRepository {
   ): Promise<Page<Schedule>> {
     const overlapping = this.db.schedules
       .filter((s) => s.deletedAt === null)
+      .filter((s) => s.recurrenceRule === null) // F-24 §18.2: 반복 마스터 행 비표시
       .filter((s) => s.startAt < toTs && (s.endAt ?? s.startAt) >= fromTs)
       .filter((s) => matchesFilter(s, filter))
       .sort((a, b) => compareBySort(a, b, sort));
@@ -158,7 +164,8 @@ export class InMemoryScheduleRepository implements ScheduleRepository {
 
   async findForDashboard(dayStart: number, dayEnd: number): Promise<Schedule[]> {
     return this.db.schedules
-      .filter((s) => s.deletedAt === null && s.startAt >= dayStart && s.startAt < dayEnd)
+      .filter((s) => s.deletedAt === null && s.recurrenceRule === null) // F-24 §18.2
+      .filter((s) => s.startAt >= dayStart && s.startAt < dayEnd)
       .map(clone);
   }
 
@@ -173,6 +180,7 @@ export class InMemoryScheduleRepository implements ScheduleRepository {
 
     const matches = this.db.schedules
       .filter((s) => s.deletedAt === null)
+      .filter((s) => s.recurrenceRule === null) // F-24 §18.2: 반복 마스터 행 비표시
       .filter((s) => matchesFilter(s, params.filter))
       .filter((s) => {
         const haystack = `${s.title} ${s.memo ?? ''} ${categoryNameById.get(s.categoryId) ?? ''}`;
@@ -198,6 +206,18 @@ export class InMemoryScheduleRepository implements ScheduleRepository {
       return s;
     });
     return count;
+  }
+
+  async findRecurringMasters(): Promise<Schedule[]> {
+    return this.db.schedules
+      .filter((s) => s.recurrenceRule !== null && s.recurrenceParentId === null && s.deletedAt === null)
+      .map(clone);
+  }
+
+  async listOccurrenceStartTimes(masterId: number): Promise<number[]> {
+    return this.db.schedules
+      .filter((s) => s.recurrenceParentId === masterId) // soft-deleted 포함(재생성 방지)
+      .map((s) => s.startAt);
   }
 }
 

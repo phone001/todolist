@@ -1,6 +1,7 @@
 /**
  * op-sqlite 저장소 어댑터 6종 (네이티브 바인딩).
  * 설계 근거: document/architect/logic.md v1.1 §16.5, database.md v1.0 §3~4, nfr §1.2 (keyset).
+ *           v1.16 §18.2/§18.3(F-24 반복 마스터/회차 분리), database.md v1.8 §14.1/§14.2.
  * 코어 포트(`src/core/ports/repositories.ts`)를 그대로 구현한다.
  *
  * 환경 제약: `@op-engineering/op-sqlite` 의존 → 현재 파이프라인 미실행(정적 리뷰). 온디바이스 검증.
@@ -78,6 +79,7 @@ function toSchedule(r: Row): Schedule {
     recurrenceEndAt: orNull(r.recurrence_end_at),
     recurrenceCount: orNull(r.recurrence_count),
     recurrenceParentId: orNull(r.recurrence_parent_id),
+    recurrenceReminderOffsets: (r.recurrence_reminder_offsets as string | null) ?? null,
     source: r.source as Schedule['source'],
     notifyAtStart: toBool(r.notify_at_start),
     createdAt: Number(r.created_at),
@@ -129,6 +131,8 @@ function filterParams(filter?: ScheduleFilter): Row {
     fCategoryId: filter?.categoryId ?? null,
     fPriority: filter?.priority ?? null,
     fIsDone: filter?.isDone === undefined ? null : bit(filter.isDone),
+    // F-24(v1.8, logic §18.2): "이후 모두" 삭제·반복 규칙 변경 조회("이 마스터의 활성 회차만").
+    fRecurrenceParentId: filter?.recurrenceParentId ?? null,
   };
 }
 
@@ -138,11 +142,11 @@ const SQL = {
   scheduleInsert:
     'INSERT INTO schedule ' +
     '(title,memo,category_id,priority,start_at,end_at,time_zone,is_all_day,is_done,done_at,' +
-    'recurrence_rule,recurrence_end_at,recurrence_count,recurrence_parent_id,source,notify_at_start,' +
-    'created_at,updated_at,deleted_at) VALUES ' +
+    'recurrence_rule,recurrence_end_at,recurrence_count,recurrence_parent_id,recurrence_reminder_offsets,' +
+    'source,notify_at_start,created_at,updated_at,deleted_at) VALUES ' +
     '(:title,:memo,:categoryId,:priority,:startAt,:endAt,:timeZone,:isAllDay,:isDone,:doneAt,' +
-    ':recurrenceRule,:recurrenceEndAt,:recurrenceCount,:recurrenceParentId,:source,:notifyAtStart,' +
-    ':createdAt,:updatedAt,:deletedAt)',
+    ':recurrenceRule,:recurrenceEndAt,:recurrenceCount,:recurrenceParentId,:recurrenceReminderOffsets,' +
+    ':source,:notifyAtStart,:createdAt,:updatedAt,:deletedAt)',
 
   // 전체 컬럼 UPDATE — 호출부가 병합된 전체 값을 넘긴다(부분 SET 조립 없음).
   scheduleUpdateAll:
@@ -150,7 +154,8 @@ const SQL = {
     'title=:title, memo=:memo, category_id=:categoryId, priority=:priority, start_at=:startAt, end_at=:endAt, ' +
     'time_zone=:timeZone, is_all_day=:isAllDay, is_done=:isDone, done_at=:doneAt, ' +
     'recurrence_rule=:recurrenceRule, recurrence_end_at=:recurrenceEndAt, recurrence_count=:recurrenceCount, ' +
-    'recurrence_parent_id=:recurrenceParentId, source=:source, notify_at_start=:notifyAtStart, ' +
+    'recurrence_parent_id=:recurrenceParentId, recurrence_reminder_offsets=:recurrenceReminderOffsets, ' +
+    'source=:source, notify_at_start=:notifyAtStart, ' +
     'updated_at=:updatedAt, deleted_at=:deletedAt ' +
     'WHERE id=:id AND (:expectedUpdatedAt IS NULL OR updated_at = :expectedUpdatedAt)',
 
@@ -159,46 +164,57 @@ const SQL = {
   scheduleRestore: 'UPDATE schedule SET deleted_at = NULL WHERE id = :id',
   scheduleReassignCategory: 'UPDATE schedule SET category_id = :toId WHERE category_id = :fromId',
 
+  // F-24(v1.8, logic §18.2): 반복 마스터 행(recurrence_rule NOT NULL)은 항상 표시 결과에서 제외한다.
   scheduleForDashboard:
     'SELECT * FROM schedule ' +
-    'WHERE deleted_at IS NULL AND start_at >= :dayStart AND start_at < :dayEnd ' +
+    'WHERE deleted_at IS NULL AND recurrence_rule IS NULL AND start_at >= :dayStart AND start_at < :dayEnd ' +
     'ORDER BY start_at, id',
 
   // 선택 조건을 전부 (:x IS NULL OR ...) 로 정적화. 정렬만 2종.
   scheduleInRangeByStart:
-    'SELECT * FROM schedule WHERE deleted_at IS NULL ' +
+    'SELECT * FROM schedule WHERE deleted_at IS NULL AND recurrence_rule IS NULL ' +
     'AND start_at < :toTs AND coalesce(end_at, start_at) >= :fromTs ' +
     'AND (:fCategoryId IS NULL OR category_id = :fCategoryId) ' +
     'AND (:fPriority IS NULL OR priority = :fPriority) ' +
     'AND (:fIsDone IS NULL OR is_done = :fIsDone) ' +
+    'AND (:fRecurrenceParentId IS NULL OR recurrence_parent_id = :fRecurrenceParentId) ' +
     'AND (:cursorStartAt IS NULL OR start_at > :cursorStartAt OR (start_at = :cursorStartAt AND id > :cursorId)) ' +
     'ORDER BY start_at, id LIMIT :limit',
 
   scheduleInRangeByPriority:
-    'SELECT * FROM schedule WHERE deleted_at IS NULL ' +
+    'SELECT * FROM schedule WHERE deleted_at IS NULL AND recurrence_rule IS NULL ' +
     'AND start_at < :toTs AND coalesce(end_at, start_at) >= :fromTs ' +
     'AND (:fCategoryId IS NULL OR category_id = :fCategoryId) ' +
     'AND (:fPriority IS NULL OR priority = :fPriority) ' +
     'AND (:fIsDone IS NULL OR is_done = :fIsDone) ' +
+    'AND (:fRecurrenceParentId IS NULL OR recurrence_parent_id = :fRecurrenceParentId) ' +
     'AND (:cursorStartAt IS NULL OR start_at > :cursorStartAt OR (start_at = :cursorStartAt AND id > :cursorId)) ' +
     "ORDER BY CASE priority WHEN 'HIGH' THEN 0 WHEN 'NORMAL' THEN 1 ELSE 2 END, start_at, id LIMIT :limit",
 
+  // F-24(v1.8, logic §18.2): 반복 마스터 행은 검색 결과에서도 제외한다.
   searchFts:
     'SELECT s.* FROM schedule_fts f JOIN schedule s ON s.id = f.rowid ' +
-    'WHERE schedule_fts MATCH :match AND s.deleted_at IS NULL ' +
+    'WHERE schedule_fts MATCH :match AND s.deleted_at IS NULL AND s.recurrence_rule IS NULL ' +
     'AND (:fCategoryId IS NULL OR s.category_id = :fCategoryId) ' +
     'AND (:fPriority IS NULL OR s.priority = :fPriority) ' +
     'AND (:fIsDone IS NULL OR s.is_done = :fIsDone) ' +
     'ORDER BY rank LIMIT :limit',
 
   searchLike:
-    'SELECT s.* FROM schedule s WHERE s.deleted_at IS NULL AND (' +
+    'SELECT s.* FROM schedule s WHERE s.deleted_at IS NULL AND s.recurrence_rule IS NULL AND (' +
     "s.title LIKE :like ESCAPE '\\' OR coalesce(s.memo,'') LIKE :like ESCAPE '\\' " +
     "OR EXISTS (SELECT 1 FROM category c WHERE c.id = s.category_id AND c.name LIKE :like ESCAPE '\\')" +
     ') AND (:fCategoryId IS NULL OR s.category_id = :fCategoryId) ' +
     'AND (:fPriority IS NULL OR s.priority = :fPriority) ' +
     'AND (:fIsDone IS NULL OR s.is_done = :fIsDone) ' +
     'ORDER BY s.start_at DESC, s.id DESC LIMIT :limit',
+
+  // F-24(v1.8, logic §18.2/§18.3 — RecurrenceScheduler 회차 실체화 대상 조회).
+  scheduleRecurringMasters:
+    'SELECT * FROM schedule ' +
+    'WHERE recurrence_rule IS NOT NULL AND recurrence_parent_id IS NULL AND deleted_at IS NULL',
+  // soft-deleted 포함 전체 조회 — 이미 다뤄본(또는 "이 일정만" 삭제된) 회차를 재생성하지 않기 위함.
+  scheduleOccurrenceStartTimes: 'SELECT start_at FROM schedule WHERE recurrence_parent_id = :masterId',
 
   reminderInsert:
     'INSERT INTO reminder (schedule_id, offset_minutes, kind, trigger_at, state, created_at, updated_at) ' +
@@ -273,6 +289,7 @@ function scheduleWriteParams(data: NewSchedule): Row {
     recurrenceEndAt: data.recurrenceEndAt,
     recurrenceCount: data.recurrenceCount,
     recurrenceParentId: data.recurrenceParentId,
+    recurrenceReminderOffsets: data.recurrenceReminderOffsets,
     source: data.source,
     notifyAtStart: bit(data.notifyAtStart),
     createdAt: data.createdAt,
@@ -378,6 +395,16 @@ export class SqliteScheduleRepository implements ScheduleRepository {
   async reassignCategory(fromCategoryId: number, toCategoryId: number): Promise<number> {
     const res = await run(this.db, SQL.scheduleReassignCategory, { fromId: fromCategoryId, toId: toCategoryId });
     return res.rowsAffected;
+  }
+
+  async findRecurringMasters(): Promise<Schedule[]> {
+    const rows = await all(this.db, SQL.scheduleRecurringMasters, {});
+    return rows.map(toSchedule);
+  }
+
+  async listOccurrenceStartTimes(masterId: number): Promise<number[]> {
+    const rows = await all(this.db, SQL.scheduleOccurrenceStartTimes, { masterId });
+    return rows.map((r) => Number(r.start_at));
   }
 }
 

@@ -84,7 +84,22 @@ export class InMemoryDb implements UnitOfWork {
 
 const NOW_ZERO = 0;
 
-/** database.md 7장의 초기 데이터에 대응하는 시드. */
+/**
+ * F-06 기본 유형 4종 시딩(v1.9, P-65, E-06-8, D-27, database.md §14.3 마이그레이션 002 대응).
+ * "기타"(보호 대상, IS_SYSTEM=1) 외 "공부"/"취미"/"업무"(IS_SYSTEM=0, 일반 유형과 동일 취급)를
+ * `CATEGORY_COLOR_PALETTE[0..2]` 고정 색상으로 idempotent 시딩한다(대소문자·앞뒤공백 무시 중복 방지).
+ */
+const DEFAULT_SEED_CATEGORIES: ReadonlyArray<{ name: string; color: string; sortOrder: number }> = [
+  { name: '공부', color: '#00897B', sortOrder: 101 },
+  { name: '취미', color: '#00ACC1', sortOrder: 102 },
+  { name: '업무', color: '#039BE5', sortOrder: 103 },
+];
+
+function normalizeName(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+/** database.md 7장(마이그레이션 001)의 초기 데이터 + §14.3(마이그레이션 002)의 기본 유형 4종 시딩. */
 export function seedDefaults(db: InMemoryDb, now: number = NOW_ZERO): void {
   if (!db.categories.some((c) => c.isSystem)) {
     db.seq.category += 1;
@@ -95,6 +110,21 @@ export function seedDefaults(db: InMemoryDb, now: number = NOW_ZERO): void {
       icon: 'dots',
       isSystem: true,
       sortOrder: 100,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+  for (const seed of DEFAULT_SEED_CATEGORIES) {
+    const exists = db.categories.some((c) => normalizeName(c.name) === normalizeName(seed.name));
+    if (exists) continue;
+    db.seq.category += 1;
+    db.categories.push({
+      id: db.seq.category,
+      name: seed.name,
+      color: seed.color,
+      icon: null,
+      isSystem: false,
+      sortOrder: seed.sortOrder,
       createdAt: now,
       updatedAt: now,
     });

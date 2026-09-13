@@ -75,6 +75,13 @@ export interface Schedule {
   recurrenceEndAt: number | null;
   recurrenceCount: number | null;
   recurrenceParentId: number | null;
+  /**
+   * F-24(v1.8 신규, `database.md` §14.1). 반복 **마스터 행**(`recurrenceRule` NOT NULL,
+   * `recurrenceParentId` NULL)에만 채워지는 사전 알림 오프셋 템플릿(JSON 배열 문자열, 예: `'[10,60]'`).
+   * 회차 행·비반복 일정은 항상 null — 회차 실체화(`RecurrenceScheduler`) 시 이 값을 파싱해
+   * 각 회차의 `REMINDER` 행을 재구성한다(logic.md §18.2/§18.3).
+   */
+  recurrenceReminderOffsets: string | null;
   source: ScheduleSource;
   notifyAtStart: boolean;
   createdAt: number;
@@ -121,6 +128,11 @@ export interface ScheduleFilter {
   isDone?: boolean;
   fromTs?: number;
   toTs?: number;
+  /**
+   * F-24(v1.8 신규, logic.md §18.2). 지정 시 이 마스터 id 의 활성 회차만 조회한다
+   * ("이후 모두" 삭제·반복 규칙 변경 시 사용, `ScheduleService.deleteRecurrenceFollowing`/`updateRecurrenceRule`).
+   */
+  recurrenceParentId?: number;
 }
 
 export type ScheduleSort = 'startAt' | 'priority';

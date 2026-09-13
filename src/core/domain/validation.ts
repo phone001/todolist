@@ -1,7 +1,7 @@
 /**
  * 일정 입력 검증 (순수 함수). 저장소 접근 없음 — 저장 이전에 호출된다.
  * 설계 근거: document/architect/logic.md 1 (ScheduleService.create), 정책 P-10/D-05.
- * AC-02, AC-03, V-4.
+ * AC-02, AC-03, V-4. F-24(v1.9): 반복 종료일 < 시작일 검증(E-24-2, AC-83, logic §18.7).
  */
 import { AppError, ErrorCodes, ValidationError } from './errors.ts';
 import type { RecurrenceRule } from './types.ts';
@@ -121,6 +121,22 @@ export function collectScheduleInputErrors(input: ScheduleInput): AppError[] {
         new AppError(
           ErrorCodes.VALIDATION_RECURRENCE_COUNT_INVALID,
           '반복 횟수는 1 이상의 정수여야 합니다.',
+          'recurrence',
+        ),
+      );
+    }
+    // E-24-2 / AC-83: 반복 종료일은 시작 일시보다 이전일 수 없다.
+    if (
+      r.endAt !== undefined &&
+      r.endAt !== null &&
+      Number.isInteger(r.endAt) &&
+      startValid &&
+      (r.endAt as number) < (input.startAt as number)
+    ) {
+      errors.push(
+        new AppError(
+          ErrorCodes.VALIDATION_RECURRENCE_END_BEFORE_START,
+          '반복 종료일은 시작 일시보다 빠를 수 없습니다.',
           'recurrence',
         ),
       );

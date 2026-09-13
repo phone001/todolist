@@ -1,6 +1,7 @@
 /**
  * 스키마 마이그레이션 정의 (순수 데이터).
- * 설계 근거: document/architect/database.md v1.0 §6 (DDL 001_init), §7 (초기 데이터).
+ * 설계 근거: document/architect/database.md v1.0 §6 (DDL 001_init), §7 (초기 데이터),
+ *           v1.8 §14.1(마이그레이션 003, F-24)/§14.3(마이그레이션 002, F-06).
  * 코어 `runMigrations(db, MIGRATIONS)` 가 순서대로 적용한다(logic §12, §16.4, AC-24).
  *
  * SQL 은 database.md 의 DDL 을 그대로 옮긴 것이며, 상수로만 존재한다(실 DB 변경 아님).
@@ -134,8 +135,42 @@ INSERT INTO app_setting (key, value, updated_at)
 VALUES ('notif.showTitle', 'true', 1756944000000);
 `.trim();
 
+/**
+ * F-06 기본 유형 4종 시딩 (database.md v1.8 §14.3, P-65, E-06-8, D-27).
+ * "기타"(마이그레이션 001, IS_SYSTEM=1)와 별도로 "공부"/"취미"/"업무"를 IS_SYSTEM=0 으로 추가한다.
+ * `WHERE NOT EXISTS(... lower(trim(name)) = lower(X))` 로 대소문자·앞뒤공백 무시 idempotent 시딩 —
+ * 이미 동일 이름의 사용자 정의 유형이 있으면 새로 만들지 않는다. 색상은 `CATEGORY_COLOR_PALETTE[0..2]`
+ * (`src/core/domain/categoryColor.ts`)를 그대로 하드코딩(마이그레이션은 순수 SQL이라 TS 함수 호출 불가).
+ * 신규 설치자·기존 사용자 모두 버전 기반 마이그레이션 러너로 동일하게 적용된다.
+ */
+const SEED_DEFAULT_CATEGORIES_UP = `
+INSERT INTO category (name, color, icon, is_system, sort_order, created_at, updated_at)
+SELECT '공부', '#00897B', NULL, 0, 101, (CAST(strftime('%s','now') AS INTEGER) * 1000), (CAST(strftime('%s','now') AS INTEGER) * 1000)
+WHERE NOT EXISTS (SELECT 1 FROM category WHERE lower(trim(name)) = lower('공부'));
+
+INSERT INTO category (name, color, icon, is_system, sort_order, created_at, updated_at)
+SELECT '취미', '#00ACC1', NULL, 0, 102, (CAST(strftime('%s','now') AS INTEGER) * 1000), (CAST(strftime('%s','now') AS INTEGER) * 1000)
+WHERE NOT EXISTS (SELECT 1 FROM category WHERE lower(trim(name)) = lower('취미'));
+
+INSERT INTO category (name, color, icon, is_system, sort_order, created_at, updated_at)
+SELECT '업무', '#039BE5', NULL, 0, 103, (CAST(strftime('%s','now') AS INTEGER) * 1000), (CAST(strftime('%s','now') AS INTEGER) * 1000)
+WHERE NOT EXISTS (SELECT 1 FROM category WHERE lower(trim(name)) = lower('업무'));
+`.trim();
+
+/**
+ * F-24 반복 일정 — 사전 알림 오프셋 템플릿 컬럼 (database.md v1.8 §14.1).
+ * 반복 마스터 행(`recurrence_rule` NOT NULL, `recurrence_parent_id` NULL)에만 값(JSON 배열 문자열,
+ * 예: '[10,60]')을 채운다. 회차 행·비반복 일정은 항상 NULL(앱 검증). 마스터 행은 REMINDER 행을 직접
+ * 갖지 않으므로, 회차 실체화(`RecurrenceScheduler`) 시 이 컬럼을 읽어 각 회차의 REMINDER 를 재구성한다.
+ */
+const ADD_RECURRENCE_REMINDER_OFFSETS_UP = `
+ALTER TABLE schedule ADD COLUMN recurrence_reminder_offsets TEXT;
+`.trim();
+
 export const MIGRATIONS: readonly Migration[] = [
   { version: 1, name: '001_init', up: INIT_UP },
+  { version: 2, name: '002_seed_default_categories', up: SEED_DEFAULT_CATEGORIES_UP },
+  { version: 3, name: '003_recurrence_reminder_offsets', up: ADD_RECURRENCE_REMINDER_OFFSETS_UP },
 ] as const;
 
 /** 최신 스키마 버전 (부트스트랩이 user_version 과 비교). */

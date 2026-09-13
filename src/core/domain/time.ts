@@ -89,6 +89,17 @@ export function localWallToEpoch(
   return candidate;
 }
 
+/**
+ * F-26(v1.9 신규, P-67, D-29, logic §7.6). `dateTs` 의 연/월/일 + `timeOfDayTs` 의 시/분을
+ * 결합해 새 epoch ms 를 만든다. 캘린더 "+" 버튼(선택 날짜 + 현재 시각) / 대시보드 FAB(구 OI-19,
+ * 기준 날짜 + 현재 시각) 프리필 공통 계산에 사용한다 — 두 시각의 성분을 조합하는 얇은 래퍼.
+ */
+export function combineDateWithTimeOfDay(dateTs: number, timeOfDayTs: number, timeZone: string): number {
+  const datePart = wallParts(dateTs, timeZone);
+  const timePart = wallParts(timeOfDayTs, timeZone);
+  return localWallToEpoch(datePart.year, datePart.month, datePart.day, timePart.hour, timePart.minute, timeZone);
+}
+
 /** 단순 반복(D-05)에서 다음 발생 시각. */
 export function advanceByRule(
   ts: number,

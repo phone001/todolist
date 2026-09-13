@@ -1,7 +1,7 @@
 /**
  * RN용 Composition Root (네이티브 바인딩).
  * 설계 근거: document/architect/overview.md v1.1 "조립 지점 리팩터", logic.md v1.1 §16.1/§16.4,
- *           v1.9 워치 배선 (overview §"전체 구조", logic §17.2).
+ *           v1.9 워치 배선 (overview §"전체 구조", logic §17.2), v1.9 F-24 반복 회차 실체화(logic §18.3).
  * 환경 제약: 네이티브 어댑터 import → 파이프라인 미실행(정적 리뷰). 온디바이스 검증.
  *
  * bootstrapSequence 의 BootstrapSteps 구현을 제공한다.
@@ -83,6 +83,9 @@ export function createPostRenderSteps(): PostRenderSteps {
   return {
     async syncReminders(services) {
       await services.scheduler.sync();
+      // F-24(v1.9, logic §18.3): 알림 재조정 직후 반복 회차를 horizon 내로 실체화(콜드 스타트/재부팅).
+      // 실패는 이 단계 자체가 이미 runPostRender 에서 격리되므로 별도 try/catch 불필요.
+      await services.recurrenceScheduler.sync();
     },
     async ensureFreshToken(services) {
       const account = await services.auth.getStatus();
