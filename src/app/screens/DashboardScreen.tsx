@@ -274,6 +274,25 @@ export function DashboardScreen() {
     }, [load, clearStale, runRollover]),
   );
 
+  // RECUR-01 후속(logic §18.3/§16.4): 콜드 스타트 부트스트랩 완료(reminderScheduler.sync +
+  // recurrenceScheduler.sync)가 이 화면이 이미 마운트·포커스된 상태에서 뒤늦게 무효화를 일으킬 수 있다.
+  // useFocusEffect 는 포커스 "복귀" 시점에만 stale 을 검사하므로, 포커스가 유지되는 동안 발생하는
+  // 무효화는 별도 라이브 구독으로 즉시 감지해야 한다. 비포커스 상태는 위 useFocusEffect 경로가 처리하므로
+  // 여기서는 navigation.isFocused() 로 "현재 포커스됨"일 때만 반응한다(cleanup 으로 구독 해제).
+  useEffect(() => {
+    const unsubscribe = useShellStore.subscribe((state, prev) => {
+      if (!navigation.isFocused()) return;
+      const becameStale =
+        (state.stale.dashboard && !prev.stale.dashboard) ||
+        (state.stale.list && !prev.stale.list);
+      if (!becameStale) return;
+      clearStale('list');
+      clearStale('dashboard');
+      void load();
+    });
+    return unsubscribe;
+  }, [navigation, clearStale, load]);
+
   // D-12: 형제 탭으로 전환(대시보드 탭 blur) 시 기준 날짜·검색 상태를 리셋한다.
   // ScheduleDetail / ScheduleEditor 로의 Stack push 는 부모 스택의 포커스 라우트로 구분해 제외한다(logic §16.3.7).
   useEffect(() => {
