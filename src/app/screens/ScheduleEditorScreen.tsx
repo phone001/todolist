@@ -14,6 +14,11 @@
  *   - startAt: number (epoch ms) 단일 상태
  *   - endAt: number | null (epoch ms), Switch 토글로 활성화
  *   - localWallToEpoch 저장 경로 사용 제거 (함수·V-26 테스트 유지)
+ *
+ * v1.17 변경(F-06/F-07/F-08/F-24, logic §16.3.1 "선택형 필드 셀렉트박스화", P-70, D-31):
+ *   중요도·유형·반복(신규 작성 + "반복 설정 변경")·사전 알림 4개 필드의 입력 위젯을 각각
+ *   `SelectField`(단일 선택)/`MultiSelectField`(다중 선택)로 교체한다. 값 도메인·상태·검증·
+ *   서비스 계약은 전혀 변경하지 않는다 — 위젯 종류만 바뀐다.
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import {
@@ -37,6 +42,8 @@ import { ValidationError, AppError } from '../../core/domain/errors.ts';
 import type { Category, Priority, RecurrenceRule } from '../../core/domain/types.ts';
 import type { RootStackParamList } from '../navigation/routes.ts';
 import { REMINDER_OFFSET_PRESETS } from '../../core/domain/reminders.ts';
+import { SelectField } from '../components/SelectField.tsx';
+import { MultiSelectField } from '../components/MultiSelectField.tsx';
 
 const PRIORITY_OPTIONS: Array<{ value: Priority; label: string }> = [
   { value: 'LOW', label: '낮음' },
@@ -51,10 +58,6 @@ const RECURRENCE_RULE_OPTIONS: Array<{ value: RecurrenceRule | null; label: stri
   { value: 'MONTHLY', label: '매월' },
   { value: 'YEARLY', label: '매년' },
 ];
-
-function recurrenceRuleLabel(rule: RecurrenceRule | null): string {
-  return RECURRENCE_RULE_OPTIONS.find((o) => o.value === rule)?.label ?? '없음';
-}
 
 function parseJson<T>(raw: string | null, fallback: T): T {
   if (raw === null) return fallback;
@@ -216,13 +219,6 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
     // F-08 §6.1: 기존 사전 알림 프리셋 선택 상태를 프리필(조회 실패 시 빈 배열 — 안전한 저하).
     schedules.getReminderOffsets(editingId).then(setReminderOffsets);
   }, [editingId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  /** F-08 §6.1: 프리셋 체크박스/칩 토글. 전역 알림이 off 면 화면에서 비활성 표시하므로 호출되지 않는다. */
-  const toggleReminderOffset = useCallback((minutes: number) => {
-    setReminderOffsets((prev) =>
-      prev.includes(minutes) ? prev.filter((m) => m !== minutes) : [...prev, minutes].sort((a, b) => a - b),
-    );
-  }, []);
 
   // ── 오류 헬퍼 ─────────────────────────────────────────────────────────────
   function clearErrors() {
@@ -577,97 +573,35 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
         <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.memo}</Text>
       ) : null}
 
-      {/* 중요도 */}
+      {/* 중요도 (v1.17: 셀렉트박스, §16.3.1) */}
       <Text style={{ fontWeight: 'bold', marginTop: 8 }}>중요도</Text>
-      <View
-        style={{
-          flexDirection: 'row',
-          borderWidth: 1,
-          borderColor: '#ddd',
-          borderRadius: 6,
-          overflow: 'hidden',
-          marginTop: 4,
-        }}
-      >
-        {PRIORITY_OPTIONS.map((o, i) => {
-          const active = o.value === priority;
-          return (
-            <Pressable
-              key={o.value}
-              onPress={() => setPriority(o.value)}
-              style={{
-                flex: 1,
-                paddingVertical: 10,
-                alignItems: 'center',
-                backgroundColor: active ? '#007AFF' : '#fff',
-                borderLeftWidth: i === 0 ? 0 : 1,
-                borderLeftColor: '#ddd',
-              }}
-            >
-              <Text style={{ color: active ? '#fff' : '#333' }}>{o.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <SelectField<Priority>
+        label="중요도"
+        value={priority}
+        options={PRIORITY_OPTIONS}
+        onChange={setPriority}
+      />
 
-      {/* 유형 */}
+      {/* 유형 (v1.17: 셀렉트박스, §16.3.1) */}
       <Text style={{ fontWeight: 'bold', marginTop: 8 }}>유형</Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-        {cats.map((c) => {
-          // 미선택 상태에서는 시스템 기본 유형("기타")이 저장 시 적용되므로 그것을 활성 표시
-          const active = categoryId === undefined ? c.isSystem : c.id === categoryId;
-          return (
-            <Pressable
-              key={c.id}
-              onPress={() => setCategoryId(c.id)}
-              style={{
-                paddingVertical: 6,
-                paddingHorizontal: 12,
-                borderRadius: 16,
-                backgroundColor: active ? '#007AFF' : '#f0f0f0',
-              }}
-            >
-              <Text style={{ color: active ? '#fff' : '#333' }}>{c.name}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <SelectField<number | undefined>
+        label="유형"
+        value={categoryId}
+        options={cats.map((c) => ({ value: c.id, label: c.name }))}
+        onChange={setCategoryId}
+      />
 
-      {/* 반복(F-24, v1.9, §16.3.1/§18.6) */}
+      {/* 반복(F-24, v1.9, §16.3.1/§18.6 — v1.17: 셀렉트박스) */}
       <Text style={{ fontWeight: 'bold', marginTop: 8 }}>반복</Text>
       {editingId === undefined ? (
-        // 신규 생성 경로만 — 규칙 세그먼트 + 종료조건
+        // 신규 생성 경로만 — 규칙 셀렉트박스 + 종료조건
         <>
-          <View
-            style={{
-              flexDirection: 'row',
-              borderWidth: 1,
-              borderColor: '#ddd',
-              borderRadius: 6,
-              overflow: 'hidden',
-              marginTop: 4,
-            }}
-          >
-            {RECURRENCE_RULE_OPTIONS.map((o, i) => {
-              const active = o.value === recurrenceRule;
-              return (
-                <Pressable
-                  key={String(o.value)}
-                  onPress={() => setRecurrenceRule(o.value)}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    alignItems: 'center',
-                    backgroundColor: active ? '#007AFF' : '#fff',
-                    borderLeftWidth: i === 0 ? 0 : 1,
-                    borderLeftColor: '#ddd',
-                  }}
-                >
-                  <Text style={{ color: active ? '#fff' : '#333' }}>{o.label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <SelectField<RecurrenceRule | null>
+            label="반복"
+            value={recurrenceRule}
+            options={RECURRENCE_RULE_OPTIONS}
+            onChange={setRecurrenceRule}
+          />
           {recurrenceRule !== null ? (
             <View style={{ marginTop: 8, gap: 8 }}>
               <View
@@ -715,35 +649,12 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
           </Pressable>
           {showRecurrenceRuleEditor ? (
             <View style={{ gap: 8, borderWidth: 1, borderColor: '#eee', borderRadius: 8, padding: 12 }}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  borderWidth: 1,
-                  borderColor: '#ddd',
-                  borderRadius: 6,
-                  overflow: 'hidden',
-                }}
-              >
-                {RECURRENCE_RULE_OPTIONS.filter((o) => o.value !== null).map((o, i) => {
-                  const active = o.value === recurrenceRule;
-                  return (
-                    <Pressable
-                      key={String(o.value)}
-                      onPress={() => setRecurrenceRule(o.value)}
-                      style={{
-                        flex: 1,
-                        paddingVertical: 10,
-                        alignItems: 'center',
-                        backgroundColor: active ? '#007AFF' : '#fff',
-                        borderLeftWidth: i === 0 ? 0 : 1,
-                        borderLeftColor: '#ddd',
-                      }}
-                    >
-                      <Text style={{ color: active ? '#fff' : '#333' }}>{o.label}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              <SelectField<RecurrenceRule | null>
+                label="반복"
+                value={recurrenceRule}
+                options={RECURRENCE_RULE_OPTIONS.filter((o) => o.value !== null)}
+                onChange={setRecurrenceRule}
+              />
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={{ fontSize: 13, color: '#555' }}>종료 없음(무기한)</Text>
                 <Switch value={recurrenceEndless} onValueChange={setRecurrenceEndless} />
@@ -768,7 +679,7 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
           ) : null}
         </View>
       ) : (
-        <Text style={{ fontSize: 13, color: '#999', marginTop: 4 }}>{recurrenceRuleLabel(null)}</Text>
+        <Text style={{ fontSize: 13, color: '#999', marginTop: 4 }}>없음</Text>
       )}
 
       {/* 알림 여부 */}
@@ -793,34 +704,18 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
         </Text>
       ) : null}
 
-      {/* 사전 알림 프리셋(F-08 §6.1, D-24 — 자유 입력 없음) — 다중 선택 칩. 전역 알림 off 면 비활성 표시 */}
+      {/* 사전 알림 프리셋(F-08 §6.1, D-24 — 자유 입력 없음 / v1.17: 셀렉트박스, D-31(a)).
+          전역 알림 off 면 비활성 표시 */}
       <Text style={{ fontWeight: 'bold', marginTop: 8, color: notifGloballyOn ? '#111' : '#aaa' }}>
         사전 알림
       </Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-        {REMINDER_OFFSET_PRESETS.map((preset) => {
-          const active = notifGloballyOn && reminderOffsets.includes(preset.minutes);
-          return (
-            <Pressable
-              key={preset.minutes}
-              disabled={!notifGloballyOn}
-              onPress={() => toggleReminderOffset(preset.minutes)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: active, disabled: !notifGloballyOn }}
-              accessibilityLabel={preset.label}
-              style={{
-                paddingVertical: 6,
-                paddingHorizontal: 12,
-                borderRadius: 16,
-                backgroundColor: active ? '#007AFF' : '#f0f0f0',
-                opacity: notifGloballyOn ? 1 : 0.5,
-              }}
-            >
-              <Text style={{ color: active ? '#fff' : '#333' }}>{preset.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <MultiSelectField
+        label="사전 알림"
+        values={reminderOffsets}
+        options={REMINDER_OFFSET_PRESETS.map((p) => ({ value: p.minutes, label: p.label }))}
+        onChange={setReminderOffsets}
+        disabled={!notifGloballyOn}
+      />
 
       {/* 저장 버튼 */}
       <View style={{ marginTop: 16 }}>
