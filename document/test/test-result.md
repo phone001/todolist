@@ -3,16 +3,18 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 검증 결과 (기능 테스트 + 코드 리뷰 + 보안 점검) |
-| 버전 | v1.23 |
-| 대상 | (v1.0) `src/core/**` · (v1.1~1.2) `src/app/**` · (v1.5) op-sqlite 6.2.11→9.3.0 상향 + iOS 온디바이스 빌드/실행 검증 · (v1.6) ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1) · (v1.7) 애플워치 워치 타깃 추가 (F-19, AC-23·AC-47~AC-56) · (v1.10) 대시보드("오늘" 탭) 개선 (F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색, AC-57~AC-66) · (v1.11) 대시보드 개선 **재확정 방향** (F-20 컴팩트 / F-21 진행률 한 줄 / F-22 접이식 검색, AC-57~AC-68, E-21-4·E-22-6·E-22-7) · (v1.12) 세 번째 탭 "검색"→"통계" 교체 + 통계 화면(F-23) (AC-69~AC-76, E-23-1~E-23-5, R-23-1~R-23-4) · (v1.13) 통계 화면(F-23) 하단 "유형별 월별 할 일 건수" 그래프 막대(bar)→선(line) 교체 — 프레젠테이션 한정 델타 (AC-71~AC-75, E-23-1~E-23-5, R-23-1~R-23-4, nfr V-46~V-49 무변경) · (v1.14) F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수 (logic §17.11, nfr §11.1·§14, AC-47~AC-56·E-19-1~7) · (v1.15) F-19 watchOS 네이티브 앱 재검증(실기 시뮬레이터 데모 포함, v1.14 허위 기록 정정) · (v1.16) F-23 통계 화면 유형별 꺾은선 그래프 — iOS 시뮬레이터 실기동 시각 검증 · (v1.17) F-06 유형 색상 자동 배정 / F-07 우선순위 색상 정책 / F-08 사전 알림 프리셋 선택 / F-10 대시보드 리스트 우선순위·유형 표시 (AC-77~AC-81) · (v1.18) 사용자 요청("빌드후 휴대폰과 워치 시뮬레이터를 띄워줘") — iOS+watchOS 동시 빌드 및 두 시뮬레이터 부팅·앱 설치·실행 재검증(신규 요구사항 없음, v1.17 변경분 그대로) · (v1.19) `알림앱.md` "추가기능" 미착수 5개 항목(F-24 반복 일정 신규 / F-10 개정 완료 시 하단 이동 / F-06 개정 기본 유형 4종 시딩 / F-25 완료된 일정 숨기기 신규 / F-26 캘린더 날짜 프리필 신규) — **FAIL**(High 1건: F-24 `RecurrenceScheduler`의 `AppState 'active'` 트리거 누락) · (v1.20) RECUR-01 Bug Fix 재검증 — `App.tsx`의 `AppState 'active'` 핸들러에 `recurrenceScheduler.sync()` 병행 호출 추가 + 콜드 스타트 초기렌더 경합 해소(부트스트랩 완료 후 `invalidate` + `DashboardScreen` 라이브 스토어 구독) — **PASS** · (v1.21) RECUR-01 확인성 재검증(코드 무변경) — **PASS** · (v1.22) 실행환경 재확인 — iOS 시뮬레이터 재시작 + Metro 선기동 순서로 "No bundle URL present" 미재현 확인 + F-06/F-07/F-10/F-24/F-25/RECUR-01 iOS 실기동 시각 재확인(F-08/F-26은 코드 무변경으로 이전 판정 유지) — **PASS** · (v1.23) `알림앱.md` "### 20260913 추가요청" 5개 항목 — F-19 개정(워치 다음일정 제거·헤더 요약 "오늘 - M/N"·체크박스 좌측 배치) / F-06·F-07·F-08·F-24 개정(중요도·유형·반복·사전알림 셀렉트박스화) / F-16 개정(캘린더 탭 아이콘 calendar.png) — **PASS** |
-| 근거 | `document/planner/plan.md` v1.10 §5.19(P-68~P-71)·AC-91~AC-94·D-30~D-31, `document/architect/{overview.md v1.17, logic.md v1.17 §16.2·§16.3.1·§17.3·§17.12, database.md v1.8(무변경), nfr.md v1.15 §14.3/§14.5/§9 V-58~V-60}` |
+| 버전 | v1.26 |
+| 대상 | (v1.0) `src/core/**` · (v1.1~1.2) `src/app/**` · (v1.5) op-sqlite 6.2.11→9.3.0 상향 + iOS 온디바이스 빌드/실행 검증 · (v1.6) ScheduleEditor 진입점 추가 (F-01/F-03, AC-15, E-10-1) · (v1.7) 애플워치 워치 타깃 추가 (F-19, AC-23·AC-47~AC-56) · (v1.10) 대시보드("오늘" 탭) 개선 (F-20 날짜 탐색 / F-21 개수 카드 / F-22 날짜별 인라인 검색, AC-57~AC-66) · (v1.11) 대시보드 개선 **재확정 방향** (F-20 컴팩트 / F-21 진행률 한 줄 / F-22 접이식 검색, AC-57~AC-68, E-21-4·E-22-6·E-22-7) · (v1.12) 세 번째 탭 "검색"→"통계" 교체 + 통계 화면(F-23) (AC-69~AC-76, E-23-1~E-23-5, R-23-1~R-23-4) · (v1.13) 통계 화면(F-23) 하단 "유형별 월별 할 일 건수" 그래프 막대(bar)→선(line) 교체 — 프레젠테이션 한정 델타 (AC-71~AC-75, E-23-1~E-23-5, R-23-1~R-23-4, nfr V-46~V-49 무변경) · (v1.14) F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수 (logic §17.11, nfr §11.1·§14, AC-47~AC-56·E-19-1~7) · (v1.15) F-19 watchOS 네이티브 앱 재검증(실기 시뮬레이터 데모 포함, v1.14 허위 기록 정정) · (v1.16) F-23 통계 화면 유형별 꺾은선 그래프 — iOS 시뮬레이터 실기동 시각 검증 · (v1.17) F-06 유형 색상 자동 배정 / F-07 우선순위 색상 정책 / F-08 사전 알림 프리셋 선택 / F-10 대시보드 리스트 우선순위·유형 표시 (AC-77~AC-81) · (v1.18) 사용자 요청("빌드후 휴대폰과 워치 시뮬레이터를 띄워줘") — iOS+watchOS 동시 빌드 및 두 시뮬레이터 부팅·앱 설치·실행 재검증(신규 요구사항 없음, v1.17 변경분 그대로) · (v1.19) `알림앱.md` "추가기능" 미착수 5개 항목(F-24 반복 일정 신규 / F-10 개정 완료 시 하단 이동 / F-06 개정 기본 유형 4종 시딩 / F-25 완료된 일정 숨기기 신규 / F-26 캘린더 날짜 프리필 신규) — **FAIL**(High 1건: F-24 `RecurrenceScheduler`의 `AppState 'active'` 트리거 누락) · (v1.20) RECUR-01 Bug Fix 재검증 — `App.tsx`의 `AppState 'active'` 핸들러에 `recurrenceScheduler.sync()` 병행 호출 추가 + 콜드 스타트 초기렌더 경합 해소(부트스트랩 완료 후 `invalidate` + `DashboardScreen` 라이브 스토어 구독) — **PASS** · (v1.21) RECUR-01 확인성 재검증(코드 무변경) — **PASS** · (v1.22) 실행환경 재확인 — iOS 시뮬레이터 재시작 + Metro 선기동 순서로 "No bundle URL present" 미재현 확인 + F-06/F-07/F-10/F-24/F-25/RECUR-01 iOS 실기동 시각 재확인(F-08/F-26은 코드 무변경으로 이전 판정 유지) — **PASS** · (v1.23) `알림앱.md` "### 20260913 추가요청" 5개 항목 — F-19 개정(워치 다음일정 제거·헤더 요약 "오늘 - M/N"·체크박스 좌측 배치) / F-06·F-07·F-08·F-24 개정(중요도·유형·반복·사전알림 셀렉트박스화) / F-16 개정(캘린더 탭 아이콘 calendar.png) — **PASS** · (v1.24) 워치 타이틀·헤더 요약·Section 라벨 "오늘"→"오늘일정" 문구 정정(F-19, v1.11 확정 미반영분 반영) + RN 대시보드 탭 라벨·타이틀·폴백 라벨 "오늘"→"오늘일정" 신규 반영(F-10/F-16, P-72, AC-95, OI-32 CLOSED) — **PASS** · (v1.25) 설계 전제 오류 정정(v1.21) 대응 — 워치 `TodayView.swift` P-73/AC-96 리스트 `Section` 헤더 요약("오늘일정 - {완료}/{전체}") **최초 구현** + 상단 `.toolbar` 헤더 요약 삭제(P-68 축소, AC-91 폐기) — **PASS** · (v1.26) 워치 상단 네비게이션 타이틀 재변경 "오늘일정"→"오늘뭐해"(F-19 재개정, 사용자 명시적 재지시, 리스트 Section 헤더는 무변경) — **PASS**(상세는 「v1.26」 독립 섹션 참고) |
+| 근거 | `document/planner/plan.md` v1.15 §5.19(P-68 재개정)·AC-47·AC-54·AC-96(정정)·D-11, `document/architect/{overview.md v1.22, logic.md v1.22 §17.12 "v1.22 개정", database.md v1.8(무변경), nfr.md v1.19 §9 V-58·§14.5}` |
 | 작성 주체 | Tester |
-| 일자 | 2026-09-13 |
+| 일자 | 2026-09-18 |
 
 ## 변경 이력
 
 | 버전 | 변경 |
 | --- | --- |
+| v1.25 | Feature(설계 전제 오류 정정 대응, v1.21): `ios/TodayWhatWatch/TodayView.swift` **1개 파일** — (1) 70행 `Section("오늘일정")` → `Section(headerSummaryText)` 로 교체(P-73/AC-96, v1.19 설계가 이번에 **최초로 코드 반영**됨을 실제 코드로 확인 — v1.19~v1.20 문서가 "이미 구현됨"이라 서술했던 것은 사실이 아니었음, Developer `BLOCKED(DESIGN_CONFLICT)` 보고에 따른 재작업), (2) 24~40행의 `.toolbar { ToolbarItem(placement: .topBarTrailing) { Text(headerSummaryText) } }` 블록 완전 삭제(P-68 축소, AC-91 폐기) — **PASS**. **코드 대조**: `git diff`로 `logic.md` §17.12 "최종 코드 상태" 목표 코드 블록과 실제 diff가 1:1 일치함을 직접 확인(`.navigationTitle("오늘일정")`만 남고 toolbar 없음 / `Section(headerSummaryText)`로 전환 / `headerSummaryText` 계산 프로퍼티 자체는 무변경). `git diff --stat` 으로 이번 라운드 iOS 변경이 `TodayView.swift` 1개 파일뿐임을 확인(`ScheduleRow.swift` 등 인접 파일 무변경, Developer 보고와 일치). **빌드**: `cd ios && xcodebuild -scheme TodayWhatWatch -destination 'id=<Apple Watch Series 11 (46mm) 시뮬레이터>' CODE_SIGNING_ALLOWED=NO build` → **BUILD SUCCEEDED**(`TodayView.swift` 컴파일 확인). **회귀**: `node --experimental-strip-types --test "tests/**/*.test.ts"` **307/307 pass, 0 fail**(v1.24와 동일 건수, 이번 변경은 Swift 파일 한정이라 RN 테스트에 영향 없음을 재확인). **실기동 시각 검증**(워치 시뮬레이터에 설치·실행, 앱 로컬 스냅샷/보류큐 캐시 JSON을 직접 시딩해 조작): (a) 오늘 3건(완료 2/미완료 1) + 보류 큐 2건 시딩 → 스크린샷에서 상단은 "오늘일정" 타이틀만 있고 우측에 어떤 요약 텍스트도 없음(AC-91 폐기 확인), `isStale` Section 다음·오늘 목록 Section 이전 위치에 "동기화 대기 2" Section 존재(D-11 위치 확인), 목록 바로 위 Section 헤더가 "오늘일정 - 2/3"로 정확히 표시(P-73/AC-96) — `document/test/screenshots/v1.25-watch-01-seeded-pending2-header2of3.png`. (b) 오늘 0건 + 보류 큐 0건 시딩 → "오늘 일정이 없습니다" 빈 상태만 렌더되고 Section 헤더·카운트 접미사가 어디에도 나타나지 않음(E-19-5, 별도 분기 없이 구조적으로 자동 충족됨을 실증) — `document/test/screenshots/v1.25-watch-02-empty-notitlesummary.png`. 검증 후 로컬 캐시 파일은 검증 전 상태로 원복. **코드 리뷰**: Critical/High/Medium **0**. DRY — `headerSummaryText`는 `Section(headerSummaryText)` 1곳에서만 소비(`grep` 재확인, toolbar 삭제로 두 번째 소비처가 사라져도 dead code 아님). 강제 언래핑 없음, `connectivity.snapshot?.summary.done ?? 0` / `notDone ?? 0` 옵셔널 처리 적절. 완료 토글 시 `snapshot`(`@Published`) 갱신 → `headerSummaryText`가 계산 프로퍼티라 SwiftUI 재계산으로 자동 갱신되는 구조(별도 수동 갱신 코드 불필요, 코드 리뷰로 확인 — 실측은 WCSession 왕복 없이는 어려워 코드 구조 근거로 판단). Low/Info 1건(비차단): `.navigationTitle("오늘일정")` 다음에 빈 줄 하나가 남아 있음(포맷팅 스타일, 기능 영향 없음). **보안 점검**: STRIDE/OWASP 관점 미해결 취약점 **0** — 이번 변경은 이미 전송되던 `summary` 필드의 표시 위치를 리스트 헤더 1곳으로 재배치한 것뿐(상단 1곳 삭제 + 리스트 1곳 신규 소비, 순증감 없음), 신규 입력·저장·로그·신뢰 경계 없음. logic §17.12 "보안 영향: 해당 없음" 서술이 실제 코드와 일치함을 확인. **plan.md 관찰(Info, 비차단, Tester가 직접 변경하지 않음)**: AC-96(§1774~1781행)의 시나리오 문구가 v1.13 시점("상단 헤더도 동일 수치로 함께 표시" / "0건이면 요약은 상단 헤더의 '오늘일정 - 0/0' 하나뿐") 그대로 남아 있어, v1.14/v1.20에서 상단 헤더 요약 자체가 삭제된 현재 상태와 부분적으로 어긋난다(AC-47은 "AC-96은 v1.14와 무관하게 유지"라고 명시하나 AC-96 본문 자체는 갱신되지 않음). 기능 구현·이번 검증 결과에는 영향 없음(리스트 Section 헤더 요약 자체는 정확히 검증됨) — plan.md 정합성 확인은 Orchestrator/Planner 판단 영역이라 Tester가 임의 수정하지 않음. |
+| v1.24 | Feature: 워치 `TodayView.swift`의 `.navigationTitle`/`headerSummaryText`/`Section` 리터럴 "오늘"→"오늘일정" 3곳 정정(F-19, plan v1.11 확정이 직전 라운드 중단으로 미반영 상태였던 것을 이번에 반영, logic §17.12) + RN `RootNavigator.tsx`의 대시보드 `Tab.Screen options.title`/`TAB_FALLBACK_LABELS[Dashboard]` 리터럴 "오늘"→"오늘일정" 2곳 신규 반영(F-10/F-16, P-72, AC-95, OI-32 CLOSED, logic §16.2) — **PASS**. 설계(logic v1.18)와 diff 1:1 대조 확인, 다른 파일(`ScheduleRow.swift`/`DashboardScreen.tsx`/`dashboardViewModel.ts`/`TAB_ICONS`) 무변경 확인(OI-33 범위 준수). `node --test` **307/307 pass, 0 fail**(v1.23 기준선 303 + Tester가 추가한 회귀 테스트 `tests/app/rootNavigatorLabels.test.ts` 4건 — 기존 `rootNavigatorIcons.test.ts` 패턴을 따른 정적 grep). watchOS `xcodebuild -scheme TodayWhatWatch` **BUILD SUCCEEDED**, 시뮬레이터에 설치·실행해 스크린샷으로 타이틀/헤더 요약/Section 라벨이 실제로 "오늘일정"으로 렌더됨을 실증(로컬 캐시에 남아있던 일정 1건 기준 "오늘일정 - 0/1"). 코드 리뷰 Critical/High/Medium 0. 보안 미해결 취약점 0(순수 리터럴 문자열 교체, 신규 신뢰 경계 없음). **관찰(Low, 비차단, "확인 필요")**: 워치 스크린샷에서 대형(large) `navigationTitle`이 상단 시각(클럭)·`.toolbar` trailing 헤더 요약 텍스트와 같은 좌표에 겹쳐 옅게 렌더되는 현상을 발견 — "오늘"(2자)→"오늘일정"(4자)으로 길어진 것이 원인인지, watchOS `NavigationStack` 대형 타이틀이 항상 이렇게 렌더되는 기존 플랫폼 특성인지는 이번 세션에서 확정하지 못했다(비교 빌드가 샌드박스 파괴적 작업 승인 정책으로 차단됨). 헤더 요약·Section 라벨 등 실제 텍스트 값 자체는 스크린샷에서 명확히 읽힘 — 기능 요구사항(AC-91/E-19-8/§17.12) 충족에는 영향 없음. Architect/Developer 후속 확인 권장(비차단, FAIL 아님). |
 | v1.23 | Feature: `알림앱.md` "### 20260913 추가요청" 5개 항목 — F-19 개정(워치 "다음 예정" 제거, 헤더 우측 요약 "오늘 - {완료}/{전체}", 완료 체크박스 좌측 배치) / F-06·F-07·F-08·F-24 개정(일정 작성/수정 화면의 중요도·유형·반복·사전 알림 4필드를 `SelectField`/`MultiSelectField` 셀렉트박스로 전환) / F-16 개정(캘린더 탭 아이콘 `goal.png`→`calendar.png`) — plan v1.10 §5.19(P-68~P-71, AC-91~94, D-30~31), 설계 overview/logic v1.17·nfr v1.15 — **PASS**. `node --experimental-strip-types --test "tests/**/*.test.ts"` 직접 재현 **303/303 pass, 0 fail**(v1.22의 291 + 신규 12: `selectFieldLogic.test.ts` 8 / `rootNavigatorIcons.test.ts` 3 / `appWiring.test.ts` v1.17 D-30(a) 1). `npx tsc -p tsconfig.json --noEmit` 93줄 — v1.22 이전과 동일한 기존 베이스라인(`repositories.ts` Buffer x2, `index.ts` console/process x3, 테스트 파일들의 `node:test`/`node:assert` 미해석 등)만 남고 신규 오류 0. **실기동 검증**: (1) watchOS — `xcodebuild -scheme TodayWhatWatch -destination 'id=Apple Watch Series 11 (46mm)'` **BUILD SUCCEEDED**(수정된 `TodayView.swift`/`ScheduleRow.swift` 컴파일 확인), 워치 시뮬레이터에 설치·실행 후 로컬 스냅샷 캐시를 직접 조작해 두 케이스를 스크린샷으로 실증 — 빈 스냅샷(0/0)에서 헤더 "오늘 - 0/0"(E-19-8) + "다음 예정" 섹션 부재, 3건(완료1/미완료2) 시드에서 헤더 "오늘 - 1/3"(AC-91) + 완료 토글(체크/원) 아이콘이 각 행 최좌측에 배치됨(AC-92, P-69)을 육안 확인 — `document/test/screenshots/v1.23-watch-01-empty-header-0of0.png`, `v1.23-watch-02-seeded-header-1of3-checkbox-left.png`. (2) iOS 폰 — 기존 `TodayWhat.app` 빌드 재사용 + Metro 기동 + `simctl install/launch` → 대시보드 하단 탭의 캘린더 아이콘이 실제로 달력 모양(`calendar.png`)으로 렌더됨을 스크린샷으로 확인(AC-94) — 일정 작성 화면의 `SelectField`/`MultiSelectField` 렌더 자체는 시뮬레이터 터치 자동화 수단 부재(v1.15~v1.22가 반복 문서화한 동일 환경 제약, `osascript`/System Events 좌표 클릭 1회 시도 후 무반응 확인)로 실측하지 못해 코드 리뷰 + 단위테스트로 대체. 코드 리뷰: 5개 항목 전부 설계(logic.md §17.3/§17.12/§16.2/§16.3.1)와 구현이 1:1 대응, `SelectField`/`MultiSelectField`는 `src/core/**`·서비스 미의존 순수 프레젠테이션 컴포넌트로 값 도메인·검증·서비스 계약 무변경 원칙을 지킴, `watchSyncService.ts`의 "다음 예정" 조회 제거가 기존 로직에 부작용 없음(V-19/V-36/D-30(a) 테스트로 회귀 확인). Critical/High/Medium **0**. 보안 점검: STRIDE/OWASP 관점에서 신규 취약점 **0**(고정 옵션 배열만 선택하는 UI, 이미 전송되던 `summary` 재계산·재배치, require 경로 문자열 교체뿐 — 신규 입력·저장·로그 표면 없음, logic §13.3/§13.8 "해당 없음" 서술과 코드 일치 확인). 회귀 없음. 상세는 아래 `# v1.23` 섹션 참조. |
 | v1.22 | Analysis/Inspection 성격의 실행환경 재확인 — 사용자가 보고한 "No bundle URL present"(iOS 시뮬레이터, 이미 설치된 앱을 Metro 미기동 상태에서 단독 재실행할 때 발생)에 대해, 오케스트레이터의 이전 조사(코드 결함 아님 판정)를 실기동으로 직접 검증 — **PASS**. iPhone 17 Pro 시뮬레이터(`1D65385D-4A27-4B4C-A16A-05855D3C502B`)를 `simctl shutdown`+`boot`로 재시작한 뒤, **(1)** Metro 미기동 상태에서 기설치 앱을 `simctl launch`로 단독 실행 → `RCTFatal("No bundle URL present")` 적색 화면이 실제로 재현됨을 스크린샷으로 1차 확인(오케스트레이터 진단이 정확했음을 실증). **(2)** 이어서 `npx react-native start --port 8081`을 백그라운드로 먼저 기동(`packager-status:running` 확인) 후 앱을 `terminate`+`launch`로 재시작 → 번들이 정상 로드되어 대시보드가 크래시 없이 렌더됨을 확인, 동일 조건에서 에러가 더 이상 재현되지 않음. 결론: 코드 결함 아님, **ENVIRONMENT_ERROR**(Metro 선기동 필요라는 React Native Debug 빌드의 정상 동작 요건, 실행 절차 문제) — 근본 원인 불변, 코드 수정 불필요. 이어서 F-06/F-07/F-10/F-24/F-25/RECUR-01을 SQLite 직접 시딩 + `simctl terminate`/`launch`(콜드) 및 Device>Home 백그라운드→`simctl launch` 포그라운드(AppState 전이, 동일 PID로 콜드 재시작 아님을 확인) 방식으로 재확인 — 전부 설계대로 동작함을 스크린샷·SQLite 조회로 실증(§C). F-08(사전 알림 프리셋)·F-26(캘린더 날짜 프리필)은 관련 코드가 이번 세션 무변경(`git diff --stat HEAD` 확인)이라 v1.17/v1.19 PASS 판정을 그대로 유지. 회귀 `node --experimental-strip-types --test "tests/**/*.test.ts"` **291/291 pass, 0 fail**(v1.20/v1.21과 동일 건수). 코드/설계 변경 없음(git 대조로 확인) — 코드 리뷰·보안 점검은 "변경 없음, 이전 판정(v1.17/v1.19/v1.20/v1.21) 유지"로 갈음. 부가 관찰(Info, 비차단): 이번 세션 중 macOS 손쉬운 사용(Accessibility) 권한이 간헐적으로 허용되어 `System Events`로 Simulator 메뉴 클릭(Device>Home) 및 좌표 클릭 1건이 우연히 성공했으나 재현성이 없어(대부분 `-1719` 오류) 정밀 좌표 보정에 사용하지 않았고, 좌표 클릭 1회가 의도치 않게 테스트 데이터 항목 하나를 완료 처리한 것을 즉시 SQLite로 원복함 — v1.16이 문서화한 "시뮬레이터 터치 주입 수단 불안정" 성격과 동일, 정밀 UI 탭 자동화로 확대하지 않음. 상세는 아래 `# v1.22` 섹션 참조. |
 | v1.20 | Bug Fix 재검증: v1.19 RECUR-01(High, IMPLEMENTATION_ERROR — `RecurrenceScheduler.sync()`의 `AppState 'active'` 트리거 배선 누락) Developer 수정분 검증 — **PASS**. 변경 파일은 `App.tsx`(`AppState 'active'` 핸들러에 `recurrenceScheduler.sync()` 병행 호출 추가 + 부트스트랩 `runPostRender` 완료 직후 `useShellStore.invalidate('list','dashboard')` 추가) + `DashboardScreen.tsx`(`useShellStore.subscribe` 기반 라이브 구독 신규 — 화면이 이미 포커스된 상태에서도 `stale` 전이를 즉시 감지해 재조회) 2개뿐(`git status --porcelain` 대조로 다른 파일 무변경 재확인). **코드 대조**로 logic §18.3/nfr §17.1·§17.3 이 요구하는 4개 트리거 중 콜드 스타트(`composeNative.native.ts` 88행)·`AppState 'active'`(`App.tsx` 108행, 신규)·생성 직후(`scheduleService.ts` `syncRecurrenceSafely`) 3곳이 배선되어 있음을 확인. **iOS 시뮬레이터(iPhone 17 Pro) 실기동**으로 두 시나리오를 모두 재현: (1) SQLite에 DAILY/count=3 마스터를 직접 시드 후 콜드 재시작 → 재시작 후 약 3초 이내에 대시보드가 "오늘" 회차를 즉시 표시(`0/1완료`)함을 스크린샷으로 확인(v1.19는 동일 절차에서 회차가 즉시 보이지 않는 결함을 관찰했었음 — 이번에 해소 확인). (2) 미래 회차 1건을 SQLite에서 직접 삭제한 뒤, 앱을 종료하지 않고 Home으로 백그라운드 전환 후 다시 포그라운드로 복귀(동일 PID로 재개 확인 — 콜드 재시작 아님)했더니 삭제했던 회차가 새 id로 재실체화됨을 SQLite 조회로 확인 — `AppState 'active'` 전이 시 `RecurrenceScheduler.sync()`가 실제로 동작함을 직접 실증(코드 리뷰뿐 아니라 행위 기반 증거). 회귀: `node --experimental-strip-types --test "tests/**/*.test.ts"` **291/291 pass, 0 fail**(v1.19와 동일 건수, 회귀 0). `npx tsc -p tsconfig.json`: `App.tsx`/`DashboardScreen.tsx` 관련 신규 오류 0(기존 `node:test`/`node:assert` 미해석 및 `categoryService.test.ts` 오류는 v1.17부터 반복된 사전 베이스라인과 동일). 코드 리뷰: `DashboardScreen.tsx` 신규 구독은 `navigation.isFocused()` 가드로 비포커스 상태에서 무시되고(다른 화면의 `invalidate` 호출과 충돌 없음), `false→true` 전이만 반응해 무한 루프 위험 없음(`clearStale` 은 `true→false` 전이라 재귀 트리거 안 됨), cleanup 이 `unsubscribe()`를 정확히 반환해 메모리 누수 없음. **Low(비차단) 1건**: 같은 화면 내부(`toggle`/`removeOne`/`removeFollowing`)가 포커스 상태에서 `invalidate('list','dashboard')`를 호출하면 새 구독 리스너와 기존 명시적 `void load()` 호출이 동시에 각각 `load()`를 발생시켜 동일 액션마다 중복 조회가 1회 더 발생함 — 기존 `loadSeqRef`/`isFreshLoadSequence`(E-20-4) 가드가 최신 결과만 반영하도록 이미 보호하고 있어 데이터 정합성 문제는 없고 단순 비효율(추가 DB 왕복 1회)에 그침, 신규 결함으로 분류하되 기능·보안에 영향 없어 비차단. 보안 점검: 이번 변경은 인메모리 boolean 무효화 신호와 구독 등록뿐 — 민감정보 노출·자원 고갈(무한 루프 없음, 위 Low 건은 유한 1회 중복에 그침)·인증/인가 변경 없음, 미해결 취약점 0. **부팅 완료(Android BOOT_COMPLETED) 트리거**는 `ReminderScheduler`/`RecurrenceScheduler` 양쪽 모두 실제 headless task 등록 코드가 저장소에 없음(매니페스트 권한 선언만 존재) — 이번 라운드 수정 대상(AppState 누락)과 무관한 기존 상태이며 v1.7~v1.19 문서가 이미 "실기기 전용 후속(N-11 계열, ENVIRONMENT_ERROR)"으로 분류해 온 것과 동일 성격이므로 이번 판정에서 새 결함으로 세지 않음(Info, 비차단, 범위 밖 재확인). 상세는 아래 `# v1.20` 섹션 참조. |
@@ -36,6 +38,249 @@
 | v1.7 | Feature: 애플워치 워치 타깃 추가(F-19, AC-23·AC-47~AC-56) — **PASS**. `node --test` 195/195(회귀 0, 신규 watchSync 30건). 코드 리뷰 Critical/High 0. 보안 미해결 취약점 0(§13.9 STRIDE 통과 — 수신 op 비신뢰 입력 검증·`findById` 재조회·dedup 원장·`toggleDone` 한정·페이로드 비밀정보 미전송·워치 로컬 파일 `.completeFileProtection`). 지적 3건(WATCH-01 Medium: `package-lock.json`에 `react-native-watch-connectivity` 미반영 — `npm ci` 파손, 비차단·머지 전 수정 / WATCH-02 Low: `applyIncomingToggle`의 `toggleDone`/repo 예외 미격리 / WATCH-03 Low: 어댑터 `activate()` 비-iOS에서 throw). 어댑터·watchOS 스캐폴드 온디바이스 검증은 N-11 후속(범위 밖). |
 | v1.9 | N-11: WATCH-08/09/10 수정 재검증(Dev iteration 3) — **PASS**. `node --test` 207/207(회귀 0, 신규 `watchMessage.test.ts` 12건). `tsc` src 신규 오류 0(사전 5건 허용). `src/core/**` 이번 사이클 무수정(`watchSyncService.ts` 미수정 확인). **WATCH-08 종결**: `WatchToggleOp.watchChangedAt`/`baseUpdatedAt` 이 Swift `Int` 로 전송(`WatchClock.nowEpochMillis()` 반올림), 비정수는 워치 `JSONDecoder`(Int) 및 폰 `parseToggleOp`(`Number.isInteger`) 양쪽에서 거부 — 큐 진입조차 불가. **WATCH-09 종결**: 신규 순수 모듈 `src/app/adapters/watch/watchMessage.ts`(RN/node 미import)의 `parseToggleOp` 가 서비스 `isValidToggleOp` 와 동일 정수 규칙 적용 — 어댑터 경계에서 차단, 서비스 조용한 폐기 제거. **WATCH-10 종결**: `classifyInboundMessage` 4분기(toggle/requestSnapshot/malformedToggle/ignore), `watch.toggle.malformed` 은 `type:'toggle'` 실패 시에만 계측, `requestSnapshot` → 캐시 `lastSnapshot` 즉시 reply + `composeNative` 가 `setSnapshotRequestHandler(()=>pushSnapshot())` 배선, 워치 `manualRefresh()` 는 도달 가능화 시점에도 실행. AC-23/AC-48/AC-49/AC-50/R-19-2 충족(실경로 통합 테스트 + Dev 라이브 증거 정합). 보안 미해결 취약점 0(§13.9 재확인 — 인바운드 파서가 비-토글 쓰기 시도를 `sendMessage`/`transferUserInfo` 양경로에서 전부 차단, `requestSnapshot` reply 는 직전 push 페이로드와 동일 — 신규 노출 없음, V-40 유지). 신규 지적 WATCH-11(Low, 비차단: `loadLocal()` `?? []` 가 손상된 보류 큐 파일을 재기록 없이 흡수). 이관 유지: WATCH-04(Architect — 컴플리케이션 App Group, AC-56 partial), WATCH-05·ENV-01·N-11-COV. |
 | v1.8 | N-11: F-19 네이티브 통합 + 라이브 왕복 검증(Dev iteration 1+2) — **FAIL**. `node --test` 195/195(회귀 0), `tsc` src 신규 오류 0(사전 5건 허용). 코드 리뷰: **WATCH-08 High** — watchOS `WatchToggleOp.make` 가 `watchChangedAt = Date().timeIntervalSince1970 * 1000`(비정수 Double)을 전송하나 `WatchSyncService.isValidToggleOp` 는 `Number.isInteger` 를 요구(설계 §17.4/§13.9) → 실제 워치 발신 토글 op 이 전부 `malformed` 로 거부(`ack REJECTED`) → R-19-2/AC-23/AC-48/AC-50 실기기 파손. node 195건은 `emitIncoming` 에 정수값을 직접 주입해 이 경로를 못 짚음. Dev iteration-2 "라이브 토글 APPLY 관찰" 증거는 커밋된 코드와 모순(재현 불가). 부수: WATCH-09 Medium(어댑터 `parseToggleOp` `Number.isFinite` ↔ 서비스 `Number.isInteger` 이중검증 불일치), WATCH-10 Medium(폰 어댑터에 워치 `requestSnapshot`(수동 새로고침, §17.2 sendMessage 경로/§17.1(d)) 핸들러 없음 → 무동작 + 허위 `watch.toggle.malformed`). 보안 미해결 취약점 0(§13.9 재확인 — 수신 op 단일 경로 검증→`findById`→dedup→`toggleDone` 한정, `sendMessage`/`transferUserInfo` 양경로 동일, 페이로드 V-40 유지, 워치 파일 `.completeFileProtection`). 이월: WATCH-04 Medium(컴플리케이션 App Group 미설정 → 상시 "—", 설계 §17.8 미명세 — Architect 확인), WATCH-05 Low(워치 AppIcon 에셋 없음 — 빌드 경고), ENV-01 Low(비ASCII 경로에서 Metro `/status` 500 — CLI 버그, 오프라인 번들 우회), N-11-COV Low(LWW tie/REJECT/200절단은 node 테스트로 커버, 라이브 미실행 — 설계상 허용). |
+
+---
+
+# v1.24 — Feature: 워치 타이틀·헤더 요약·Section 라벨 및 RN 대시보드 탭 라벨/타이틀 "오늘"→"오늘일정" 문구 정정
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-15 |
+| status | **PASS** |
+| 배경 | Developer가 2개 파일을 수정: (1) `ios/TodayWhatWatch/TodayView.swift` — `.navigationTitle("오늘")`→`"오늘일정"`, `headerSummaryText` 접두어 "오늘 - "→"오늘일정 - ", `Section("오늘")`→`Section("오늘일정")` (`ScheduleRow.swift`·빈 상태 문구 "오늘 일정이 없습니다"는 의도적으로 무변경). (2) `src/app/navigation/RootNavigator.tsx` — 대시보드 `Tab.Screen options.title` "오늘"→"오늘일정", `TAB_FALLBACK_LABELS[Dashboard]` "오늘"→"오늘일정" (`TAB_ICONS`·`DashboardScreen.tsx`·`dashboardViewModel.ts`는 OI-33에 따라 의도적으로 무변경). git add/commit 없이 워킹트리에 unstaged 상태로 남아 있던 상태에서 Tester가 검증을 수행했다. |
+| 근거 | `document/planner/plan.md` v1.12 §5.20(P-72)·AC-95·OI-32·OI-33 + v1.11(워치 문구 확정), `document/architect/{overview.md v1.18, logic.md v1.18 §16.2 "탭 라벨 설계"(F-10/F-16)·§17.3/§17.9/§17.10/§17.11.3/§17.12(워치, F-19)·§13.3/§13.8(보안 서술), database.md v1.8(무변경), nfr.md v1.16 §9 V-58(문구 정정)·§14.5}`, `.claude/skills/_shared/conventions.md` |
+| 검증 환경 | macOS, Xcode 26.2(Build 17C52), Node(현재 세션 런타임). watchOS 시뮬레이터 Apple Watch Series 11 46mm(`D898C6F3-3587-4633-905F-FE97A347AD6E`, 이번 세션에서 boot) |
+
+## A. 설계 대조 (요구사항 → 설계 → 구현)
+
+| 항목 | 설계 지점 | 구현 대조 결과 |
+| --- | --- | --- |
+| 워치 타이틀 "오늘"→"오늘일정" (F-19, v1.11 확정, logic §17.11.3/§17.12) | `.navigationTitle("오늘일정")` | `TodayView.swift` 33행 — 정확히 일치 |
+| 워치 헤더 요약 "오늘 - {완료}/{전체}"→"오늘일정 - {완료}/{전체}" (P-68, AC-91, E-19-8) | `headerSummaryText` 반환식 접두어 정정, `summary` 산출 로직 무변경 | `TodayView.swift` 18~21행 — `"오늘일정 - \(done)/\(total)"`, 0건이면 자동으로 "오늘일정 - 0/0" — 분기 추가 없이 기존 산식 그대로. 일치 |
+| 워치 `Section` 라벨 "오늘"→"오늘일정" (순수 레이아웃, 설계 판단·비필수 확장) | `Section("오늘일정")` | `TodayView.swift` 70행 — 일치 |
+| 워치 `ScheduleRow.swift`·빈 상태 문구 무변경 지시 | 변경하지 않음 | `git diff` 확인 — `ScheduleRow.swift` 변경분 없음(빈 diff), `TodayView.swift`의 `Text("오늘 일정이 없습니다")`(65행)도 원문 그대로 — 일치 |
+| RN 대시보드 탭 `title` "오늘"→"오늘일정" (F-10/F-16, P-72, AC-95) | `Tab.Screen options={{ title: '오늘일정' }}` | `RootNavigator.tsx` 92행 — 일치 |
+| RN `TAB_FALLBACK_LABELS[Dashboard]` "오늘"→"오늘일정" (E-16-1/AC-28 폴백) | `[TAB_ROUTES.Dashboard]: '오늘일정'` | `RootNavigator.tsx` 40행 — 일치 |
+| `TAB_ICONS[Dashboard]`(`todo.png`)·나머지 3개 탭 title 무변경 지시 | 변경하지 않음 | `RootNavigator.tsx` 32행 `todo.png` require 불변, 캘린더/통계/설정 `title` 리터럴 불변 — 일치 |
+| OI-33 비범위: `DashboardScreen.tsx`/`dashboardViewModel.ts` 내부 "오늘" 날짜 지시어 표현 무변경 지시 | 변경하지 않음(탭/화면 정체성 명칭이 아닌 날짜 지시어이므로 제외) | `git diff` 확인 — 두 파일 변경분 없음(빈 diff). `DASHBOARD_EMPTY_TEXT`(dashboardViewModel.ts 19행)="오늘 일정이 없습니다", `"오늘로"`(DashboardScreen.tsx 420행), `오늘 · {date}`(91행) 전부 원문 유지 — 일치 |
+
+`git diff --stat`으로 이번 라운드 Developer 변경분이 정확히 위 두 파일(총 4곳 리터럴 교체)에만 한정됨을 확인했다. 문서 변경(`logic.md`/`nfr.md`/`overview.md`/`plan.md`/`log/agent-execute.log`)은 이전 Architect/Planner 단계 산출물로 이번 Tester 검증 대상이 아니다.
+
+## B. 기능 테스트 — 회귀 스위트 + 신규 테스트
+
+```
+node --test
+# tests 303 (개정 전, 기준선)
+# pass 303 / fail 0
+```
+
+기존 회귀 스위트를 그대로 재실행해 303/303 pass를 확인했다. 그러나 이번 2개 리터럴 교체(RN 탭 라벨)에 대응하는 자동화 테스트가 없어(워치 Swift 코드는 `node --test`로 직접 검증 불가하므로 실기동 스크린샷으로 대체하지만, RN `RootNavigator.tsx`는 기존 `rootNavigatorIcons.test.ts`처럼 정적 grep 테스트가 가능함에도 부재) Tester가 `tests/app/rootNavigatorLabels.test.ts` 4건을 신규 작성했다(기존 `rootNavigatorIcons.test.ts` 패턴 재사용, Production 코드는 손대지 않음):
+
+1. 대시보드 `Tab.Screen options.title === '오늘일정'`
+2. `TAB_FALLBACK_LABELS[Dashboard] === '오늘일정'`
+3. 실행 코드에 정정 전 리터럴 `'오늘'`(단독 title/라벨 값) 잔존 참조 없음
+4. 캘린더/통계/설정 3개 탭의 `title` 리터럴 무변경
+
+```
+node --test
+# tests 307 (303 + 신규 4)
+# pass 307 / fail 0
+```
+
+`npm run typecheck`(`tsc -p tsconfig.json --noEmit`)은 99줄 — 신규 테스트 파일의 `node:test`/`node:fs`/`node:url`/`ImportMeta.url` 미해석 오류는 기존 `rootNavigatorIcons.test.ts`와 완전히 동일한 프로젝트 공통 베이스라인 패턴(`types: []`)이며, 다른 신규 오류는 없다.
+
+## C. 실기동 시각 검증 — watchOS
+
+1. `xcodebuild -workspace TodayWhat.xcworkspace -scheme TodayWhatWatch -destination 'platform=watchOS Simulator,name=Apple Watch Series 11 (46mm)' -derivedDataPath build_watch_verify build` → **BUILD SUCCEEDED**(수정된 `TodayView.swift` 포함 컴파일 성공).
+2. 시뮬레이터를 boot(`D898C6F3-3587-4633-905F-FE97A347AD6E`), 앱을 `simctl install`+`launch` → 이전 세션이 남긴 로컬 캐시(스냅샷 1건, 미완료)를 그대로 로드한 화면을 `simctl io screenshot`으로 캡처: 헤더 요약이 **"오늘일정 - 0/1"**로 렌더, 목록 Section 라벨이 **"오늘일정"**, 항목 "업무"가 정상 표시됨을 확인 — AC-91/§17.12 요구 문구가 실제로 반영됨을 실증. `/private/tmp/.../scratchpad/watch_today_title_verify3.png` (Tester 스크래치패드, 저장소 미포함).
+3. **관찰(Low, 비차단)**: 스크린샷에서 대형(large) `.navigationTitle` 텍스트가 상단 시스템 시각("11:2x")·`.toolbar` trailing 요약 텍스트와 같은 위치에 옅게(회색) 겹쳐 보이는 현상을 발견했다. 헤더 요약("오늘일정 - 0/1")과 Section 라벨("오늘일정") 자체는 밝은 색으로 선명하게 렌더되어 텍스트 값은 요구사항대로 정확하다. 이 겹침이 "오늘"(2자)→"오늘일정"(4자)으로 길어진 것에 따른 신규 레이아웃 영향인지, watchOS `NavigationStack` 대형 타이틀이 원래도 이렇게 렌더되는 플랫폼 특성인지는 이번 세션에서 확정하지 못했다 — 개정 전 코드로 되돌려 A/B 비교 빌드를 시도했으나 샌드박스의 "Irreversible Local Destruction" 승인 정책에 의해 후속 빌드 명령이 차단되어(파일은 안전하게 원상 복구함) 대조 실험을 완료하지 못했다. **판단**: AC-91/E-19-8/§17.12가 요구하는 것은 문자열 값·형식이며 픽셀 단위 레이아웃 무결성은 이번 라운드의 검증 대상이 아니었고(v1.16 nfr §14.5가 이미 별도 레이아웃 검증을 "변경 불요"로 종결), 실제 텍스트 값도 스크린샷에서 명확히 확인되므로 FAIL 사유로 보지 않는다. 근거 불충분 사안은 확정하지 않고 "확인 필요"로 남긴다 — Architect/Developer가 후속 라운드에서 watchOS 시뮬레이터 화면을 직접 눈으로 재확인할 것을 권장한다(비차단).
+
+## D. 코드 리뷰
+
+- **설계 준수**: §A 표대로 워치 3곳 + RN 2곳, 총 5곳 리터럴 교체가 logic.md v1.18 §16.2/§17.12 지시와 정확히 1:1 대응. 설계가 "무변경"으로 명시한 대상(`ScheduleRow.swift`, 빈 상태 문구, `TAB_ICONS`, `DashboardScreen.tsx`, `dashboardViewModel.ts`)도 실제로 손대지 않았음을 `git diff`로 확인(빈 diff).
+- **범위**: `git status --porcelain`으로 이번 세션 Developer 변경분이 정확히 2개 파일에 한정됨을 재확인 — 요구사항에 없는 추가 변경, 대규모 리팩터링 없음.
+- **계층 아키텍처 / SOLID**: 해당 없음 — 순수 문자열 리터럴 교체로 로직·상태·계층 구조에 변경이 없다.
+- **테스트 커버리지**: 워치 Swift 변경은 node 테스트로 직접 커버 불가(플랫폼 특성)하여 실기동 스크린샷으로 보완(§C). RN 변경은 기존에 테스트가 없던 갭을 Tester가 §B에서 보완했다.
+- Critical / High / Medium **0**. Low 1건(§C.3의 레이아웃 관찰, 비차단, "확인 필요") 외 신규 지적 없음.
+
+## E. 보안 점검 (STRIDE / OWASP)
+
+| 항목 | 결과 |
+| --- | --- |
+| 입력 검증/주입 | 해당 없음 — 사용자 입력을 받지 않는 빌드 타임 하드코딩 문자열 리터럴 교체뿐 |
+| 정보 노출 | 워치 헤더 요약은 이미 전송되던 `WatchSnapshot.summary` 재계산 표시 위치만 유지, 신규 필드·조회·저장 없음 |
+| 데이터 보호 / 비밀정보 | 해당 없음 — 키/토큰/자격증명과 무관 |
+| 의존성/설정 | 신규 npm/네이티브 의존성 0(`git diff`로 `package.json`/`Podfile` 무변경 확인) |
+| 결론 | logic.md §13.3/§13.8의 "보안 영향 해당 없음" 서술을 코드 대조로 독립 재확인. 미해결 취약점 **0** |
+
+## F. 회귀
+
+- 전체 회귀 스위트 307/307(기존 303 + Tester 추가 4건, 실패 0) — §B.
+- `ScheduleRow.swift`, `DashboardScreen.tsx`, `dashboardViewModel.ts`, `TAB_ICONS` 무변경을 `git diff` 빈 결과로 확인 — F-19(워치 다른 상호작용)·F-20(날짜 네비게이션)·F-16(탭 아이콘) 등 기존 F-01~F-26 관련 동작에 회귀 없음.
+- watchOS 빌드 성공 + 실기동 스크린샷으로 크래시 없이 렌더됨을 확인 — 기존 워치 핵심 흐름(스냅샷 로드·목록 렌더) 회귀 없음.
+
+## Failure Category / Regression
+
+- 발견된 결함 없음 — FAIL 사유 없음.
+- 관찰 1건(Low, 비차단, "확인 필요"): §C.3 워치 대형 타이틀과 시스템 시각/헤더 요약 텍스트가 시각적으로 겹쳐 보이는 현상 — 원인(신규 텍스트 길이 vs 플랫폼 기존 특성) 미확정, 텍스트 값 자체는 정확함을 확인. FUNCTIONAL 결함으로 분류하지 않음(요구사항은 문자열 값·형식이며 충족됨).
+- 회귀: 없음(307/307, 무변경 대상 파일 빈 diff로 확인 — §F).
+
+## 판정 (v1.24)
+
+**PASS** — 워치 `TodayView.swift`(3곳)와 RN `RootNavigator.tsx`(2곳), 총 5곳의 "오늘"→"오늘일정" 리터럴 교체가 설계(logic.md v1.18 §16.2/§17.12)와 정확히 1:1 대응함을 코드 대조로 확인했다(§A). 회귀 스위트를 307/307(신규 4건 포함, 실패 0)로 재현했고, 기존에 없던 RN 라벨 검증 테스트를 신규 작성해 커버리지 갭을 보완했다(§B). watchOS는 Xcode 빌드 성공 + 시뮬레이터 스크린샷으로 헤더 요약·Section 라벨이 실제로 "오늘일정"으로 렌더됨을 실증했다(§C). 코드 리뷰에서 Critical/High/Medium 결함 0건(§D), 보안 점검에서 STRIDE/OWASP 관점 미해결 취약점 0건(§E)을 확인했다. 회귀 없음(§F). Low 1건(워치 대형 타이틀 시각적 겹침 관찰, 원인 미확정·비차단)만 있어 다음 단계 진행을 차단하지 않는다. 다음 라우팅(Complete 처리 여부, 또는 Low 관찰 사항의 후속 확인 필요성 판단)은 Orchestrator 결정.
+
+---
+
+# v1.25 — Feature: 워치 P-73/AC-96 리스트 Section 헤더 요약 최초 구현 + 상단 헤더 요약(.toolbar) 삭제 (설계 전제 오류 정정 v1.21 대응)
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-17 |
+| status | **PASS** |
+| 배경 | Developer 가 `BLOCKED(DESIGN_CONFLICT)` 로 보고한 v1.21 설계 전제 오류(logic.md §17.12 — v1.19/v1.20 문서가 "P-73/AC-96 리스트 `Section` 헤더 요약이 v1.19 시점에 이미 구현됨"이라 서술했으나 실제 코드는 `Section("오늘일정")`(접미사 없음)이었고, 그 설계는 한 번도 구현된 적이 없었음)에 대한 Architect 정정(logic v1.21 §17.12 "구현 순서(v1.21, 필수)")을 Developer 가 이번 라운드에서 구현. 변경 파일은 `ios/TodayWhatWatch/TodayView.swift` **1개**: (1) 70행 `Section("오늘일정")` → `Section(headerSummaryText)` 교체(P-73/AC-96, 이번에 최초로 코드 반영), (2) 24~40행 `.toolbar { ToolbarItem(placement: .topBarTrailing) { Text(headerSummaryText) } }` 블록 완전 삭제(P-68 축소, AC-91 폐기). `headerSummaryText` 계산 프로퍼티 자체(18~22행)는 무변경 — 기존 값을 그대로 재사용(DRY). |
+| 근거 | `document/planner/plan.md` v1.14 §5.19(P-68·P-73)·AC-47·AC-54·AC-91(폐기)·AC-92·AC-96·D-11, `document/architect/{overview.md v1.21, logic.md v1.21 §17.12 "워치 화면 개정"(구현 순서 v1.21, "최종 코드 상태" 목표 코드 블록)·§13.3/§13.8(보안 서술), database.md v1.8(무변경), nfr.md v1.18 §9 V-58(갱신)·§14.5}`, `.claude/skills/_shared/conventions.md` |
+| 검증 환경 | macOS, Xcode 26.2(Build 17C52), Node(현재 세션 런타임). watchOS 시뮬레이터 Apple Watch Series 11 46mm(`D898C6F3-3587-4633-905F-FE97A347AD6E`, 이번 세션에서 boot) |
+
+## A. 설계 대조 (요구사항 → 설계 → 구현)
+
+| 항목 | 설계 지점 | 구현 대조 결과 |
+| --- | --- | --- |
+| 상단 `.navigationTitle("오늘일정")`만 남고 우측 요약 없음 (P-68 축소, AC-91 폐기 — 검증 대상 제외이되 "부재"는 확인) | logic §17.12 "최종 코드 상태" — `.navigationTitle("오늘일정")` 단독, `.toolbar` 없음 | `TodayView.swift` 27~38행 — `.navigationTitle("오늘일정")` 뒤에 `.toolbar` 블록 없음(빈 줄 하나만 잔존, §D 참고). 일치 |
+| "동기화 대기 {count}" Section(D-11) 위치 — `isStale` Section 다음, 오늘 목록 Section 이전 | 위치 지시 없이 기존 배선 유지(이번 델타 범위 밖, 회귀 확인 대상) | `TodayView.swift` 46~59행 — `isStale` Section(46~52행) → `pendingCount > 0` Section(53~59행) → 오늘 목록 Section(61~76행) 순서 그대로. 일치, 회귀 없음 |
+| 리스트 `Section` 헤더 요약 "오늘일정 - {완료}/{전체}" (P-73/AC-96, **v1.21 최초 구현**) | `Section("오늘일정")` → `Section(headerSummaryText)` 교체, `headerSummaryText`(18~22행)는 기존 그대로 재사용 | `TodayView.swift` 69행 `Section(headerSummaryText)` — 일치. `headerSummaryText` 소비처는 이 1곳뿐(grep 확인, dead code 아님) |
+| 오늘 0건(E-19-5) → Section 자체 비렌더, 카운트 접미사도 자동으로 미표시 | 별도 분기 불필요(구조적 자동 충족) | `TodayView.swift` 62~67행 `if today.isEmpty { Section { Text("오늘 일정이 없습니다") } }` — else 분기(69행)만 `headerSummaryText` 참조, 0건이면 그 분기 자체가 실행 안 됨. 일치 |
+| 완료 토글 시 `snapshot` 갱신 → 리스트 Section 헤더 즉시 갱신 | `headerSummaryText` 는 계산 프로퍼티이므로 별도 갱신 코드 불요 | 코드 구조상 자동 충족(§D 코드 리뷰로 확인, WCSession 실 왕복 재현은 범위 밖) |
+| `ios/TodayWhatWatch/ScheduleRow.swift` 등 인접 파일 무변경 | 변경 대상은 `TodayView.swift` 1개 파일 한정 | `git diff --stat` 확인 — 이번 라운드 iOS 변경은 `TodayView.swift` 1개 파일뿐(추가 23줄/삭제 10줄), `ScheduleRow.swift` 등 무변경. 일치 |
+
+## B. 기능 테스트 — 회귀 스위트 재실행
+
+```
+node --experimental-strip-types --test "tests/**/*.test.ts"
+# tests 307
+# pass 307 / fail 0
+```
+
+v1.24 기준선(307)과 동일 건수 — 이번 변경은 watchOS Swift 파일 1개 한정이라 RN 테스트 결과에 영향이 없음을 재확인했다(신규 RN 테스트 불필요, 기존 회귀 재현만으로 충분).
+
+## C. 실기동 시각 검증 — watchOS
+
+1. `cd ios && xcodebuild -scheme TodayWhatWatch -destination 'id=D898C6F3-3587-4633-905F-FE97A347AD6E' CODE_SIGNING_ALLOWED=NO build` → **BUILD SUCCEEDED**(수정된 `TodayView.swift` 컴파일 확인).
+2. 워치 시뮬레이터에 설치·실행 후, 앱 로컬 캐시 JSON(`watch-snapshot.json`/`watch-pending-queue.json`)을 Tester 가 직접 시딩해 2개 시나리오를 스크린샷으로 실증(검증 후 두 파일 모두 검증 전 상태로 원복):
+   - **시나리오 (a) — 오늘 3건(완료 2/미완료 1) + 보류 큐 2건**: 상단 "오늘일정" 타이틀만 있고 우측 요약 텍스트 없음(AC-91 폐기 확인) / "동기화 대기 2" Section 이 오늘 목록 바로 위에 렌더(D-11 위치 확인) / 목록 바로 위 Section 헤더가 **"오늘일정 - 2/3"** 로 정확히 표시(P-73/AC-96) / 체크박스가 각 행 좌측에 배치(기존 회귀 확인). `document/test/screenshots/v1.25-watch-01-seeded-pending2-header2of3.png`.
+   - **시나리오 (b) — 오늘 0건 + 보류 큐 0건**: "오늘 일정이 없습니다" 빈 상태만 렌더되고 Section 헤더·카운트 접미사가 어디에도 나타나지 않음(E-19-5, 별도 분기 없이 구조적으로 자동 충족됨을 실증). `document/test/screenshots/v1.25-watch-02-empty-notitlesummary.png`.
+
+## D. 코드 리뷰
+
+- **설계 준수**: §A 표대로 1개 파일의 두 변경(`Section` 라벨 전환 + `.toolbar` 삭제)이 logic.md v1.21 §17.12 "구현 순서"·"최종 코드 상태" 목표 코드와 정확히 1:1 대응.
+- **DRY**: `headerSummaryText` 는 `Section(headerSummaryText)` 1곳에서만 소비(grep 재확인) — 상단 헤더용 소비처가 사라졌지만 리스트 헤더가 새 소비처가 되어 dead code 가 되지 않음(설계가 명시한 순서 준수 결과).
+- **방어적 코딩**: 강제 언래핑 없음. `connectivity.snapshot?.summary.done ?? 0` / `notDone ?? 0` 옵셔널 처리 적절.
+- **범위**: `git diff --stat` 재확인 — 이번 라운드 변경은 `TodayView.swift` 1개 파일뿐, 요구사항에 없는 추가 변경 없음.
+- Critical / High / Medium **0**. Low 1건(비차단): `.navigationTitle("오늘일정")` 다음에 `.toolbar` 삭제 흔적인 빈 줄 하나가 남아 있음(순수 포맷팅, 기능 영향 없음, LOW-01).
+
+## E. 보안 점검 (STRIDE / OWASP)
+
+| 항목 | 결과 |
+| --- | --- |
+| 입력 검증/주입 | 해당 없음 — 사용자 입력을 받지 않는 표시 위치 이동뿐 |
+| 정보 노출 | 이미 전송되던 `WatchSnapshot.summary` 필드의 표시 위치가 상단 1곳→리스트 1곳으로 재배치(순증감 없음), 신규 필드·조회·저장·로그 없음 |
+| 데이터 보호 / 비밀정보 | 해당 없음 — 키/토큰/자격증명과 무관 |
+| 의존성/설정 | 신규 npm/네이티브 의존성 0(`git diff` 로 `package.json`/`Podfile` 무변경 확인) |
+| 결론 | logic.md §17.12 "보안 영향: 해당 없음" 서술을 코드 대조로 독립 재확인. 미해결 취약점 **0** |
+
+## F. 회귀
+
+- 전체 회귀 스위트 307/307(§B) — v1.24 기준선과 동일 건수, 실패 0.
+- D-11 "동기화 대기" Section 위치, 체크박스 좌측 배치(AC-92), 빈 상태 문구(E-19-5) 등 이번 델타 범위 밖 기존 동작이 시딩 스크린샷(§C)에서도 함께 정상 렌더됨을 확인 — 회귀 없음.
+- `ScheduleRow.swift` 등 인접 파일 무변경(§A) — 관련 기존 기능(체크박스 토글 로직 등) 회귀 없음.
+
+## Failure Category / Regression
+
+- 발견된 결함 없음 — FAIL 사유 없음.
+- LOW-01(Low, 비차단, IMPLEMENTATION_ERROR 성격이나 기능 무영향): `.navigationTitle` 다음 빈 줄 잔존 — 포맷팅.
+- DOC-OBS-01(Low, 비차단, 코드 결함 아님 — plan.md 문서 정합성 관찰): `plan.md` AC-96(1774~1781행) 시나리오 문구가 v1.13 시점("상단 헤더도 동일 수치로 함께 표시" / "0건이면 요약은 상단 헤더의 '오늘일정 - 0/0' 하나뿐") 그대로 남아 있어, v1.14/v1.20 에서 상단 헤더 요약이 삭제된 현재 상태와 문면이 어긋남. AC-47 은 "AC-96 은 v1.14 개정과 무관하게 유지"라 명시하나 이는 요구사항 *내용*이 안 바뀐다는 뜻이지 AC-96 *본문 문구*가 최신 상태를 반영한다는 뜻은 아니다. 이번 검증(리스트 Section 헤더 요약 자체)에는 영향 없음 — Tester 가 plan.md 를 임의로 수정하지 않으며, Orchestrator/Planner 판단이 필요하면 후속 검토 권장(비차단).
+- 회귀: 없음(§F).
+
+## 판정 (v1.25)
+
+**PASS** — 워치 `TodayView.swift` 1개 파일의 두 변경(P-73/AC-96 리스트 Section 헤더 요약 최초 구현 + P-68/AC-91 상단 헤더 요약 삭제)이 설계(logic.md v1.21 §17.12 "구현 순서"·"최종 코드 상태")와 정확히 1:1 대응함을 코드 대조로 확인했다(§A). 회귀 스위트를 307/307(실패 0)로 재현했다(§B). watchOS 는 Xcode 빌드 성공 + 시뮬레이터에 데이터 시딩 후 스크린샷 2장으로 상단 요약 부재·D-11 위치·리스트 헤더 카운트·0건 케이스 전부 실기동으로 실증했다(§C). 코드 리뷰에서 Critical/High/Medium 결함 0건(Low 1건 LOW-01, 비차단, §D), 보안 점검에서 STRIDE/OWASP 관점 미해결 취약점 0건(§E)을 확인했다. 회귀 없음(§F). DOC-OBS-01(plan.md AC-96 문구 정합성 관찰, 비차단)은 기능 결함이 아니므로 판정에 영향 없음. 다음 단계 진행을 차단하는 문제 없음 — 다음 라우팅은 Orchestrator 결정.
+
+---
+
+# v1.26 — Feature: 워치 TodayView 상단 네비게이션 타이틀 재변경 "오늘일정"→"오늘뭐해" (F-19 재개정, 사용자 명시적 재지시)
+
+| 항목 | 값 |
+| --- | --- |
+| 일자 | 2026-09-18 |
+| status | **PASS** |
+| 배경 | 사용자 신규 요청 원문("`ios/TodayWhatWatch/TodayView.swift` 에서 네비게이션 타이틀을 '오늘일정'에서 '오늘뭐해'로 변경해줘")에 따른 Feature 재개정. 이 타이틀 리터럴은 v1.11에서 확정된 뒤 v1.12·v1.13·v1.14/v1.20/v1.21(=test-result v1.24/v1.25)까지 "타이틀은 유지"로 3차례 재확인된 값이었으나, 사용자가 그 사실을 인지한 상태에서 명시적으로 재지시해 뒤집었다 — 근거 없는 되돌리기(regression)가 아니라 정당한 재지시(plan.md v1.15, overview/logic.md v1.22 판단과 동일). Developer 변경은 `ios/TodayWhatWatch/TodayView.swift` **1개 파일**: 36행 `.navigationTitle("오늘일정")` → `.navigationTitle("오늘뭐해")` 리터럴 1곳 교체 + 파일 상단 설명 주석(5~9행) 문구 정리(주석 6~9행은 사실과 일치하도록 갱신되었으나, 5행의 "타이틀("오늘일정")" 표기는 갱신되지 않고 남아 있음 — §D 참고). `headerSummaryText` 계산 프로퍼티(18~22행)·리스트 `Section` 헤더(69행 `Section(headerSummaryText)`, "오늘일정 - {완료}/{전체}")·`.toolbar` 삭제 상태(v1.21)·다음 예정 미표시(P-68)·체크박스 좌측 배치(P-69)는 전부 무변경. |
+| 근거 | `document/planner/plan.md` v1.15 §5.19(P-68 재개정)·§7.10·AC-47/AC-54(재정정)·AC-96(v1.14 누락 정정)·§10 매핑, `document/architect/{overview.md v1.22, logic.md v1.22 §17.1/§17.9/§17.10/§17.11.3/§17.12 "v1.22 개정" 소단락(리터럴 1곳 교체 지시, 현재/최종 코드 블록)·§13.8, database.md v1.8(무변경), nfr.md v1.19 §9 V-58(상단 타이틀 확인 리터럴 정정)·§14.5}`, `.claude/skills/_shared/conventions.md` |
+| 검증 환경 | macOS, Xcode 26.2(Build 17C52), Node(현재 세션 런타임). watchOS 시뮬레이터 Apple Watch Series 11 46mm(`D898C6F3-3587-4633-905F-FE97A347AD6E`, 기존 세션에서 이미 booted 상태를 재사용) |
+
+## A. 설계 대조 (요구사항 → 설계 → 구현)
+
+| 항목 | 설계 지점 | 구현 대조 결과 |
+| --- | --- | --- |
+| 상단 `NavigationBar` 타이틀 "오늘일정"→"오늘뭐해" (F-19, P-68 재개정, AC-47/AC-54 재정정) | logic §17.12 "v1.22 개정" — 36행 `.navigationTitle("오늘일정")` → `.navigationTitle("오늘뭐해")` 리터럴 1곳만 교체, 그 외 무변경 | `TodayView.swift` 36행 — `.navigationTitle("오늘뭐해")`. 정확히 일치. 실기동 스크린샷(§C)에서도 "오늘뭐해" 렌더 확인 |
+| 리스트 `Section` 헤더 "오늘일정 - {완료}/{전체}" 무변경 (P-73/AC-96) | `headerSummaryText`(18~22행)·`Section(headerSummaryText)`(69행) 무변경 지시 | `TodayView.swift` 18~22행 산식(`"오늘일정 - \(done)/\(total)"`)·69행 `Section(headerSummaryText)` 모두 무변경. 실기동 스크린샷(§C)에서 "오늘일정 - 1/1"로 상단 타이틀과 다른 문구로 정확히 분리 렌더됨을 확인 — plan.md v1.15가 명시한 "의도된 문구 분리" 그대로 |
+| `.toolbar` 상단 헤더 요약 삭제 상태(v1.21) 유지, AC-91 계속 폐기 | 재확인만, 변경 없음 | `TodayView.swift` 27~38행 — `.navigationTitle` 뒤에 `.toolbar` 블록 없음(빈 줄 1개, LOW-01 잔존 확인). 스크린샷에서도 타이틀 우측에 요약 텍스트 없음 — 일치 |
+| 다음 예정 미표시(P-68, v1.17)·체크박스 좌측 배치(P-69, `ScheduleRow.swift`) 무변경 | 변경하지 않음 | `git diff` 확인 — `ScheduleRow.swift` 이번 라운드 변경분 없음(빈 diff). 스크린샷에서 "다음 예정" 영역 없음·체크박스가 카드 좌측에 배치됨을 재확인 — 회귀 없음 |
+| 공유 페이로드 계약·전송 메커니즘·LWW·보류 큐·DB 스키마 무변경 | logic §17.12 "보안 영향: 해당 없음" | `git diff --stat` — 이번 라운드 iOS 변경은 `TodayView.swift` 1개 파일뿐(타이틀 리터럴 + 주석). `Models.swift`/`WatchConnectivityService.swift`/`PendingQueue.swift`/`SnapshotStore.swift`/`LWW.swift` 무변경 — 일치 |
+
+## B. 기능 테스트 — 회귀 스위트 재실행
+
+```
+node --experimental-strip-types --test "tests/**/*.test.ts"
+# tests 307
+# pass 307 / fail 0
+```
+
+v1.25 기준선(307)과 동일 건수 — 이번 변경은 watchOS Swift 파일의 타이틀 리터럴 1곳뿐이라 RN/core 테스트 결과에 영향이 없음을 재확인했다(신규 자동화 테스트 불필요 — watchOS 네이티브 UI 텍스트는 기존에도 `node --test`로 직접 커버되지 않으며, 이번 변경 대상 파일에 대응하는 신규 로직·분기도 없다).
+
+## C. 실기동 시각 검증 — watchOS
+
+1. `cd ios && xcodebuild -scheme TodayWhatWatch -destination 'id=D898C6F3-3587-4633-905F-FE97A347AD6E' CODE_SIGNING_ALLOWED=NO build` → **BUILD SUCCEEDED**(수정된 `TodayView.swift` 컴파일 확인, Developer 보고와 일치).
+2. 이미 booted 상태였던 워치 시뮬레이터에 재설치(`simctl install`)·재실행(`simctl launch`) 후 기존 로컬 캐시(오늘 일정 1건, 완료 상태)를 그대로 로드한 화면을 `simctl io screenshot`으로 캡처:
+   - 상단 타이틀 **"오늘뭐해"** — 요구사항(AC-47/AC-54) 그대로 렌더.
+   - 타이틀 우측에는 어떤 요약 텍스트도 없음(AC-91 폐기 유지 확인).
+   - 목록 바로 위 리스트 Section 헤더 **"오늘일정 - 1/1"** — 상단 타이틀과 다른 리터럴로 정확히 분리 표시(P-73/AC-96, 무변경·의도된 결과).
+   - 카드 좌측에 완료 체크박스(녹색 체크) 배치(P-69, 회귀 없음), "다음 예정" 영역 없음(P-68, 회귀 없음).
+   - `/private/tmp/.../scratchpad/watch_title_verify_v126.png`(Tester 스크래치패드, 저장소 미포함 — 세션 정리 대상). 화면 내용은 이 문서 §A/§C 서술로 기록을 대체한다.
+
+## D. 코드 리뷰
+
+- **설계 준수**: §A 표대로 타이틀 리터럴 1곳 교체가 logic.md v1.22 §17.12 "변경 지시"·"최종 코드 상태"와 정확히 1:1 대응. 설계가 "그 외 어떤 것도 변경하지 않는다"고 명시한 대상(`headerSummaryText`, `Section(headerSummaryText)`, `.toolbar` 삭제 상태, `ScheduleRow.swift`)도 실제로 손대지 않았음을 `git diff`로 확인.
+- **범위**: `git diff --stat` 재확인 — 이번 라운드 변경은 `TodayView.swift` 1개 파일(리터럴 1곳 + 주석 정리)뿐, 요구사항에 없는 추가 변경·대규모 리팩터링 없음.
+- **계층 아키텍처 / SOLID**: 해당 없음 — 순수 문자열 리터럴 교체로 로직·상태·계층 구조 변경 없음.
+- **지적 사항(LOW-02, Low, 비차단, IMPLEMENTATION_ERROR 성격이나 기능 무영향)**: `TodayView.swift` 5행 파일 상단 설명 주석이 "루트 화면(§17.11.3, v1.17 개정 §17.12) — 타이틀("오늘일정") / ..."로 남아 있어, 36행의 실제 `.navigationTitle("오늘뭐해")`와 문구가 어긋난다. 같은 블록의 6~9행 주석(리스트 Section 헤더 요약·`.toolbar` 삭제 이력 등)은 이번 라운드에서 함께 갱신되어 사실과 일치하지만, 5행만 갱신 대상에서 누락된 것으로 보인다. 기능·테스트·설계 준수에는 영향이 없는 순수 코드 주석(문서화) 드리프트이며, logic.md v1.22 설계 지시("리터럴 1곳만 교체, 그 외 변경 없음")가 애초에 이 주석 갱신을 요구하지 않았으므로 설계 위반은 아니다 — 향후 라운드에서 함께 정리할 것을 권장(비차단).
+- Critical / High / Medium **0**. Low 2건(LOW-01 — v1.25에서 이미 발견된 `.toolbar` 삭제 흔적 빈 줄, 비차단·재확인만 / LOW-02 — 위 신규 발견) 외 지적 없음.
+
+## E. 보안 점검 (STRIDE / OWASP)
+
+| 항목 | 결과 |
+| --- | --- |
+| 입력 검증/주입 | 해당 없음 — 사용자 입력을 받지 않는 빌드 타임 하드코딩 문자열 리터럴 1곳 교체뿐 |
+| 정보 노출 | 표시 문자열 값만 바뀌었을 뿐 `WatchSnapshot.summary` 등 노출 데이터의 종류·양은 무변경(리스트 Section 헤더의 완료/전체 수치 노출은 기존과 동일) |
+| 데이터 보호 / 비밀정보 | 해당 없음 — 키/토큰/자격증명과 무관 |
+| 의존성/설정 | 신규 npm/네이티브 의존성 0(`git diff` 로 `package.json`/`Podfile` 무변경 확인) |
+| 결론 | logic.md §17.12 "보안 영향: 해당 없음" 서술을 코드 대조로 독립 재확인. 미해결 취약점 **0** |
+
+## F. 회귀
+
+- 전체 회귀 스위트 307/307(§B) — v1.25 기준선과 동일 건수, 실패 0.
+- 체크박스 좌측 배치(AC-92)·다음 예정 미표시(P-68)·`.toolbar` 삭제 상태(AC-91 폐기)·리스트 Section 헤더 요약(P-73/AC-96)이 실기동 스크린샷(§C)에서도 함께 정상 렌더됨을 확인 — 이번 델타 범위 밖 기존 동작에 회귀 없음.
+- `ScheduleRow.swift`, `WatchConnectivityService.swift`, `PendingQueue.swift`, `SnapshotStore.swift`, `LWW.swift`, `Models.swift` 무변경(§A) — 완료 토글·동기화·LWW·보류 큐 등 기존 기능에 회귀 없음.
+- RN 앱(`src/app/navigation/RootNavigator.tsx` 등)은 이번 라운드와 무관한 이전(v1.24) 확정 변경분으로, 이번 검증 범위 밖이다 — 회귀 스위트 307/307 재현으로 간접 확인만 수행.
+
+## Failure Category / Regression
+
+- 발견된 결함 없음 — FAIL 사유 없음.
+- LOW-01(재확인, 비차단): `.navigationTitle` 다음 빈 줄 잔존 — 포맷팅, v1.25에서 이미 기록됨.
+- LOW-02(신규, Low, 비차단): `TodayView.swift` 5행 파일 상단 설명 주석의 "타이틀("오늘일정")" 표기가 실제 코드(36행, "오늘뭐해")와 어긋남 — 문서화(주석) 드리프트, 기능·요구사항 충족에는 영향 없음. IMPLEMENTATION_ERROR 성격이나 설계가 요구하지 않은 부수 사항이라 판정에 영향 없음.
+- 회귀: 없음(§F).
+
+## 판정 (v1.26)
+
+**PASS** — 워치 `TodayView.swift`의 상단 네비게이션 타이틀 리터럴 교체("오늘일정"→"오늘뭐해")가 설계(logic.md v1.22 §17.12 "변경 지시"·"최종 코드 상태")와 정확히 1:1 대응함을 코드 대조로 확인했다(§A). 리스트 Section 헤더("오늘일정 - {완료}/{전체}")는 설계 지시대로 무변경이며, 상단 타이틀과 문구가 갈라지는 것이 plan.md v1.15/logic.md v1.22가 명시한 의도된 결과임을 실기동 스크린샷으로 실증했다(§C). 다음 예정 미표시·체크박스 좌측 배치·`.toolbar` 삭제 상태 등 기존 확정 사항에 회귀 없음(§F). 회귀 스위트 307/307(§B), watchOS Xcode 빌드 성공(§C)으로 Developer 보고를 재현·재확인했다. 코드 리뷰에서 Critical/High/Medium 결함 0건(Low 2건 — LOW-01 재확인, LOW-02 신규 주석 드리프트, 둘 다 비차단, §D), 보안 점검에서 STRIDE/OWASP 관점 미해결 취약점 0건(§E)을 확인했다. 다음 단계 진행을 차단하는 문제 없음 — 다음 라우팅은 Orchestrator 결정.
 
 ---
 

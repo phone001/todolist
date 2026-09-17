@@ -2,9 +2,11 @@
 //  TodayView.swift
 //  TodayWhatWatch
 //
-//  루트 화면(§17.11.3, v1.17 개정 §17.12) — 타이틀 우측 헤더 요약("오늘 - {완료}/{전체}") /
-//  오늘 목록 / 빈 상태(E-19-5) / "최신 아님"(E-19-1) / "동기화 대기"(D-11) / pull-to-refresh(P-43(d)).
+//  루트 화면(§17.11.3, v1.17 개정 §17.12) — 타이틀("오늘일정") /
+//  오늘 목록(리스트 Section 헤더 요약 "오늘일정 - {완료}/{전체}", P-73/AC-96) /
+//  빈 상태(E-19-5) / "최신 아님"(E-19-1) / "동기화 대기"(D-11) / pull-to-refresh(P-43(d)).
 //  v1.17: "완료/미완료" 헤더 Section 과 "다음 예정" Section 은 제거(P-68, AC-91/92).
+//  v1.20: 상단 네비게이션 타이틀 우측 헤더 요약(.toolbar)은 삭제(P-68 축소, AC-91 폐기).
 //
 
 import SwiftUI
@@ -12,13 +14,14 @@ import SwiftUI
 struct TodayView: View {
     @EnvironmentObject private var connectivity: WatchConnectivityService
 
-    /// "오늘 - {완료}/{전체}" — WatchSnapshot.summary 만으로 산출(§17.12, P-68, AC-91).
-    /// 오늘 0건(E-19-5)이면 done=0, total=0 → "오늘 - 0/0"(E-19-8) 이 분기 없이 자동 산출된다.
+    /// "오늘일정 - {완료}/{전체}" — WatchSnapshot.summary 만으로 산출(§17.12, P-73, AC-96).
+    /// 리스트 Section 헤더의 유일한 소비처(상단 헤더 요약은 v1.20에서 삭제됨).
+    /// 오늘 0건(E-19-5)이면 리스트 Section 자체가 렌더되지 않으므로 이 값도 표시되지 않는다.
     /// 연결 불가로 마지막 스냅샷을 표시 중(E-19-1)이어도 그 스냅샷의 summary 를 그대로 사용한다.
     private var headerSummaryText: String {
         let done = connectivity.snapshot?.summary.done ?? 0
         let total = done + (connectivity.snapshot?.summary.notDone ?? 0)
-        return "오늘 - \(done)/\(total)"
+        return "오늘일정 - \(done)/\(total)"
     }
 
     var body: some View {
@@ -30,12 +33,8 @@ struct TodayView: View {
                     content
                 }
             }
-            .navigationTitle("오늘")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Text(headerSummaryText)
-                }
-            }
+            .navigationTitle("오늘뭐해")
+
         }
     }
 
@@ -67,7 +66,7 @@ struct TodayView: View {
                         .foregroundColor(.secondary)
                 }
             } else {
-                Section("오늘") {
+                Section(headerSummaryText) {
                     ForEach(today) { item in
                         ScheduleRow(item: item) {
                             connectivity.sendToggle(for: item)

@@ -37,7 +37,7 @@ const TAB_ICONS = {
 
 // 탭 아이콘 폴백 라벨 (E-16-1, AC-28: 에셋 로드 실패 시 Text 대체)
 const TAB_FALLBACK_LABELS: Record<string, string> = {
-  [TAB_ROUTES.Dashboard]: '오늘',
+  [TAB_ROUTES.Dashboard]: '오늘일정',
   [TAB_ROUTES.Calendar]: '캘린더',
   [TAB_ROUTES.Statistics]: '통계',
   [TAB_ROUTES.Settings]: '설정',
@@ -89,7 +89,7 @@ function Tabs() {
         ),
       })}
     >
-      <Tab.Screen name={TAB_ROUTES.Dashboard} component={DashboardScreen} options={{ title: '오늘' }} />
+      <Tab.Screen name={TAB_ROUTES.Dashboard} component={DashboardScreen} options={{ title: '오늘일정' }} />
       <Tab.Screen name={TAB_ROUTES.Calendar} component={CalendarScreen} options={{ title: '캘린더' }} />
       <Tab.Screen name={TAB_ROUTES.Statistics} component={StatisticsScreen} options={{ title: '통계' }} />
       <Tab.Screen name={TAB_ROUTES.Settings} component={SettingsScreen} options={{ title: '설정' }} />
