@@ -33,6 +33,7 @@ ios/build_ios/
 ios/build_ios_verify/
 ios/build_watch/
 ios/build_watch_verify/
+ios/build_ios_verify_f27/
 ios/Pods/
 ios/*.xcworkspace
 ios/.xcode.env.local
@@ -54,3 +55,9 @@ vendor/bundle/
 
 # 아카이브
 *.zip
+
+# --- Firebase 설정 파일 (F-27, v1.23 — document/architect/logic.md §13.10, P-79/AC-100) ---
+# 슬래시 없는 파일명 패턴이라 경로와 무관하게 매칭된다 — 임시 전달 위치(.claude/)와 실제 배치
+# 위치(ios/TodayWhat/) 양쪽을 이 한 줄로 커버한다. Android 대응 파일도 방어적으로 함께 제외한다.
+GoogleService-Info.plist
+google-services.json

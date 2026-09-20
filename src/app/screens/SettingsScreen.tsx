@@ -4,6 +4,10 @@
  * 바인딩: SettingService.get/set, CategoryService.list/create/remove, AuthService.link/unlink.
  * v1.9(F-25/D-28(a)): 완료된 일정 숨기기(`dashboard.hideCompleted`)는 대시보드와 공유하는 단일 키 —
  *   이 화면과 대시보드가 각각 마운트/포커스 시 다시 읽으므로 별도 동기화 채널이 필요 없다(logic §7.5).
+ * v1.23(F-27): "알림 사용" 토글 on/off 전환 직후 `RemotePushService.applyGlobalNotificationsToggle(v)`
+ *   를 호출해 원격 푸시 공지 토픽 구독/해지를 함께 반영한다(§6 "전역 알림 토글과 원격 푸시 연동").
+ *   이 호출은 서비스 내부에서 독립 try/catch 로 격리되어 실패해도 위 로컬 토글 저장 결과(이미 완료)를
+ *   되돌리지 않는다(E-27-2/E-27-6).
  * 환경 제약: react / react-native 의존 → 파이프라인 미실행(정적 리뷰).
  */
 import React, { useCallback, useEffect, useState } from 'react';
@@ -93,7 +97,7 @@ function Segmented<T extends string>({
 }
 
 export function SettingsScreen() {
-  const { settings, auth, categories } = useServices();
+  const { settings, auth, categories, remotePush } = useServices();
   const navigation = useNavigation<SettingsNavProp>();
 
   const [notifEnabled, setNotifEnabled] = useState(true);
@@ -163,6 +167,8 @@ export function SettingsScreen() {
           onChange={async (v) => {
             setNotifEnabled(v);
             await save(SETTING_KEYS.notifEnabled, v);
+            // F-27(v1.23): 원격 푸시 공지 토픽 구독/해지 연동(독립 격리, 로컬 토글 결과에 영향 없음).
+            void remotePush.applyGlobalNotificationsToggle(v);
           }}
         />
         <SwitchRow

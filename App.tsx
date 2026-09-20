@@ -17,6 +17,10 @@
  *   기다리므로, 그 사이 실체화된 "오늘" 회차를 최초 마운트된 화면이 놓칠 수 있다. `runPostRender` 완료
  *   직후 `list`/`dashboard` 스토어를 무효화해 이미 마운트된 화면이 이를 감지하고 재조회하도록 신호를
  *   보낸다(포커스 유지 중인 화면의 실시간 감지는 각 화면의 라이브 구독이 담당 — 예: DashboardScreen).
+ * 원격 푸시 배선(F-27, v1.23 신규, logic §16.4/§19.3/§19.4): 렌더 후 `wireRemotePushListeners()`로
+ *   `onTokenRefresh`/`onMessage` 리스너를 1회 등록하고, `registerRemotePushIfNeeded()`로 등록을
+ *   시도한다(비차단·격리 — 실패해도 위 로컬 알림/워치 동기화 단계에 영향 없음, E-27-2/AC-99).
+ *   `AppState 'active'` 복귀 시에도 기존 `scheduler.sync()` 와 동일 타이밍에 재시도한다(§18.2 nfr).
  * 환경 제약: react / react-native / 네이티브 어댑터 의존 → 파이프라인 미실행(정적 리뷰).
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -25,6 +29,8 @@ import { bootstrap, runPostRender, type BootstrapResult } from './src/app/bootst
 import {
   createBootstrapSteps,
   createPostRenderSteps,
+  getRemotePushService,
+  wireRemotePushListeners,
   type NativeConfig,
 } from './src/app/bootstrap/composeNative.native.ts';
 import { ServicesProvider } from './src/app/bootstrap/AppContext.tsx';
@@ -86,6 +92,9 @@ export default function App() {
         // F-19: 워치 게이트 활성화(수신 콜백 등록 포함) 후 최신 스냅샷 1회 전송(§17.2).
         await r.services.watchSync.activate();
         void r.services.watchSync.pushSnapshot();
+        // F-27(v1.23): onTokenRefresh/onMessage 리스너 1회 등록 + 등록 재시도(비차단·격리, §19.3/§19.4).
+        wireRemotePushListeners();
+        void getRemotePushService().registerRemotePushIfNeeded();
       }
     })();
     return () => {
@@ -106,6 +115,8 @@ export default function App() {
       // F-24(RECUR-01 수정, logic §18.3 / nfr §17.1·§17.3): ReminderScheduler.sync() 와 동일 지점에서
       // RecurrenceScheduler.sync() 도 병행 호출 — 콜드 스타트/생성 직후 누락분을 보완한다.
       void result.services.recurrenceScheduler.sync();
+      // F-27(v1.23): 동일 타이밍에 원격 등록 재시도(토큰 미존재 시에만, §16.4/§18.2 nfr).
+      void getRemotePushService().registerRemotePushIfNeeded();
     });
     return () => sub.remove();
   }, [result]);
@@ -134,7 +145,7 @@ export default function App() {
   if (!result.ok) return <SafeModeScreen migration={result.migration} />;
 
   return (
-    <ServicesProvider services={result.services}>
+    <ServicesProvider services={{ ...result.services, remotePush: getRemotePushService() }}>
       <RootNavigator />
     </ServicesProvider>
   );

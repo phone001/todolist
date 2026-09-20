@@ -1,6 +1,6 @@
 /**
  * 테스트/데모용 게이트웨이 구현. 운영 어댑터(Notifee, app-auth, Keychain, WatchConnectivity 등)를 대체한다.
- * 설계 근거: document/architect/logic.md 0.1, 13, §17.
+ * 설계 근거: document/architect/logic.md 0.1, 13, §17, §19(F-27).
  */
 import type {
   AuthGateway,
@@ -12,6 +12,8 @@ import type {
   NotificationGateway,
   NotificationRequest,
   PermissionStatus,
+  RemotePushGateway,
+  RemotePushMessage,
   TokenSet,
   TokenStore,
   WatchSyncGateway,
@@ -305,5 +307,66 @@ export class FakeWatchSyncGateway implements WatchSyncGateway {
 
   lastSnapshot(): WatchSnapshot | undefined {
     return this.sentSnapshots[this.sentSnapshots.length - 1];
+  }
+}
+
+/**
+ * 원격 푸시 채널 스파이(테스트용, F-27, v1.23 신규).
+ * `registerResult`/`fail*` 플래그로 등록·구독 성공/실패를 흉내내고, `emitTokenRefresh`/`emitMessage`
+ * 로 토큰 로테이션·포그라운드 수신 콜백을 트리거한다. 실제 어댑터와 동일하게 예외를 던지지 않는다
+ * (E-27-2) — `fail*` 플래그는 예외 대신 실패값(`null`/`false`)을 반환하도록 흉내낸다.
+ */
+export class FakeRemotePushGateway implements RemotePushGateway {
+  supported: boolean;
+  registerResult: string | null = 'fcm-token-1';
+  failSubscribe = false;
+  failUnsubscribe = false;
+
+  registerCalls = 0;
+  readonly subscribedTopics: string[] = [];
+  readonly unsubscribedTopics: string[] = [];
+  private tokenRefreshCb: ((token: string) => void) | null = null;
+  private messageCb: ((message: RemotePushMessage) => void) | null = null;
+
+  constructor(supported = true) {
+    this.supported = supported;
+  }
+
+  isSupported(): boolean {
+    return this.supported;
+  }
+
+  async register(): Promise<string | null> {
+    this.registerCalls += 1;
+    if (!this.supported) return null;
+    return this.registerResult;
+  }
+
+  async subscribeToTopic(topic: string): Promise<boolean> {
+    if (!this.supported || this.failSubscribe) return false;
+    this.subscribedTopics.push(topic);
+    return true;
+  }
+
+  async unsubscribeFromTopic(topic: string): Promise<boolean> {
+    if (!this.supported || this.failUnsubscribe) return false;
+    this.unsubscribedTopics.push(topic);
+    return true;
+  }
+
+  onTokenRefresh(cb: (token: string) => void): void {
+    this.tokenRefreshCb = cb;
+  }
+
+  onMessage(cb: (message: RemotePushMessage) => void): void {
+    this.messageCb = cb;
+  }
+
+  emitTokenRefresh(token: string): void {
+    this.tokenRefreshCb?.(token);
+  }
+
+  emitMessage(message: RemotePushMessage): void {
+    this.messageCb?.(message);
   }
 }

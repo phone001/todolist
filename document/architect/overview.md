@@ -3,15 +3,16 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 설계 총괄 (Overview) |
-| 버전 | v1.22 |
+| 버전 | v1.23 |
 | 상태 | 작성 완료 (Developer 착수 가능) |
-| 근거 기획서 | `document/planner/plan.md` v1.15 |
+| 근거 기획서 | `document/planner/plan.md` v1.16 |
 | 작성 주체 | Architect |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
+| v1.23 | 2026-09-20 | **설계 델타 — plan.md v1.16: F-27 원격 푸시 알림(Firebase Cloud Messaging, iOS 한정) 신규.** 사용자 신규 요청 원문: "`.claude/GoogleService-Info.plist` 를 적용해서 푸시알림 기능을 구현해줘." `알림앱.md` 원본에 근거 없는 신규 요청. 기획 재검증 **PASS** — 상세는 아래 "v1.23 재검증" 표(비차단 사실 정정 1건: 저장소 루트 `.gitignore` **파일 자체는 이미 존재** — plan.md 서술과 달리 신규 생성이 아니라 기존 파일에 패턴 추가로 P-79/AC-100 요건 충족). 주요 결정: **(1) 신규 포트 `RemotePushGateway`**(iOS 전용, Android no-op — P-74) — 토큰 발급(`register`)·토픽 구독/해지·토큰 갱신 이벤트·포그라운드 수신 콜백. 어댑터는 `@react-native-firebase/app`+`@react-native-firebase/messaging`(신규 기술 스택). **(2) 등록·수신 흐름** — 기존 알림 권한 허용(F-08 E-08-1과 동일, P-77) 시 APNs→FCM 토큰 발급 → 단일 공지 토픽(D-34) 구독 → `APP_SETTING`(로컬)에만 저장(P-78, D-33). 등록 실패는 예외 없이 격리되어 로컬 알림(F-08/F-09)·부트스트랩에 영향 없음(E-27-2, AC-99). 포그라운드 수신은 전역 알림 토글(F-18)을 따라 `notifee.displayNotification()` 으로 게이팅(E-27-6), 백그라운드/종료는 iOS 표준 알림에 위임(E-27-3). **(3) 서버 부재(P-76)** — 발송은 Firebase 콘솔 수동/토픽 발송으로 한정, 서버 자동 발송·토큰 서버 전송은 이번 범위 밖(D-32/D-33, 후속 OI-34). **(4) 보안(P-79, AC-100)** — `GoogleService-Info.plist` 실제 배치 `ios/TodayWhat/`, 저장소 `.gitignore`에 패턴 추가(경로 무관 매칭으로 `.claude/` 임시 위치도 함께 커버), 원문 내용 비인용 원칙. **DB 스키마 변경 없음**(`database.md` v1.9 §15 — `APP_SETTING` 신규 키 3개만). `logic.md` v1.23(§0.1/§0.2·§6 신규 소단락·§13.10 신규·§16.4~16.7/§16.3.6 갱신·§19 신설·§14/§15 갱신) / `nfr.md` v1.20(§18 신설·§4/§5.2/§6/§9/§12 갱신) 동반 개정. 기존 F-08/F-09/P-41(로컬 예약 알림)은 **완전히 무변경** — 원격 푸시는 별도 채널로 그 위에 얹힌다(P-75) |
 | v1.22 | 2026-09-17 | **설계 델타 — plan.md v1.15: F-19 재개정 — 워치 TodayView 상단 네비게이션 타이틀 문구 재변경 "오늘일정"→"오늘뭐해".** 사용자 신규 요청 원문: "`ios/TodayWhatWatch/TodayView.swift` 에서 네비게이션 타이틀을 '오늘일정'에서 '오늘뭐해'로 변경해줘" — v1.11 확정 후 v1.12·v1.13·v1.14/v1.20/v1.21(타이틀 유지)를 거치며 재확인된 값을 사용자가 명시적으로 재지시해 뒤집는 변경(되돌리기/regression 아님). 기획 재검증 **PASS** — 상세는 아래 "v1.22 재검증" 표. **범위 판단**: 상단 `NavigationBar` 타이틀 리터럴 1곳(`ios/TodayWhatWatch/TodayView.swift` 36행 `.navigationTitle("오늘일정")`)만 `.navigationTitle("오늘뭐해")`로 교체한다. 리스트 Section 헤더(69행 `Section(headerSummaryText)` — "오늘일정 - {완료}/{전체}", P-73/AC-96)는 상단 타이틀과 코드상 별개 UI 요소이므로 **변경하지 않는다** — 이번 변경으로 상단 타이틀="오늘뭐해" / 리스트 Section 헤더="오늘일정"으로 문구가 갈라지는 것은 의도된 결과다(plan.md v1.15 판단과 동일). `headerSummaryText` 계산 프로퍼티(산식 무변경)·다음 예정 미표시(P-68, v1.17)·체크박스 좌측 배치(P-69)·상단 헤더 요약 삭제(v1.20/v1.21, 이미 구현됨)는 이번 개정과 무관하며 전부 그대로 유지. **공유 페이로드 계약·전송 메커니즘·LWW·보류 큐·`ScheduleRow.swift`·DB 스키마(`database.md` v1.8)·보안 위협 모델은 전부 무변경** — 순수 하드코딩 문자열 리터럴 1곳 교체다. `logic.md` v1.22(§17.1/§17.9/§17.10/§17.11.3/§17.12/§13.8/§14/§15 갱신) / `nfr.md` v1.19(§14.5 검증 문구 중 상단 타이틀 확인 리터럴만 "오늘일정"→"오늘뭐해" 정정) 동반 개정. 「API 설계」 섹션 미신설(신규/외부 API 없음) |
 | v1.21 | 2026-09-17 | **설계 전제 오류 정정 — Developer `BLOCKED(DESIGN_CONFLICT)` 대응(plan.md 델타 없음, 여전히 v1.14 기준).** Developer 가 `ios/TodayWhatWatch/TodayView.swift` 구현 착수 중, v1.20 설계(그 전제였던 v1.19 설계 포함)가 "P-73/AC-96(리스트 `Section` 헤더 `headerSummaryText` 요약 접미사)이 v1.19에서 이미 구현되어 있다"고 서술한 부분이 **사실과 다름**을 코드·git 워킹트리·`log/agent-execute.log` 대조로 확인해 보고했다. 실제로는 (1) `TodayView.swift` 70행이 지금도 `Section("오늘일정")`(접미사 없음)이고 `headerSummaryText` 는 34~38행 `.toolbar` 블록에서만 소비되며, (2) v1.13(P-73/AC-96) 라운드는 2026-09-16 Architect 디스패치 이후 Developer/Tester RESULT 로그가 없어 실제 구현·검증 사이클이 한 번도 완결되지 않았다 — v1.19 logic.md 설계가 다음 v1.20 설계의 전제로 이어지는 과정에서, 실제 코드 반영 여부를 재확인하지 않고 "이미 구현됨"으로 서술한 **Architect 문서화 공정 오류**였다(plan.md 의 요구사항 내용 자체는 문제 없음). **결정(Option B)**: P-73/AC-96 은 plan.md v1.13 에서 이미 "정식 반영"·"설계 착수 가능" 판정을 받은 확정·미변경 요구사항이고 설계(§17.12 `headerSummaryText` 재사용)도 이미 완결돼 있으므로, plan.md v1.14 의 "이번 개정 범위 밖으로 변경하지 않는다"(= 요구사항 **내용**을 바꾸지 않는다는 뜻이며 구현을 보류한다는 뜻이 아님)를 근거로 사용자가 명시적으로 요청한 v1.14(toolbar 삭제)와 **동일 Developer 라운드에서 함께 구현**하도록 지시를 명확화했다(범위 확장이 아니라 확정 요구사항의 뒤늦은 이행 — 미루면 (a) `headerSummaryText` 가 dead code 화, (b) AC-96 미충족 gap 이 새로 남는 두 문제가 생김). `logic.md` v1.21 — §17.1/§17.9/§17.10/§17.11.3 서술을 "v1.19/v1.20 설계, v1.21 구현"으로 정정하고, §17.12 를 "구현 순서(필수)" 절로 재작성: **1단계** `TodayView.swift` 70행 `Section("오늘일정")` → `Section(headerSummaryText)`(P-73/AC-96 최초 구현) → **2단계** 34~38행 `.toolbar { ToolbarItem(placement: .topBarTrailing) { Text(headerSummaryText) } }` 블록 완전 삭제(P-68, `.navigationTitle("오늘일정")` 만 유지). 순서 준수 이유(2단계 단독/선행 적용 시 dead code·AC-96 미충족 잔존)를 명시하고 현재 코드 기준선·최종 코드 상태를 코드 블록으로 첨부. **공유 페이로드 계약·전송 메커니즘·LWW·보류 큐·`ScheduleRow.swift`·DB 스키마(`database.md` v1.8)·보안 위협 모델은 전부 무변경** — 이번 정정은 설계 내용이 아니라 "그 설계가 실제 코드에 반영되었는가"에 대한 사실관계 정정과 Developer 재작업을 위한 순서 명확화다. `nfr.md` v1.18 — §14.5 검증 문구를 "무변경 회귀 확인"에서 "**최초 구현 확인**"(P-73/AC-96) + "toolbar 삭제 확인"(P-68) 동시 검증으로 정정. **신규 미결정 N-19** — 같은 세션 내에서 이전 설계 라운드의 실제 Developer 구현 완료 여부를 코드로 재확인하지 않고 다음 설계의 전제로 이어받는 공정 오류가 재발하지 않도록, 향후 Architect 라운드는 착수 전 대상 파일의 실제 코드 상태를 항상 우선 확인하도록 권장(비차단, Architect 공정 개선 사항). 아래 "v1.21 (설계 전제 오류 정정)" 영향 범위 절 참고. 「API 설계」 섹션 미신설(신규/외부 API 없음) |
 | v1.20 | 2026-09-17 | **설계 델타 — plan.md v1.14: F-19 개정(축소) — 워치 TodayView 상단 헤더 요약(`.toolbar`) 삭제**(사용자 신규 요청: `ios/TodayWhatWatch/TodayView.swift` 34라인 근처 `.toolbar { ToolbarItem(placement: .topBarTrailing) { Text(headerSummaryText) } }` 제거, P-68 축소 개정 — "다음 예정 제거" 요건만 유지, 헤더 요약 요건 삭제. **AC-91 폐기** — 검증 대상 제외. AC-47/AC-54 재정정. E-19-5/E-19-8 문구 갱신). 기획 재검증 **PASS** — 상세는 아래 "v1.20 재검증" 표(plan.md AC-96 잔존 서술 1건 발견 — note, 비차단). 주요 결정: `ios/TodayWhatWatch/TodayView.swift` 루트 뷰의 `.navigationTitle("오늘일정")`(v1.11 확정 문구, 유지)에 붙어 있던 `.toolbar { ToolbarItem(placement: .topBarTrailing) { Text(headerSummaryText) } }` 블록을 **완전히 제거**한다 — 화면 상단에는 "오늘일정" 타이틀만 남고 우측 요약은 표시되지 않는다. 계산 프로퍼티 `headerSummaryText`(산식 무변경)는 삭제하지 않고 존치 — v1.19에서 도입된 리스트 Section 헤더(`Section(headerSummaryText)`, P-73)가 유일한 소비처가 된다(상단 헤더 소비처만 제거). 다음일정 제거(P-68, v1.17)·오늘 목록 Section 라벨(v1.18)·체크박스 좌측 배치(P-69, v1.17)·리스트 Section 헤더 요약(P-73, v1.19)은 이번 개정과 무관하며 그대로 유지 — plan.md v1.14 가 "리스트 Section 헤더는 코드상 별개 컴포넌트이므로 범위 밖"이라 명시한 판단과 동일하다. E-19-5(0건 케이스)는 "상단 헤더 요약 자체가 없어져 0건 케이스에는 상단·리스트 Section 헤더 어디에도 요약이 표시되지 않는다"로 정정, E-19-8 의 적용 대상을 "상단 헤더 요약"에서 "리스트 Section 헤더 요약(P-73)"으로 변경. AC-47/AC-54 는 상단 헤더 관련 Then 절을 "타이틀만 표시"로 정정, **AC-91 은 폐기(검증 대상 제외)**. **공유 페이로드 계약·`WatchSnapshot`/`WatchScheduleItem`·전송 메커니즘·LWW·보류 큐·`ScheduleRow.swift`는 전부 무변경.** **DB 스키마 변경 없음**(`database.md` v1.8 유지). **정량 NFR 목표 영향 없음**(계산·조회·전송 경로 무변경, 오히려 렌더 대상 1개 감소) — 다만 `nfr.md` v1.17 로 갱신하여 §9 V-58 검증 문구(상단 헤더 요약 스크린샷 확인 → 삭제 확인 + 리스트 Section 헤더 요약 회귀 확인)와 §14.5 를 실제 설계와 일치시켰다. **보안 위협 모델 영향 없음**(노출 위치가 2곳→1곳으로 줄어 오히려 축소). `logic.md` v1.20(§17.12 재작성·§17.9/§17.10/§17.11.3 갱신·§13.8/§14/§15 갱신) / `nfr.md` v1.17(§9 V-58, §14.5 갱신) 동반 개정. 「API 설계」 섹션 미신설(신규/외부 API 없음). **발견 사항(비차단, Planner 후속 정리 권장)**: plan.md AC-96(1779행·1781행)의 Then/And 절 2곳이 v1.14에서 삭제된 상단 헤더 요약이 "계속 존재"하는 것처럼 서술하고 있어, 같은 문서 내 F-19/P-68/E-19-5/E-19-8/AC-47/AC-54/AC-91/§7.10(모두 v1.14 갱신 지점, 8곳에서 일관되게 "삭제"로 서술)과 상충한다. 본 설계는 다수 지점의 v1.14 확정 서술(삭제 의도)을 따랐다 — plan.md AC-96 잔존 서술 정정은 Architect 권한 밖이므로 수정하지 않고 아래 「미결정 사항」 N-18 에 기록한다 |
@@ -42,11 +43,32 @@
 
 - **기능 목적**: 개인이 일정을 등록·분류·완료 관리하고, 일정 전/정시에 로컬 알림을 받으며, 금일 현황을 대시보드로 파악하고, 검색·테마·계정 연동·기본 캘린더 연동을 사용하는 오프라인 우선 모바일 앱.
 - **설계 대상**: 신규 시스템 전체. 클라이언트(React Native) + 로컬 저장소(SQLite) + OS 연동(로컬 알림 / 기본 캘린더 / OAuth).
-- **변경 범위**: 저장소는 현재 `src/index.ts` 스캐폴드뿐이므로 신규 구축. 서버 컴포넌트는 이번 범위 없음(기획 게이트 D-01 = (c) 가정).
+- **변경 범위**: 저장소는 현재 `src/index.ts` 스캐폴드뿐이므로 신규 구축. 서버 컴포넌트는 이번 범위 없음(기획 게이트 D-01 = (c) 가정). **(v1.23 추가)** F-27(원격 푸시 알림, FCM, iOS 한정)에 따라 클라이언트에 Firebase Cloud Messaging 수신 인프라(토큰 발급·토픽 구독·수신 표시)를 추가한다 — 서버 컴포넌트는 이번에도 도입하지 않는다(P-76).
 
 ---
 
 ## 기획 검증 결과
+
+### v1.23 재검증 (plan.md v1.16 — F-27 신규: 원격 푸시 알림, Firebase Cloud Messaging, iOS 한정)
+
+**결과: PASS (설계 가능, Planner 재작업 불필요)** — 단, plan.md 서술 중 사실관계 오류 1건을 Architect 조사로 발견·정정(비차단, 아래 note 참고).
+
+| 검증 항목 | 판정 | 비고 |
+| --- | --- | --- |
+| 원본 요청/상위 요구사항 반영 | OK | 사용자 신규 요청 원문("`.claude/GoogleService-Info.plist` 를 적용해서 푸시알림 기능을 구현해줘.")이 신규 F-27·§5.21(P-74~P-79)·§7.16·AC-97~AC-100·D-32~D-35·OI-34~OI-37 에 빠짐없이 반영되어 있다. `알림앱.md` 원본에 근거가 없는 사용자 신규 요청임을 plan.md가 명시하고, 근거 파일(`GoogleService-Info.plist`)의 존재·용도만 인용하고 원문 내용은 열람·인용하지 않았음을 확인했다(Architect도 동일 원칙 준수, 원문 미열람) |
+| 기능 목적/범위/시나리오 | OK | Who/When/What/Action/Result/Exception 이 구체적(§F-27). 플랫폼(iOS 한정, P-74), 서버 부재로 인한 범위 축소(수신 인프라 구축까지, P-76), 로컬 알림과의 관계(별도 채널, P-75), 권한 UX(기존 재사용, P-77) 가 전부 명시적으로 확정되어 모호함이 없다 |
+| 입력·출력·상태변화·예외 | OK | E-27-1~E-27-6 이 권한 거부·등록 실패·앱 종료 상태 수신·동시 도착·워치 노출·전역 토글 상호작용까지 구체적으로 정의. AC-97~AC-100 이 Given/When/Then 형태로 검증 가능 |
+| 비기능 요구사항 | OK | 보안(P-79)이 필수 정책으로 명시되어 있고, 서버가 없어 신규 정량 성능 SLO가 필요하지 않음을 plan.md가 스스로 판단(§5.21 P-76) |
+| 요구사항 충돌 | 없음 | 기존 F-08(사전 알림)/F-09(정시 알림)/P-41(예약 주체=폰)과의 관계가 P-75·F-08 절 참고 문구로 명확히 분리되어 있어 상호 모순이 없다 |
+| 가정/확정 구분 | OK | P-74~P-79 는 "확정"(plan 채택), D-32~D-35 는 "비차단 가정값 + 후속 위임"으로 명확히 구분되어 있다 |
+| Acceptance Criteria 검증 가능성 | OK | AC-97~AC-100 전부 Given/When/Then 구체적. AC-100 은 보안 정적 점검으로 검증 가능한 형태 |
+| 미결정 게이트 영향 | **비차단** | D-32(서버 자동 발송 후속 여부)만 향후 백엔드 투자와 직결되어 이해관계자 확인을 권장하나, 이번 릴리스 설계 착수를 막지 않는다(plan.md가 "서버 없음"을 명확히 확정했으므로 BLOCKED 판단 근거 없음) |
+
+**note — Architect 조사로 발견한 plan.md 사실관계 오류 (비차단, 설계·정책 변경 없음)**: plan.md(§5.21 P-79, v1.16 변경이력)는 "현재 저장소에 `.gitignore` 파일 자체가 존재하지 않는다"고 서술했으나, Architect가 저장소를 조사한 결과 저장소 루트에 `.gitignore`가 **이미 존재**한다(Android/iOS 네이티브 빌드 산출물 제외 등 기존 규칙 다수 포함, 최초 도입 시점은 이번 조사 범위 밖). P-79/AC-100 이 요구하는 실질 결과("`GoogleService-Info.plist`가 git 추적에서 제외됨")는 "신규 `.gitignore` 생성" 대신 "기존 `.gitignore`에 패턴 추가"로 동일하게 달성 가능하므로, 이 사실 정정이 정책·설계 결정 자체를 바꾸지 않는다 — Planner 반려 사유가 아니라 Architect 조사 단계에서 바로잡을 수 있는 기술적 사실 확인 사항으로 판단해 설계를 진행했다(`logic.md` §13.10에 정정 내용과 대응 설계를 명문화, 아래 「미결정 사항」에도 정보성으로 기록).
+
+**설계 반영 요약**: `logic.md` §0.1(신규 포트 `RemotePushGateway`)·§0.2(신규 오류 코드)·§6(전역 알림 토글 ↔ 원격 푸시 연동 신규 소단락)·§13.10(신규, Firebase 설정 파일 보안)·§13.8(위협표 4행 추가)·§16.4~16.7/§16.3.6(부트스트랩·어댑터 매핑·권한 흐름·보안 노트·설정 화면 갱신)·§19(신설, 등록·수신·API 설계·예외·AC 매핑)·§14/§15(일관성·미결정 갱신)에 반영했다. `database.md`는 **v1.9로 갱신**(§15 신설) — 스키마 변경 없이 기존 `APP_SETTING` EAV 테이블에 신규 키 3개만 추가(F-25 v1.8 선례와 동일 패턴). `nfr.md`는 **v1.20으로 갱신**(§18 신설, §4/§5.2/§6/§9/§12 갱신) — 등록 실패 격리(가용성)·재시도 정책·관측성 메트릭·보안 NFR·신규 검증 항목(V-61~V-63) 반영, 신규 정량 성능 SLO는 없음(서버 없음, P-76).
+
+---
 
 ### v1.22 재검증 (plan.md v1.15 — F-19 재개정: 워치 TodayView 상단 네비게이션 타이틀 문구 재변경 "오늘일정"→"오늘뭐해")
 
@@ -533,10 +555,13 @@
 │  Gateway · RNCalendarEventsGateway · AppAuthGateway ·          │
 │  KeychainTokenStore · SystemClock · MigrationRunner ·          │
 │  WatchConnectivityGateway (iOS, react-native-watch-connectivity)│
+│  FirebaseRemotePushGateway (iOS, F-27, v1.23 신규) ·           │
+│  NoopRemotePushGateway (Android no-op)                          │
 └───────────────────────────────────────────────────────────────┘
                          │
    SQLite(암호화 옵션) · OS 로컬 알림 · OS 기본 캘린더 · OAuth Provider
                          │  WatchConnectivity (iOS ↔ watchOS, OS 페어링 채널)
+                         │  APNs/FCM (iOS, F-27, v1.23 — Firebase 콘솔 수동/토픽 발송만, 서버 없음)
                          ▼
 ┌───────────────────────────────────────────────────────────────┐
 │ Apple Watch 앱 (네이티브 SwiftUI 단일 타깃 TodayWhatWatch, F-19)│
@@ -573,6 +598,19 @@ ScheduleEditor 입력(반복 주기 선택) → ScheduleService.create({ recurre
    → listOccurrenceStartTimes(마스터ID) 와 diff(soft-deleted 포함 — 삭제된 회차 재생성 방지) → 미생성분만 INSERT
    → 신규 회차마다 REMINDER 재사용 경로로 독립 예약
  → 목록/대시보드/캘린더 뷰 무효화
+```
+
+대표 흐름 (원격 푸시 알림 등록·수신, v1.23 F-27):
+
+```text
+온보딩: 사용자가 알림 권한 허용(F-08 E-08-1과 동일 권한, P-77)
+ → NotificationGateway 로컬 예약 가능 상태 + (fire-and-forget) RemotePushGateway.register()
+   → 성공: FCM 토큰 발급 → APP_SETTING 저장 → subscribeToTopic(공지 토픽, D-34)
+   → 실패: 예외 없이 무시, 다음 앱 실행/포그라운드 진입 시 재시도(E-27-2, AC-99 — 로컬 알림 흐름 완전 독립)
+(운영자) Firebase 콘솔에서 토픽 대상 또는 테스트 메시지 발송(P-76, 서버 자동 발송 없음)
+앱 수신:
+  포그라운드 → onMessage 콜백 → 전역 알림 토글(F-18) 확인 → notifee.displayNotification()(E-27-6)
+  백그라운드/종료 → iOS 표준 알림 자동 표시(E-27-3, 앱 코드 개입 없음)
 ```
 
 대표 흐름 (일정 등록 → 알림):
@@ -629,6 +667,8 @@ src/
     │   ├── secure/KeychainTokenStore.ts
     │   ├── clock/SystemClock.ts (core 재noop 또는 재사용) + boot/BootReschedule.ts
     │   ├── watch/WatchConnectivityGateway.native.ts  # 신규(v1.9) — WatchSyncGateway 구현 (iOS; Android no-op)
+    │   ├── push/FirebaseRemotePushGateway.native.ts  # 신규(v1.23, F-27) — RemotePushGateway 구현 (iOS; @react-native-firebase/messaging)
+    │   ├── push/NoopRemotePushGateway.ts             # 신규(v1.23, F-27) — Android no-op(isSupported()=false, P-74)
     │   └── logging/MaskingLogger.ts       # nfr 5.1 마스킹 규칙 구현
     ├── ui/                       # 공용 컴포넌트·테마 (theme.mode/accent/fontScale 반영)
     └── components/               # 신규(v1.7) — 순수 프레젠테이션 컴포넌트. core/서비스/bindings 무의존, props 로만 데이터 수신
@@ -671,6 +711,7 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 | `Logger` | `MaskingLogger` | 자체 | 마스킹 규칙 테스트(V-15) |
 | 부팅 재예약 | `BootReschedule` (Android `BootReceiver` headless JS / iOS 앱 기동 시) | `@notifee/react-native` + Android receiver | `bootstrapSequence`가 `ReminderScheduler.sync()` 호출함을 테스트(AC-08) |
 | `WatchSyncGateway` (신규, F-19) | `WatchConnectivityGateway` (iOS 전용; Android no-op) | `react-native-watch-connectivity` 1.x | `WatchSyncService`와의 계약 동치 테스트(스냅샷 전송·op 수신 콜백·ack). WCSession 실제 왕복은 워치 기기 후속(N-11). watchOS 앱 코드(Swift)는 이 파이프라인 정적 리뷰만 |
+| `RemotePushGateway` (신규 v1.23, F-27) | `FirebaseRemotePushGateway`(iOS 전용) / `NoopRemotePushGateway`(Android) | `@react-native-firebase/app` + `@react-native-firebase/messaging`(overview 기술 스택 표) | 스파이·목 기반 계약 테스트(등록 실패 시 `null` 반환·throw 없음 확인, V-61). 실제 APNs/FCM 네트워크 라운드트립은 온디바이스 후속(§11.2 nfr) |
 
 ### 조립 지점 리팩터 (seam)
 
@@ -690,7 +731,7 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 | Search (v1.12: Stack 화면, Calendar 헤더에서 진입 — D-20(a)) | `SearchService.search` (2자↑ FTS / 미만 LIKE, `SEARCH_PAGE_SIZE=50` cursor 추가 로드) — 로직 무변경(P-54) | `search` |
 | Statistics (신규 v1.12, F-23, 읽기 전용) | 상단 카드: `ScheduleService.findInRange(0, MAX_SAFE_INTEGER, undefined, 'startAt', STATISTICS_PAGE_SIZE, cursor)` cursor 루프 전건/완료 count / 하단 그래프: `ScheduleService.findInRange(yearStartTs, yearEndTs, undefined, 'startAt', STATISTICS_PAGE_SIZE, cursor)` cursor 루프 + `CategoryService.list()`. 선택 연도는 화면 로컬 state(기본 올해, 비영속). 포커스 시 재조회(R-23-3). 집계는 순수 `statisticsViewModel.ts` | 화면 로컬 state(신규 슬라이스 없음) |
 | Settings | `SettingService.get/set` (theme.*, notif.enabled, notif.showTitle, schedule.default*, calendar.*), `AuthService.link/unlink`, 전역 알림 토글 시 `ReminderScheduler.applyGlobalNotificationsToggle` | `settings`, `account` |
-| Permissions(온보딩) | `NotificationGateway.requestPermission`, `CalendarGateway.requestPermission` | `settings` |
+| Permissions(온보딩) | `NotificationGateway.requestPermission`, `CalendarGateway.requestPermission`, (v1.23, F-27) 권한 허용 시 `RemotePushGateway.register()` fire-and-forget 호출 | `settings` |
 
 ### 앱 라이프사이클 → 부트스트랩
 
@@ -699,6 +740,8 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 `AppState`가 `active` 전이 시 `sync()` 재호출. Android 부팅 완료 브로드캐스트 → headless JS → `sync()`. (logic §16.4)
 
 **워치 동기화 배선(v1.9, F-19, iOS)**: `bootstrapSequence` 렌더 후 단계에서 `WatchSyncGateway.activate()` + 수신 콜백 등록(`onIncomingToggle → WatchSyncService.applyIncomingToggle`). 폰 데이터 변경(create/update/toggleDone/softDelete/restore/캘린더 pull) 후 `dashboard` store 무효화 시점에 `WatchSyncService.pushSnapshot()`(디바운스)로 최신 스냅샷을 `updateApplicationContext` 전송. `AppState 'active'` 전이·워치 `sendMessage` 수신 시에도 push. Android 는 no-op. (logic §17.2)
+
+**원격 푸시 등록 배선(v1.23, F-27, iOS)**: 렌더 후 비차단 단계에서 알림 권한이 이미 `granted`면 `RemotePushGateway.register()`(실패해도 throw 없음, E-27-2) → 성공 시 `subscribeToTopic(PUSH_TOPIC_ANNOUNCEMENTS)` + `onTokenRefresh`/`onMessage` 리스너 1회 등록. `AppState 'active'` 전이 시 토큰 미존재라면 재시도. Android 는 `isSupported()=false`로 전부 no-op. 부트스트랩 렌더·기존 단계(마이그레이션·설정 로딩·`scheduler.sync()`)에는 어떤 영향도 주지 않는다(AC-99, logic §16.4/§19.3).
 
 ---
 
@@ -712,6 +755,7 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
   - 쓰기 작업은 단일 SQLite 트랜잭션. 실패 시 전체 롤백, UI 상태 롤백(E-05-2).
   - OS 게이트웨이(알림/캘린더/OAuth/WatchConnectivity) 실패는 도메인 데이터에 영향 주지 않음(부분 실패 격리). 사용자 안내 + 재시도 경로 제공.
   - **워치 동기화(v1.9, F-19)**: 베스트-에포트(NFR-12). 워치 연결 실패/미설치는 폰 기능을 저해하지 않는다 — 폰은 `WatchSyncGateway` 실패를 로깅 후 무시하고 계속. 워치는 마지막 스냅샷으로 조회 + 보류 큐로 완료 토글 지속(E-19-1). 워치→폰 완료 토글 op 은 수신 시 `scheduleId` 재조회·`opId` 중복 제거·LWW(§17.4) 검증 후 `ScheduleService.toggleDone` 로만 반영 — 그 외 필드/동작은 워치에서 수용하지 않는다(P-43).
+  - **원격 푸시 등록 실패(v1.23, F-27)**: `RemotePushGateway`의 모든 메서드는 예외를 삼키고 결과값만 반환한다 — 등록/토픽 구독 실패는 로컬 알림(F-08/F-09)·부트스트랩·일정 CRUD 어디에도 영향을 주지 않는다(AC-99). 원격 푸시용 OS 알림 권한은 기존 로컬 알림 권한과 동일(P-77, 신규 프롬프트 없음) — 거부 시 로컬·원격 둘 다 노출되지 않는다(E-27-1, AC-98).
   - 상세 예외 흐름과 에러 코드 체계는 `logic.md` 참조.
 
 ---
@@ -738,8 +782,12 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 | 유형 색상 자동 배정·우선순위 색상·대시보드 배지·사전 알림 프리셋 — **해당 없음** (F-06/F-07/F-08/F-10, v1.15) | 색상은 코드 상수 배열에서만 선택(사용자 입력 없음), 프리셋은 고정 5값 다중 선택(자유 입력란 없음, D-24), 배지·점은 이미 로드된 필드를 렌더할 뿐 신규 조회·저장·로그 표면이 없음. 신규 신뢰 경계·비밀정보 취급 없음. 상세 `logic.md` §13.3/§13.8 |
 | 반복 회차 실체화(F-24, v1.16) — 대량 행 생성 가능성 / 알림 노출면 확대 | `expandOccurrences` 상한(366) + `RecurrenceScheduler` horizon(60일 [제안])으로 무한 증식 방지(DoS 유사 자기 자신 대상 경계). 마스터 행은 `REMINDER` 를 갖지 않고 알림 예약 대상에서 원천 배제되어 노출면이 늘지 않음(회차만 예약). "이후 모두" 삭제·규칙 변경도 서비스 계층의 트랜잭션·기존 취소 경로 재사용 — 새 입력 지점 없음 |
 | 완료된 일정 숨기기·완료 정렬·기본 유형 시딩·캘린더 프리필 — **해당 없음** (F-25/F-10/F-06/F-26, v1.16) | 숨기기 토글은 boolean 1개(`APP_SETTING`, 자유 입력 아님), 정렬은 이미 로드된 배열의 순수 재배치, 시딩은 코드에 고정된 3개 문자열·색상 값, 프리필은 이미 신뢰된 로컬 시각값(`Clock` 포트)의 결합. 신규 신뢰 경계·저장·로그 표면 없음 |
+| Firebase 설정 파일(`GoogleService-Info.plist`) 유출 — Information Disclosure / Security Misconfiguration (F-27, v1.23) | 저장소 `.gitignore`에 패턴 추가로 비커밋(P-79/AC-100, 경로 무관 매칭으로 임시 위치·최종 위치 모두 커버), 실제 배치는 `ios/TodayWhat/`, 원문 내용 로그·문서 인용 금지. 상세 `logic.md` §13.10 |
+| FCM 토큰 노출/오용 — Information Disclosure (F-27, v1.23) | 토큰은 자격증명이 아닌 단말-메시지 라우팅 식별자, 서버 전송 없음(P-78/D-33) — `APP_SETTING`(SQLite)에 저장, 로그에는 존재 여부만 기록 |
+| 원격 푸시 등록/구독 실패로 인한 가용성 저하 — DoS(자기 자신 대상) (F-27, v1.23) | `RemotePushGateway` 전 메서드가 예외를 삼키고 결과만 반환 — 로컬 알림(F-08/F-09)·부트스트랩·일정 CRUD 무관 경로(정적 확인 가능, AC-99) |
+| 위조된 푸시로 사용자 기만 — Spoofing/Tampering (F-27, v1.23) | 발송 주체는 Firebase 콘솔 운영자로 한정(P-76, 서버 API·토큰 기반 임의 발송 경로 없음), 딥링크 처리 없음(OI-37 비범위)이라 위조 payload로 화면 유도 표면 자체가 없음 |
 
-잔여 위험: 루팅/탈옥 단말, OS 백업에 포함되는 평문(암호화 미선택 시), 디바이스 잠금 미설정 사용자, 잠금 해제된 분실 워치에서 오늘 일정 제목 열람 — `nfr.md`/`logic.md`에 residual risk로 기록. (대시보드 진행률 한 줄·접이식 검색(v1.11), 유형 색상·우선순위 색상·리스트 배지·알림 프리셋(v1.15)은 새 저장·전송·주입 표면을 만들지 않는다 — 표면 축소.)
+잔여 위험: 루팅/탈옥 단말, OS 백업에 포함되는 평문(암호화 미선택 시), 디바이스 잠금 미설정 사용자, 잠금 해제된 분실 워치에서 오늘 일정 제목 열람, `.gitignore` 적용 전 Firebase 설정 파일 실수 커밋 가능성(V-63 정적 점검으로 완화), 백그라운드/종료 상태에서 전역 알림 토글 off 전파 지연 구간의 원격 푸시 표시(F-27, iOS 자동 표시라 앱 코드로 차단 불가) — `nfr.md`/`logic.md`에 residual risk로 기록. (대시보드 진행률 한 줄·접이식 검색(v1.11), 유형 색상·우선순위 색상·리스트 배지·알림 프리셋(v1.15)은 새 저장·전송·주입 표면을 만들지 않는다 — 표면 축소.)
 
 ---
 
@@ -748,13 +796,28 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 | 문서 | 목적 |
 | --- | --- |
 | `overview.md` | 전체 구조, 기술 스택 결정, 설계 간 관계, **클라이언트 셸 아키텍처(v1.1)**, 미결정 사항 (본 문서) |
-| `logic.md` | 서비스의 처리 흐름 + 상태 변화 + 예외, 「API 설계」(외부 OAuth/캘린더 연동 계약 — 워치는 외부 API 아님·해당 없음), 「보안 설계」, **§16 클라이언트 셸 처리 흐름(v1.1)**, **§16.9 브랜드 로딩 인디케이터(v1.7, F-17)**, **§5.1 유형 관리 계약 / §6 전역 알림 게이트 / §7 대시보드 데이터 소스 / §16.3.3~16.3.5 / §16.10 SwipeableRow / §16.11 표시 시각(v1.8)**, **§17 애플워치 워치 동기화 + §13.9 워치 보안(v1.9, F-19) + §17.11 watchOS 앱 타깃 구성·Swift 레이아웃·페이로드 바인딩·빌드/스크린샷 검증 절차(v1.14 구현 착수)**, **§7.1 대시보드 기준 날짜·진행률 한 줄·접이식 검색 + §16.3.7 화면 레이아웃/상태(v1.10 신설 / v1.11 재작성, F-20/F-21/F-22)**, **§7.2 통계 화면 집계 + §16.3.8 통계 화면 레이아웃/상태(v1.12 신설, F-23) + §8/§16.2 F-11 진입점 이전(v1.12)**, **§16.3.8 하단 그래프 렌더 막대 → 선(line) 교체(v1.13, 집계 계약 불변)**, **§5.1 색상 자동 배정 / §5.2 우선순위 색상 / §6.1 사전 알림 프리셋 / §7.3 대시보드 리스트 우선순위·유형 표시(v1.15 신설, F-06/F-07/F-08/F-10)**, **§5.3 기본 유형 시딩 / §7.4 완료 시 하단 이동 / §7.5 완료된 일정 숨기기 / §16.3.1 캘린더 프리필 / §18 반복 일정 실체화(v1.16 신설, F-06/F-10/F-24/F-25/F-26)**, **§16.2 캘린더 탭 아이콘 교체 / §16.3.1 선택형 필드 셀렉트박스화(`SelectField`/`MultiSelectField`) / §17.3·§17.9~§17.11.3 갱신 + §17.12 워치 헤더 요약·다음일정 제거·체크박스 좌측 배치(v1.17 신설, F-06/F-07/F-08/F-16/F-19/F-24)**, **§17.12 리스트 Section 헤더 요약 접미사 설계(v1.19 설계, F-19/P-73)**, **§17.12 재작성 — 상단 헤더 요약(`.toolbar`) 삭제 설계, `headerSummaryText` 존치·소비처 1곳 축소, AC-91 폐기(v1.20, F-19/P-68)**, **§17.12 재작성 — v1.19/v1.20 이 설계에 그쳤고 미구현이었음을 확인, "구현 순서(1단계 P-73/AC-96 최초 구현 → 2단계 P-68 toolbar 삭제)"로 명확화(v1.21, Developer `BLOCKED(DESIGN_CONFLICT)` 대응)**, **§17.1/§17.9/§17.10/§17.11.3/§17.12 재개정 — 상단 네비게이션 타이틀 리터럴 "오늘일정"→"오늘뭐해"(v1.22, F-19/P-68, plan.md v1.15 사용자 명시적 재지시), 리스트 Section 헤더(P-73/AC-96)는 무변경** |
-| `database.md` | SQLite 스키마(테이블·인덱스·FTS·제약), 마이그레이션 러너, 초기 데이터. **v1.8 유지 — v1.17(F-19 헤더 요약/체크박스 배치·F-06/F-07/F-08/F-24 셀렉트박스화·F-16 아이콘 교체) 스키마 무영향**(값 도메인·데이터 구조 전부 기존 그대로, 별도 갱신 없음). **v1.7 — 스키마 무변경**(§9 v1.3 재설계분 + §10 F-19 워치(+ v1.6 "구현 착수 확인" 문단) + §11 대시보드 개선 + §12 F-23 통계 재검토 + **§13 F-06/F-07/F-08/F-10 v1.8 색상·표시 개정 재검토(v1.7)**). 신규 테이블·컬럼·인덱스·트리거·`APP_SETTING` 키 없음. **v1.13(막대→선 시각화)·v1.14(watchOS 앱 타깃 구현 착수)·v1.15(색상 자동배정/우선순위 색상/리스트 표시/프리셋 UI) 모두 DB 무영향**. **v1.16(F-24/F-06) — 신규 §14: 마이그레이션 002(F-06 기본 유형 3종 시딩, DML) + 마이그레이션 003(`SCHEDULE.RECURRENCE_REMINDER_OFFSETS TEXT NULL` 추가 컬럼, F-24 회차 실체화용) — 최초로 실제 스키마 변경 발생** |
-| `nfr.md` | 성능/용량/가용성/관측성 목표의 기술적 구체화, Tester 검증 관점, **§11 셸 검증 관점(v1.1)**, **§13 로딩 애니메이션 성능(v1.5, NFR-11)**, **§14 워치 동기화(v1.7, F-19 / NFR-10·NFR-12) + §11.1 로 watchOS 앱 타깃 빌드·시뮬레이터 설치/실행/WCSession 라운드트립/스크린샷 이동(v1.12, N-11 축소)**, **§15 대시보드 날짜 네비게이션·진행률 한 줄·접이식 검색(v1.8 신설 / v1.9 재확정 방향, F-20~F-22)**, **§16 통계 화면(v1.10 신설 / v1.11 막대→선 갱신 — 차트 렌더(§16.2 `react-native-svg` `Polyline`)·대량 집계 비용·접근성/스크린리더 대체 텍스트·Reduce Motion·i18n, F-23 / NFR-04·NFR-08·NFR-09, V-46~V-49)**, **§7 접근성 대비표(v1.13, 우선순위/유형 색상 대비) + §9 V-50~V-52(색상 자동배정·우선순위 매핑·프리셋 UI)**, **§17 반복 회차 실체화·완료 정렬·숨기기·시딩·캘린더 프리필(v1.14 신설, F-24/F-10/F-25/F-06/F-26) + §9 V-53~V-57 + §1.2 반복 설계 갱신(가상 전개 → 경계 내 실체화)**, **§14.3 워치 페이로드 구성 문구 정정(v1.15, F-19 — "다음 예정 1건" 삭제, D-30)**, **§9 V-58/§14.5 갱신 — 상단 헤더 요약 삭제 반영, 리스트 Section 헤더 요약 검증 문구 정정(v1.17, F-19/P-68/P-73)**, **§14.5 재정정 — "무변경 회귀 확인"→"P-73/AC-96 최초 구현 확인"(v1.18, v1.21 정정 대응)**, **§14.5 상단 타이틀 확인 리터럴 정정 "오늘일정"→"오늘뭐해"(v1.19, F-19/P-68, plan.md v1.15)** |
+| `logic.md` | 서비스의 처리 흐름 + 상태 변화 + 예외, 「API 설계」(외부 OAuth/캘린더 연동 계약 — 워치는 외부 API 아님·해당 없음), 「보안 설계」, **§16 클라이언트 셸 처리 흐름(v1.1)**, **§16.9 브랜드 로딩 인디케이터(v1.7, F-17)**, **§5.1 유형 관리 계약 / §6 전역 알림 게이트 / §7 대시보드 데이터 소스 / §16.3.3~16.3.5 / §16.10 SwipeableRow / §16.11 표시 시각(v1.8)**, **§17 애플워치 워치 동기화 + §13.9 워치 보안(v1.9, F-19) + §17.11 watchOS 앱 타깃 구성·Swift 레이아웃·페이로드 바인딩·빌드/스크린샷 검증 절차(v1.14 구현 착수)**, **§7.1 대시보드 기준 날짜·진행률 한 줄·접이식 검색 + §16.3.7 화면 레이아웃/상태(v1.10 신설 / v1.11 재작성, F-20/F-21/F-22)**, **§7.2 통계 화면 집계 + §16.3.8 통계 화면 레이아웃/상태(v1.12 신설, F-23) + §8/§16.2 F-11 진입점 이전(v1.12)**, **§16.3.8 하단 그래프 렌더 막대 → 선(line) 교체(v1.13, 집계 계약 불변)**, **§5.1 색상 자동 배정 / §5.2 우선순위 색상 / §6.1 사전 알림 프리셋 / §7.3 대시보드 리스트 우선순위·유형 표시(v1.15 신설, F-06/F-07/F-08/F-10)**, **§5.3 기본 유형 시딩 / §7.4 완료 시 하단 이동 / §7.5 완료된 일정 숨기기 / §16.3.1 캘린더 프리필 / §18 반복 일정 실체화(v1.16 신설, F-06/F-10/F-24/F-25/F-26)**, **§16.2 캘린더 탭 아이콘 교체 / §16.3.1 선택형 필드 셀렉트박스화(`SelectField`/`MultiSelectField`) / §17.3·§17.9~§17.11.3 갱신 + §17.12 워치 헤더 요약·다음일정 제거·체크박스 좌측 배치(v1.17 신설, F-06/F-07/F-08/F-16/F-19/F-24)**, **§17.12 리스트 Section 헤더 요약 접미사 설계(v1.19 설계, F-19/P-73)**, **§17.12 재작성 — 상단 헤더 요약(`.toolbar`) 삭제 설계, `headerSummaryText` 존치·소비처 1곳 축소, AC-91 폐기(v1.20, F-19/P-68)**, **§17.12 재작성 — v1.19/v1.20 이 설계에 그쳤고 미구현이었음을 확인, "구현 순서(1단계 P-73/AC-96 최초 구현 → 2단계 P-68 toolbar 삭제)"로 명확화(v1.21, Developer `BLOCKED(DESIGN_CONFLICT)` 대응)**, **§17.1/§17.9/§17.10/§17.11.3/§17.12 재개정 — 상단 네비게이션 타이틀 리터럴 "오늘일정"→"오늘뭐해"(v1.22, F-19/P-68, plan.md v1.15 사용자 명시적 재지시), 리스트 Section 헤더(P-73/AC-96)는 무변경**, **신규 §0.1(`RemotePushGateway`)/§0.2/§6 신규 소단락(전역 알림 토글 ↔ 원격 푸시)/§13.10(신규, Firebase 설정 파일 보안)/§16.4~16.7·§16.3.6 갱신/§19 신설(등록·수신·API 설계·예외·AC 매핑, v1.23, F-27)** |
+| `database.md` | SQLite 스키마(테이블·인덱스·FTS·제약), 마이그레이션 러너, 초기 데이터. **v1.9 — §15 신설(F-27 스키마 영향 검토, 스키마 무변경, `APP_SETTING` 신규 키 3개만)**. **v1.8 유지 — v1.17(F-19 헤더 요약/체크박스 배치·F-06/F-07/F-08/F-24 셀렉트박스화·F-16 아이콘 교체) 스키마 무영향**(값 도메인·데이터 구조 전부 기존 그대로, 별도 갱신 없음). **v1.7 — 스키마 무변경**(§9 v1.3 재설계분 + §10 F-19 워치(+ v1.6 "구현 착수 확인" 문단) + §11 대시보드 개선 + §12 F-23 통계 재검토 + **§13 F-06/F-07/F-08/F-10 v1.8 색상·표시 개정 재검토(v1.7)**). 신규 테이블·컬럼·인덱스·트리거·`APP_SETTING` 키 없음. **v1.13(막대→선 시각화)·v1.14(watchOS 앱 타깃 구현 착수)·v1.15(색상 자동배정/우선순위 색상/리스트 표시/프리셋 UI) 모두 DB 무영향**. **v1.16(F-24/F-06) — 신규 §14: 마이그레이션 002(F-06 기본 유형 3종 시딩, DML) + 마이그레이션 003(`SCHEDULE.RECURRENCE_REMINDER_OFFSETS TEXT NULL` 추가 컬럼, F-24 회차 실체화용) — 최초로 실제 스키마 변경 발생** |
+| `nfr.md` | 성능/용량/가용성/관측성 목표의 기술적 구체화, Tester 검증 관점, **§18 원격 푸시 알림 등록·수신(v1.20 신설, F-27 — 등록 실패 격리·재시도 정책·관측성·보안 NFR) + §9 V-61~V-63**, **§11 셸 검증 관점(v1.1)**, **§13 로딩 애니메이션 성능(v1.5, NFR-11)**, **§14 워치 동기화(v1.7, F-19 / NFR-10·NFR-12) + §11.1 로 watchOS 앱 타깃 빌드·시뮬레이터 설치/실행/WCSession 라운드트립/스크린샷 이동(v1.12, N-11 축소)**, **§15 대시보드 날짜 네비게이션·진행률 한 줄·접이식 검색(v1.8 신설 / v1.9 재확정 방향, F-20~F-22)**, **§16 통계 화면(v1.10 신설 / v1.11 막대→선 갱신 — 차트 렌더(§16.2 `react-native-svg` `Polyline`)·대량 집계 비용·접근성/스크린리더 대체 텍스트·Reduce Motion·i18n, F-23 / NFR-04·NFR-08·NFR-09, V-46~V-49)**, **§7 접근성 대비표(v1.13, 우선순위/유형 색상 대비) + §9 V-50~V-52(색상 자동배정·우선순위 매핑·프리셋 UI)**, **§17 반복 회차 실체화·완료 정렬·숨기기·시딩·캘린더 프리필(v1.14 신설, F-24/F-10/F-25/F-06/F-26) + §9 V-53~V-57 + §1.2 반복 설계 갱신(가상 전개 → 경계 내 실체화)**, **§14.3 워치 페이로드 구성 문구 정정(v1.15, F-19 — "다음 예정 1건" 삭제, D-30)**, **§9 V-58/§14.5 갱신 — 상단 헤더 요약 삭제 반영, 리스트 Section 헤더 요약 검증 문구 정정(v1.17, F-19/P-68/P-73)**, **§14.5 재정정 — "무변경 회귀 확인"→"P-73/AC-96 최초 구현 확인"(v1.18, v1.21 정정 대응)**, **§14.5 상단 타이틀 확인 리터럴 정정 "오늘일정"→"오늘뭐해"(v1.19, F-19/P-68, plan.md v1.15)** |
 
 ---
 
 ## 영향 범위
+
+### v1.23 (F-27 신규 — 원격 푸시 알림 인프라, FCM, iOS 한정, plan.md v1.16)
+
+- **신규(Developer) — TS 어댑터 2개**: `src/app/adapters/push/FirebaseRemotePushGateway.native.ts`(iOS, `@react-native-firebase/messaging` 래핑) + `src/app/adapters/push/NoopRemotePushGateway.ts`(Android, 전 메서드 no-op). `src/core/ports/gateways.ts`에 `RemotePushGateway` 인터페이스 추가.
+- **신규(Developer) — 서비스 로직**: `RemotePushService`(신규, `src/app` 계층 또는 유사 위치 — 등록·토픽 구독/해지·전역 토글 연동, logic §19.3/§6). 기존 `ReminderScheduler`/`ScheduleService`/`SettingService` 파일은 **수정하지 않음**(단, `SettingsScreen` 의 토글 핸들러 호출부에 `RemotePushService.applyGlobalNotificationsToggle` 호출 1줄 추가).
+- **변경(Developer) — 부트스트랩**: `bootstrapSequence.ts`(또는 동등 진입점)에 렌더 후 비차단 원격 등록 단계 추가(logic §16.4/§19.3). `PermissionsScreen.tsx`(또는 온보딩 권한 요청 처리부)의 알림 권한 허용 콜백에 `RemotePushGateway.register()` fire-and-forget 호출 추가.
+- **신규(Developer) — 네이티브 iOS 설정**:
+  1. `ios/TodayWhat/GoogleService-Info.plist` 배치 + Xcode 프로젝트(`ios/TodayWhat.xcodeproj`) Build Phases → Copy Bundle Resources 등록(logic §13.10).
+  2. `AppDelegate.mm`에 Firebase 초기화(`[FIRApp configure]`, 통상 `didFinishLaunchingWithOptions` 최상단) 추가 — 현재 파일은 RN 표준 보일러플레이트만 있고 Firebase 관련 코드가 없음(Architect 조사 확인).
+  3. `Podfile`에 Firebase 관련 Pod 추가(`@react-native-firebase/app`/`messaging` 의 autolink 가 대부분 처리하되 `use_frameworks!` 등 Firebase iOS SDK 요구사항 검토 필요) 후 `pod install`.
+  4. Push Notification / Background Modes(Remote notifications) capability 추가 검토(APNs 등록에 필요할 수 있음, Xcode 프로젝트 설정).
+- **신규(Developer) — 저장소 루트 `.gitignore` 갱신**: `GoogleService-Info.plist` 패턴 추가(기존 파일에 추가 — 신규 생성 아님, logic §13.10 정정 참고). `.claude/GoogleService-Info.plist` 정리(선택, Developer 재량).
+- **package.json**: `@react-native-firebase/app`, `@react-native-firebase/messaging` 의존성 추가(overview 기술 스택 표 버전 고정 참고).
+- **DB 마이그레이션**: 없음(`database.md` v1.9 §15, `APP_SETTING` 신규 키만).
+- **변경하지 않음**: `ReminderScheduler`(§6 기존 로직)·`NotifeeNotificationGateway.native.ts`·`REMINDER`/`SCHEDULE` 테이블·워치 동기화(§17)·반복 일정(§18)·기존 F-01~F-26 화면·서비스 전부.
 
 ### v1.22 (F-19 재개정 — 워치 TodayView 상단 네비게이션 타이틀 재변경 "오늘일정"→"오늘뭐해", plan.md v1.15)
 
@@ -1073,6 +1136,7 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 | 테스트 | Jest 29 + ts-jest, `@testing-library/react-native` 12.x | Jest 29.x | RN 기본 러너. **코어 도메인/서비스는 순수 단위 테스트로 즉시 검증** | Vitest — RN 프리셋 미성숙 |
 | 선택형 필드 UI (F-06/F-07/F-08/F-24, v1.17) | 자체 구현 `SelectField`/`MultiSelectField` (`src/app/components/`) — 기존 RN 내장 `Pressable`/`Modal`/`Text` 조합, 신규 라이브러리 없음 | — (내부 컴포넌트, 버전 고정 대상 아님) | plan P-70 이 "셀렉트박스(드롭다운/피커 계열)" 위젯 형태만 요구하고 정확한 컴포넌트는 Architect 위임(D-31). 이미 `ScheduleEditorScreen` 의 iOS DateTimePicker 가 `Modal` 트리거 패턴을 사용 중이라 동일 패턴 재사용 시 학습 비용·번들 비용 0, iOS/Android 렌더 일관성 확보 | `@react-native-picker/picker`(신규 네이티브 모듈 + `pod install`, iOS `UIPickerView`/Android `Spinner` 로 플랫폼별 외형 상이·다중 선택 미지원) — 기각. `ActionSheetIOS`(iOS 전용, 다중 선택·Android 대응 불가) — 기각 |
 | 린트/포맷 | ESLint + `@react-native/eslint-config`, Prettier 3 | — | RN 표준 | Biome — RN 커뮤니티 채택 낮음 |
+| 원격 푸시 (F-27, v1.23 신규) | `@react-native-firebase/app` + `@react-native-firebase/messaging` (iOS 전용 사용, Android 모듈은 링크하되 어댑터가 `isSupported()=false`로 호출을 차단 — P-74) | 두 패키지 모두 **21.x major 고정**(RN 0.74.x 호환 확인된 최신 안정 라인 — RN 0.75+ 요구 버전은 회피, op-sqlite 9.x 선정 시 적용한 것과 동일한 "RN 0.74 peer 우선" 원칙) | `알림앱.md` 원본에는 없으나 사용자 신규 요청(F-27)에 따라 Firebase Cloud Messaging 클라이언트 SDK가 필요. `@react-native-firebase`는 RN 생태계 사실상 표준 Firebase 바인딩(공식 네이티브 Firebase SDK를 래핑, 순수 JS 폴리필 아님)이며 `@notifee/react-native`(이미 도입)와 함께 쓰는 "FCM 수신 + notifee 표시" 조합이 커뮤니티 표준 패턴이다. `GoogleService-Info.plist` 네이티브 리소스 배치만으로 초기화가 되어 이번 릴리스(서버 없음, 콘솔 발송만, P-76)의 최소 요구를 충족 | (1) 순수 네이티브 모듈 직접 작성(AppDelegate에서 Firebase iOS SDK 직접 호출 + 커스텀 RN 브리지) — 유지비·구현 비용이 크고 이미 검증된 `@react-native-firebase`가 동일 기능을 제공해 기각. (2) Expo Notifications(`expo-notifications`) — 이 프로젝트는 Expo 관리형이 아닌 bare RN CLI(overview 기술 스택 "앱 프레임워크" 행 근거와 동일 이유로 Expo 제외)라 자연스럽지 않음, 기각. (3) OneSignal 등 서드파티 푸시 벤더 — 사용자가 명시적으로 `GoogleService-Info.plist`(Firebase)를 전달했으므로 벤더 변경은 요구사항 범위 밖, 기각 |
 
 **주요 기술 결정**
 
@@ -1087,6 +1151,7 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 11. **선택형 필드(F-06/F-07/F-08/F-24) UI 는 신규 라이브러리 없이 자체 `SelectField`/`MultiSelectField` 로 구현**(v1.17). `ScheduleEditorScreen` 이 이미 iOS `DateTimePicker` 를 `Modal` 트리거로 렌더하고 있어(§16.3.1) 동일 패턴(트리거 `Pressable` + 옵션 목록 `Modal`)을 재사용하면 신규 의존성·플랫폼 간 외형 불일치 없이 "셀렉트박스" 요구(P-70)를 충족한다. 검토한 대안: `@react-native-picker/picker`(네이티브 모듈 추가·`pod install` 필요·iOS/Android 렌더가 플랫폼 표준 위젯이라 외형이 서로 다름·다중 선택 미지원이라 사전 알림 필드에는 별도 처리 필요) — 기각. `ActionSheetIOS`(iOS 전용이라 Android 미대응, 다중 선택 UX 열위) — 기각. 값 도메인·검증·서비스 계약은 전부 무변경(순수 위젯 교체). 상세 §16.3.1(logic).
 10. **반복 일정(F-24)은 "가상 전개" 대신 "경계 내 실체화(materialization)"로 구현**(v1.16). 기존 순수 함수 `expandOccurrences`(`src/core/domain/recurrence.ts`)는 v1.0부터 존재했으나 조회 시점 가상 전개용으로 어디에도 결선되지 않은 죽은 코드였다. F-24 확정 요건(회차별 독립 완료 상태·독립 알림 예약, P-03 재사용)은 각 회차가 자신만의 `isDone`/`doneAt`/`REMINDER` 행을 가져야 하므로 가상 전개(조회 시 계산, 저장 없음)로는 근본적으로 충족 불가능 — 최초로 확정되는 요구사항 앞에서 기존 설계 전제(구 D-05 가정, `nfr.md` §1.2 옛 문구)를 폐기하고 `ReminderScheduler`(이미 구현된 "논리 예약 vs OS 예약 분리 + horizon 재조정" 패턴)와 동형인 `RecurrenceScheduler`를 도입해 마스터 행(규칙 보유, 비표시)과 회차 행(개별 표시·완료·알림 대상)으로 분리 저장한다. 검토한 대안: (a) 순수 가상 전개만 유지 + 완료/알림 상태를 별도 맵 테이블로 관리 — 회차 식별자 안정성(규칙 변경 시 재계산으로 식별자가 흔들림) 문제로 폐기, (b) 전체 반복 구간을 생성 시점에 즉시 모두 실체화(무기한 반복 시 무한) — E-24-3 이 명시적으로 배제, (c) RFC 5545(iCalendar RRULE) 전면 도입 — plan §3.2 가 명시적으로 범위 제외. 상세 `logic.md` §18.
 6. **일정 편집 날짜/시간 입력은 `@react-native-community/datetimepicker` 8.6.0으로 구현**(v1.6, N-10 해소). v1.4에서 디스크 여유 부족(~1.8 GiB)으로 이연했던 네이티브 DateTimePicker 도입을 v1.6에서 완료한다. 빌드 호스트 765 Gi 여유 확보로 이연 사유가 해소됨. iOS는 inline/spinner/compact 표시, Android는 OS 다이얼로그. 피커 `onChange` 콜백의 `Date.getTime()` → epoch ms 직접 추출로 텍스트 파싱 표면이 제거된다. 기존 `localWallToEpoch` 함수(`src/core/domain/time.ts`)는 역방향 표시 초기값 및 V-26 테스트용으로 존속하되 저장 경로에서는 사용하지 않는다. 코어/로직(포트 계약)/DB 무변경.
+12. **원격 푸시(F-27)는 "수신 인프라만" 구현하고 서버·자동 발송·딥링크를 도입하지 않는다**(v1.23, P-76). `RemotePushGateway` 포트를 `WatchSyncGateway`와 동일한 원칙(모든 메서드가 예외를 삼키고 결과만 반환, iOS 전용·Android no-op)으로 설계해 등록 실패가 로컬 알림(F-08/F-09)에 전혀 영향을 주지 않도록 격리한다(AC-99). 토픽 구독은 **단일 공지 토픽**(D-34, 다중 토픽은 포트 시그니처 변경 없이 후속 확장 가능)만 채택하고, FCM 토큰은 자격증명이 아니므로 Keychain이 아닌 `APP_SETTING`(SQLite)에 저장한다(P-78, DB 스키마 변경 없음, `database.md` §15). 포그라운드 수신 표시는 신규 알림 채널을 만들지 않고 **기보유 `@notifee/react-native`를 재사용**(`notifee.displayNotification()`)해 전역 알림 토글(F-18)을 일관되게 적용한다(E-27-6) — 이 결정으로 신규 UI 컴포넌트·신규 알림 표시 경로를 추가하지 않는다. 검토한 대안: (a) 백그라운드 데이터 전용(silent) 푸시 + 커스텀 처리 — 서버가 없어 개인화 트리거를 만들 수 없으므로 이번 범위에서 이점이 없어 기각. (b) 다중 토픽(카테고리별) — plan D-34가 세부를 위임했으나 현재 서비스에 사용자별 세분화 기준이 없어 과설계로 판단, 기각(후속 재검토 여지는 열어둠). 상세 `logic.md` §19.
 
 ---
 
@@ -1107,6 +1172,7 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 - 선택형 필드 셀렉트박스화·워치 헤더 요약·탭 아이콘 교체(F-06/F-07/F-08/F-16/F-19/F-24, v1.17): 신규 성능·용량·가용성·관측성 목표 없음. `SelectField`/`MultiSelectField` 는 이미 메모리에 있는 옵션 배열(최대 수십 개)을 렌더하는 `Modal` UI로 신규 쿼리·인덱스가 없다. 워치 헤더는 기존 `summary` 필드를 재계산해 표시할 뿐이며, 다음 예정 조회 제거로 `pushSnapshot()` 쿼리 1개가 오히려 줄어든다(§14 갱신 참고).
 - 워치 타이틀·헤더 요약 문구 정정 · RN 탭 라벨 문구 정정(F-19/F-10/F-16, v1.18): 신규 성능·용량·가용성·관측성 목표 없음 — 순수 리터럴 문자열 교체(빌드 타임 상수)이며 조회·집계·전송 경로에 영향이 없다. 상세 `nfr.md` §9 V-58·§14.5.
 - 워치 리스트 Section 헤더 요약 추가(F-19, v1.19 설계·v1.21 구현) / 워치 상단 헤더 요약(`.toolbar`) 삭제(F-19, v1.20 설계·v1.21 구현): 신규 성능·용량·가용성·관측성 목표 없음 — 이미 계산되던 `summary` 값의 표시 위치만 조정하는 순수 UI 변경(최종적으로 렌더 대상 1개 감소). 조회·집계·전송 경로 무영향. `nfr.md` v1.18(§9 V-58·§14.5 검증 체크리스트 — "P-73/AC-96 최초 구현 확인"으로 정정, 정량 목표 변경 없음).
+- 원격 푸시 알림 등록·수신(F-27, v1.23): 신규 정량 성능 SLO 없음(서버 없음, P-76). **가용성**: 등록 실패 격리 — `RemotePushGateway` 전 메서드가 예외를 삼키고 로컬 알림·부트스트랩에 영향을 주지 않음(AC-99). **재시도**: 별도 백오프 타이머 없이 다음 콜드 스타트/`AppState active` 전이에 자연 편승(과설계 방지). **용량**: 신규 DB 쿼리는 `APP_SETTING` 단건 get/set 3개 키뿐, 신규 인덱스 불필요. **보안 NFR**: `GoogleService-Info.plist` 비커밋(`.gitignore` 패턴 추가) 정적 점검 가능. 상세 `nfr.md` §18.
 
 ---
 
@@ -1126,11 +1192,16 @@ RN 프로젝트 파일: `index.js`(AppRegistry), `App.tsx`, `app.json`, `metro.c
 | D-29 | 캘린더 "+" 버튼 프리필 시각(시:분) 기본값 (F-26, v1.9 신규) | (a) 현재 시각(plan 채택) 설계 반영. `combineDateWithTimeOfDay`(logic §16.3.1, §18). 비차단 |
 | D-30 | 워치 "다음 예정 1건" 페이로드 전송 지속 여부 (F-19, v1.10 신규) | (a) 화면 표시 제거와 함께 전송도 중단(plan 채택) 설계 반영. `WatchSyncService.pushSnapshot()` 이 다음 예정 조회를 하지 않고 `nextUpcoming=null` 고정 전달(logic §17.3). `WatchSnapshot.nextUpcoming` 타입은 유지(스키마 안정성, Swift 무변경) — 값만 상시 null. (b) "전송은 유지, 표시만 제거" 확정 시 조회 라인만 복원하는 국소 변경. 비차단 |
 | D-31 | 사전 알림(F-08) 다중 선택 셀렉트박스의 구체 컴포넌트 형태 (F-08, v1.10 신규) | **바텀시트형 다중 선택 목록(`MultiSelectField`)** 채택 — 트리거 + `Modal` 옵션 리스트, 각 행 체크 토글, "닫기" 액션으로 확정(logic §16.3.1). 드롭다운 내 체크 표시 방식도 동일 컴포넌트로 흡수 가능한 국소 변경. 다중 선택(0개 이상) 기능 요건(P-62)은 그대로. 비차단 |
+| D-32 | 원격 푸시(F-27)의 실제 발송 주체·트리거 방식 (v1.23 신규) | **(a) 이번 릴리스는 Firebase 콘솔 수동/토픽 발송만 지원** 채택(plan 확정). 서버 기반 개인화 자동 발송(특정 일정 이벤트 연동)은 후속(백엔드 인프라 도입 필요, OI-34). 이해관계자 추인 권장(비차단, 후속 투자 여부와 직결) |
+| D-33 | FCM 토큰의 서버 전송·관리 여부 (v1.23 신규) | **(a) 이번 릴리스는 로컬 저장까지만, 서버 전송 없음** 채택(plan 확정). `APP_SETTING`(`database.md` §15)에만 저장(P-78, logic §19.3). 게이트 형식상 OPEN(비차단) |
+| D-34 | FCM 토픽 구독 전략 (v1.23 신규) | **단일 공지 토픽** 채택(plan 가정, 세부는 Architect 위임) — 상수 `PUSH_TOPIC_ANNOUNCEMENTS`(logic §19.2, 실제 문자열 값은 Firebase 콘솔 설정과 일치해야 하므로 배포 시 운영자와 확정). 다중 토픽(카테고리별 등) 확장은 후속 — 포트 시그니처(`topic: string` 파라미터)가 이미 국소 확장을 지원. 게이트 형식상 OPEN(비차단) |
+| D-35 | Android(FCM) 지원 여부 및 시점 (v1.23 신규) | **(a) 이번 릴리스 범위 밖** 채택(plan 확정, `google-services.json` 부재). `RemotePushGateway.isSupported()`가 Android에서 `false`(`WatchSyncGateway`와 동일 패턴). 후속 OI-36. 게이트 형식상 OPEN(비차단) |
 | OI-32 | RN 앱 대시보드 탭 라벨 "오늘"도 워치 TodayView 와 동일하게 "오늘일정"으로 바꿀지 (v1.11 신규) | **CLOSED (plan v1.12)** — 사용자 신규 요청("앱에서 메뉴 중 오늘을 오늘일정으로 변경해줘")으로 확정. `RootNavigator.tsx` `title`/`TAB_FALLBACK_LABELS` 2개 리터럴 교체(P-72, AC-95, logic §16.2, 영향 범위 "v1.18" 절). 미결정 아님 |
 | OI-33 | `DashboardScreen.tsx` 내부의 다른 "오늘" 표현(날짜 네비게이션 "오늘로"/`오늘 · {date}`, 빈 상태 문구 등)까지 "오늘일정"으로 확장할지 (F-10, v1.12 신규, Architect/Developer 위임) | **이번 v1.18 라운드는 제외(설계 결정)** — 해당 표현은 탭·화면 정체성 명칭이 아니라 "당일"을 가리키는 날짜 지시어이며, plan.md 의 관련 서술·AC(E-10-1/AC-15 등)도 문구를 바꾸지 않았다(logic §16.2 신설 소단락 근거). 비차단, 후속 사용자 요청 시 별도 라운드에서 재검토 |
 | N-17 | (신규, v1.18, note, 비차단) plan.md §11 OI 레지스트리의 OI-32 문구가 v1.12 갱신 시점에 CLOSED 로 갱신되지 않았고 OI-33 이 §11 목록 자체에 항목으로 추가되지 않음(변경이력 표·F-10 서술부·§5.20 서술에는 반영) | 정책 내용 자체는 3곳(변경이력 표 v1.12 행, F-10 서술부, §5.20 P-72 서술)에서 일관되게 명확히 기술되어 있어 설계를 차단하지 않고 PASS + note 로 처리(기획 검증 결과 "§11 OI 레지스트리 동기화 이슈" 참고). Planner 가 다음 라운드에서 plan.md §11 목록 자체를 동기화(OI-32 CLOSED 표기, OI-33 항목 추가)하도록 권장 |
 | N-18 | (신규, v1.20, note, 비차단, **RESOLVED — plan.md v1.15**) plan.md AC-96(v1.13 신규, 1779행·1781행)의 Then/And 절이 v1.14에서 삭제된 상단 헤더 요약(P-68)이 여전히 표시되는 것처럼 서술("상단 네비게이션 타이틀 옆 헤더 요약... 동일한 수치로 함께 표시된다", "요약은 상단 헤더의 '오늘일정 - 0/0' 하나뿐이다")해, 같은 문서의 F-19 서술부·P-68·E-19-5·E-19-8·AC-47·AC-54·AC-91·§7.10(모두 v1.14 갱신 지점)과 상충함 | v1.20 당시에는 정책 내용 자체가 F-19 서술부·P-68·E-19-5·E-19-8·AC-47·AC-54·AC-91·§7.10 8곳에서 일관되게 "상단 헤더 요약 삭제"로 명확히 기술되어 있어 설계를 차단하지 않고 PASS + note 로 처리했다(기획 검증 결과 "v1.20 재검증" note 참고). **v1.15 에서 Planner 가 AC-96의 잔존 문장(세 번째 항목)을 상단 헤더 요약 삭제 사실에 맞춰 직접 정정 — 해소(RESOLVED).** logic.md §17.10 AC-96 매핑은 이미 삭제 사실을 반영하고 있어 이번 정정에 따른 추가 설계 변경은 없다(v1.22 재검증 "요구사항 충돌" 항목 참고) |
 | N-19 | (신규, v1.21, note, 비차단, Architect 공정 개선) v1.19 logic.md 설계(`Section(headerSummaryText)`, P-73/AC-96)가 실제 Developer 구현·Tester 검증 사이클을 거치지 않은 채, 곧이은 v1.20 설계 라운드에서 "이미 구현됨"을 전제로 서술되어 Developer `BLOCKED(DESIGN_CONFLICT)` 로 이어짐(§14 일관성 표 v1.21 행 참고) | 이번 라운드는 실제 코드·git 워킹트리·`log/agent-execute.log` 대조로 원인을 확인하고 logic.md §17.1/§17.9/§17.10/§17.11.3/§17.12 서술 및 구현 지시를 정정해 해소했다. **재발 방지 권장(비차단, 정책 사항 아님)**: 이후 Architect 라운드는 같은 세션 안에서 이전 설계 버전의 서술을 다음 설계의 전제로 이어받기 전에, 해당 대상 파일의 실제 코드 상태(및 직전 라운드의 Developer/Tester RESULT 로그 존재 여부)를 먼저 확인할 것을 권장 |
+| N-20 | (신규, v1.23, note, 비차단, 정보성 — 기획 문서 사실관계 정정) plan.md v1.16(§5.21 P-79, 변경이력)이 "저장소에 `.gitignore` 파일 자체가 존재하지 않는다"고 서술했으나, Architect 조사 결과 저장소 루트에 `.gitignore`가 **이미 존재**함(Android/iOS 네이티브 빌드 산출물 제외 등 기존 규칙 다수 포함) | P-79/AC-100 이 요구하는 실질 결과("`GoogleService-Info.plist`가 git 추적에서 제외됨")는 "신규 파일 생성" 대신 "기존 파일에 패턴 추가"로 동일하게 달성되므로 설계·정책 변경 없음(비차단). Developer 작업 지시를 `logic.md` §13.10에 "기존 `.gitignore`에 패턴 추가"로 명확히 반영했다. Planner 후속 라운드에서 plan.md 서술을 사실에 맞게 정정하는 것을 권장(정보성, 차단 아님) |
 | N-16 | (신규, v1.16, 비차단) 반복 규칙 자체의 사후 변경("이후 모두" 규칙/시각 변경, E-24-1) UI 세부 | 이번 설계는 `ScheduleService.updateRecurrenceRule`(logic §18.5)로 기능 수준만 지원(마스터 규칙 갱신 + 미래 활성 회차 삭제 후 재생성, 과거·완료 회차 보존). 마법사/확인 대화상자 등 세부 UX는 plan이 "Architect 설계 범위"로 위임했으나 AC-82~84가 이 흐름을 직접 검증하지 않으므로 이번 릴리스는 최소 기능만 제공하고 세부 UX는 후속 |
 | D-06 | 오리 로딩 인디케이터 세부 정책 5건 (인라인 순환 방식 / 임계 수치 / 저사양·절전 판정 / 스플래시 관계 / 구현 수단) | v1.7에서 **설계값 확정**(위 "D-06 설계 확정값" 표). 서비스 정책이 아니라 기술/UX 튜닝 결정이며 기획이 Architect 위임 → 가정값 = 설계값. 게이트는 형식상 OPEN 유지(이해관계자 추인 대기), 설계·구현은 비차단 |
 | D-07 | 전역 알림 사용 off 전환 시 기존 예약분 처리 | **(a) 즉시 전체 취소** 채택(plan v1.3 기본안, 사용자 방향 (B) 확정). 설계: `ReminderScheduler.applyGlobalNotificationsToggle(false)` 가 활성(PENDING/SCHEDULED) reminder 를 OS 취소 + `state='CANCELLED'`. on 복귀 시 기존 전체 일정 자동 일괄 재예약은 **하지 않음**(이후 저장·수정 건부터 `replaceForSchedule`→`syncOnce` 로 재생성). 게이트 상태 OPEN 유지(이해관계자 추인 대기), 비차단 |

@@ -3,14 +3,15 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 비즈니스 로직 설계 (Logic) |
-| 버전 | v1.22 |
+| 버전 | v1.23 |
 | 상태 | 작성 완료 |
-| 근거 | `document/planner/plan.md` v1.15, `document/architect/overview.md` v1.22, `document/architect/database.md` v1.8 |
+| 근거 | `document/planner/plan.md` v1.16, `document/architect/overview.md` v1.23, `document/architect/database.md` v1.9 |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
+| v1.23 | 2026-09-20 | **설계 델타 — plan.md v1.16: F-27 원격 푸시 알림(Firebase Cloud Messaging, iOS 한정) 신규.** 사용자 신규 요청 원문: "`.claude/GoogleService-Info.plist` 를 적용해서 푸시알림 기능을 구현해줘." `알림앱.md` 원본에 근거 없는 신규 요청이며, plan.md 가 서버 부재(P-76)·플랫폼(P-74)·로컬 알림과의 관계(P-75)·권한 UX(P-77)·토큰 저장 범위(P-78)·보안(P-79) 5대 정책을 확정해 설계 착수를 막는 미결 정책이 없다. 기획 재검증 **PASS** — 상세는 `overview.md` v1.23 "v1.23 재검증"(비차단 사실 정정 1건 포함: 저장소 루트 `.gitignore` **파일 자체는 이미 존재** — plan.md 의 "`.gitignore` 파일 자체가 존재하지 않는다"는 서술은 부정확하나, P-79/AC-100 이 요구하는 "해당 파일이 git 추적에서 제외됨"이라는 결과 자체는 기존 파일에 패턴을 **추가**하는 방식으로 동일하게 달성 가능해 설계를 차단하지 않음). 주요 결정: **(1) 신규 포트 `RemotePushGateway`(§0.1)** — `isSupported()`(iOS만 true, P-74) / `register(): Promise<string|null>`(APNs→FCM 토큰, 실패 시 예외 없이 `null`) / `subscribeToTopic`/`unsubscribeFromTopic`(예외를 삼키는 best-effort, `WatchSyncGateway.sendSnapshot` 과 동일 원칙) / `onTokenRefresh(cb)` / `onMessage(cb)`(포그라운드 수신). 신규 오류 코드 `GATEWAY_PUSH_REGISTRATION_FAILED`(§0.2, 도메인 영향 없는 경고 로그 전용). **(2) 신규 §19 "원격 푸시 알림 등록·수신(F-27)"** — 등록 흐름(권한 허용 → APNs/FCM 토큰 발급 → 단일 공지 토픽(D-34) 구독 → `APP_SETTING` 로컬 저장, P-77/P-78), 수신 처리(포그라운드는 `notifee.displayNotification()` 경유로 전역 알림 토글(F-18)을 따르도록 게이팅, 백그라운드/종료는 iOS 표준 알림에 위임 — E-27-3), 실패 격리(등록 실패가 로컬 알림에 영향 없음, try/catch로 완전 격리 — E-27-2/AC-99), 「API 설계」서브섹션(자체 서버 API 없음, P-76 — FCM SDK 콜백 계약만 문서화), 예외 매핑(E-27-1~6), AC 매핑(AC-97~100). **(3) §6 전역 알림 토글 확장** — `SettingsScreen` 의 `notif.enabled` off/on 전환이 로컬 알림 일괄 취소/유지(기존 D-07)에 더해 `RemotePushService.applyGlobalNotificationsToggle(enabled)`(신규, best-effort 격리)로 토픽 구독/해지도 함께 반영(E-27-6 — plan 이 "토글을 따르는 것으로 가정"하고 구체 메커니즘을 Architect 에 위임한 항목). **(4) §13.10 신규 "원격 푸시 알림(FCM) 및 Firebase 설정 파일 보안"** — `GoogleService-Info.plist` 취급 규정을 명문화: (a) 실제 배치 경로 `ios/TodayWhat/GoogleService-Info.plist`(Xcode 프로젝트가 이 경로에서 참조하도록 프로젝트 설정에 추가 필요), (b) 저장소 루트 `.gitignore`에 `GoogleService-Info.plist` 패턴(경로 무관 매칭 — 임시 위치 `.claude/`와 최종 위치 `ios/TodayWhat/` 양쪽을 단일 규칙으로 커버) 추가, (c) `.claude/GoogleService-Info.plist`(임시 전달 위치)는 위 패턴으로 이미 추적 제외되므로 별도 조치 없이도 안전하나, Developer 가 파일을 최종 위치로 이관한 뒤에는 정리(삭제 또는 존치) 여부를 판단할 것 — `.claude/` 디렉터리 자체가 이 저장소에서 별도로 관리되는 설정 자산(에이전트/스킬 정의)을 담고 있어 디렉터리 전체를 일괄 무시 대상으로 지정하지 않음(단정하지 않고 Developer 판단으로 위임), (d) 파일 원문 내용(API 키 등)은 로그·커밋 메시지·문서 어디에도 인용하지 않는다는 원칙 재확인. FCM 토큰은 자격증명이 아니므로 Keychain 이 아닌 `APP_SETTING`(§0.1 `SettingRepository`)에 저장(P-78). **(5) §16.4/§16.5/§16.6/§16.7/§16.3.6 갱신** — 부트스트랩에 비차단 원격 등록 단계 추가, 네이티브 어댑터 매핑에 `RemotePushGateway`→`@react-native-firebase/messaging`+`@react-native-firebase/app` 행 추가, 권한 흐름에 원격 등록 동시 수행 명시, 셸 보안 노트에 §13.10 참조 1줄, 설정 화면에 토글↔토픽 연동 1줄. **§13.8 위협표·§14 일관성 표·§15 미결정(D-32~D-35 추가)** 갱신. `database.md` v1.9(§15 신설 — **스키마 무변경**, `APP_SETTING` 신규 키 3개만) / `nfr.md` v1.20(§18 신설 — 등록 실패 격리·재시도·관측성·보안 NFR, §9 V-61~63) / `overview.md` v1.23 동반 개정. 기존 F-08/F-09/P-41(로컬 예약 알림) 로직·계약·코드 경로는 **무변경** — 원격 푸시는 그 위에 얹는 완전히 별도인 신규 채널이다 |
 | v1.22 | 2026-09-17 | **설계 델타 — plan.md v1.15: F-19 재개정 — 워치 TodayView 상단 네비게이션 타이틀 문구 재변경 "오늘일정"→"오늘뭐해".** 사용자 신규 요청 원문: "`ios/TodayWhatWatch/TodayView.swift` 에서 네비게이션 타이틀을 '오늘일정'에서 '오늘뭐해'로 변경해줘" — 이 문구는 v1.11에서 확정된 뒤 v1.12(레이아웃 검증)·v1.13(리스트 Section 헤더 요약 추가)·v1.14/v1.20/v1.21(상단 헤더 요약 삭제, 타이틀 자체는 유지)을 거치며 3차례 "타이틀은 유지"로 재확인된 값이었으나, 사용자가 그 사실을 인지한 상태에서 명시적으로 재지시했다 — **근거 없는 되돌리기(regression)가 아니라 정당한 재지시**로 판단해 Orchestrator가 Planner부터 Feature 흐름을 재개했다(plan.md v1.15 변경이력과 동일 판단). 기획 재검증 **PASS** — 상세는 `overview.md` v1.22 "v1.22 재검증". **범위 판단(plan.md v1.15와 동일)**: 이번 변경은 상단 `NavigationBar` 타이틀 리터럴 **1곳**(`ios/TodayWhatWatch/TodayView.swift` 36행 `.navigationTitle("오늘일정")`)에 한정된다. 리스트 `Section` 헤더(69행 `Section(headerSummaryText)` — 계산 프로퍼티 `headerSummaryText`(18~22행)가 산출하는 "오늘일정 - {완료}/{전체}" 리터럴, P-73/AC-96, v1.13 신규)는 상단 타이틀과 코드상 완전히 별개인 UI 요소(`NavigationBar` 타이틀 vs 리스트 `Section` 뷰)이며 이번 개정 범위 밖 — **변경하지 않고 그대로 유지**한다. 두 요소는 과거 우연히 동일 문자열("오늘일정")을 표시했을 뿐 값을 공유하도록 설계된 의존 관계가 아니었으므로, 이번 변경으로 상단 타이틀="오늘뭐해" / 리스트 Section 헤더="오늘일정"으로 문구가 갈라지는 것은 **의도된 결과이며 결함이 아니다**. **주요 결정**: `TodayView.swift` **36행** `.navigationTitle("오늘일정")` → `.navigationTitle("오늘뭐해")` 리터럴 **1곳만** 교체한다. `headerSummaryText` 계산 프로퍼티(18~22행, `"오늘일정 - \(done)/\(total)"` 산식)는 **무변경** — 리스트 Section 헤더의 유일한 소비처로 그대로 유지된다. 다음 예정 미표시(P-68, v1.17)·체크박스 좌측 배치(P-69)·상단 헤더 요약(`.toolbar`) 삭제(v1.20/v1.21, 이미 구현됨)는 이번 개정과 무관하며 전부 그대로 유지. **§17.1(장 제목)·§17.9(E-19-5)·§17.10(AC-47/AC-54)·§17.11.3(Swift 파일 레이아웃 표)·§17.12(구현 지시) 갱신.** **공유 페이로드 계약·전송 메커니즘·LWW·보류 큐·`ScheduleRow.swift`·DB 스키마(`database.md` v1.8 유지)·보안 위협 모델은 전부 무변경** — 순수 하드코딩 문자열 리터럴 1곳 교체다(§13.8 갱신). `nfr.md` v1.19 로 갱신 — §14.5 검증 문구 중 상단 타이틀 확인 리터럴을 "오늘일정"→"오늘뭐해"로 정정(리스트 Section 헤더 확인 리터럴 "오늘일정 - M/N"은 무변경). `overview.md` v1.22 동반 개정. 「API 설계」 섹션 미신설(신규/외부 API 없음). **plan.md 참고(정보성, Architect 추가 조치 불요)**: plan.md v1.15 는 같은 라운드에서 AC-96(v1.14 당시 상단 헤더 요약 삭제를 반영하지 못하고 남아 있던 서술 2곳)도 함께 정정했다 — logic.md §17.10 AC-96 매핑은 이미 상단 헤더 요약 삭제 사실을 반영하고 있어 이번 라운드에 추가 설계 변경이 필요하지 않다 |
 | v1.21 | 2026-09-17 | **설계 전제 오류 정정 — Developer `BLOCKED(DESIGN_CONFLICT)` 대응(plan.md 델타 없음, 여전히 v1.14 기준).** Developer 가 구현 착수 중 `ios/TodayWhatWatch/TodayView.swift` 실제 코드를 재확인한 결과, v1.20 설계(및 그 전제였던 v1.19 설계)가 "P-73/AC-96(리스트 `Section` 헤더에 `headerSummaryText` 요약 접미사 표시)이 v1.19 시점에 이미 구현되어 있다"고 서술한 부분이 **사실과 다름**을 발견·보고했다. **원인 조사**: (1) `ios/TodayWhatWatch/TodayView.swift` 실제 코드(70행)는 현재도 `Section("오늘일정")`(리터럴 문자열, 접미사 없음)이며 `headerSummaryText`(18~22행)는 34~38행의 `.toolbar { ToolbarItem(placement: .topBarTrailing) { Text(headerSummaryText) } }` 블록 **한 곳에서만** 소비되고 있다 — `Section(headerSummaryText)` 로의 전환은 코드 어디에도 존재하지 않는다. (2) 현재 워킹트리의 `git status`/`git diff` 기준 `TodayView.swift` 의 uncommitted 변경은 v1.18(제목 리터럴 "오늘"→"오늘일정" 치환) 한 건뿐이며, v1.19가 설계했던 `Section("오늘일정")`→`Section(headerSummaryText)` 전환은 커밋·미커밋 어디에도 반영된 적이 없다. (3) `log/agent-execute.log` 를 대조한 결과 v1.13(plan.md P-73/AC-96) 라운드는 2026-09-16 Architect 디스패치(§447행) 로그 이후 **Developer/Tester RESULT 로그가 전혀 없다** — 즉 v1.19 logic.md 설계가 작성된 뒤 실제 Developer 구현·Tester 검증 사이클이 한 번도 완결되지 않은 채, 곧이어 같은 문서 안에서 v1.20(오늘 v1.14 요청) 설계가 "v1.19에서 이미 구현됨"을 전제로 작성됐다. 이는 **Architect 문서화 공정 오류**(설계 단계에서 이전 라운드의 실제 Developer 구현 완료 여부를 코드로 재확인하지 않고, 같은 세션에서 작성한 설계 서술을 실제 구현 사실인 것처럼 이어받아 서술함)이며, plan.md 의 요구사항 내용(P-73/AC-96) 자체에는 문제가 없다. **범위 판단**: plan.md v1.14 는 "리스트 Section 헤더 요약(P-73/AC-96)은 상단 타이틀과 별개 UI 요소이며 이번 v1.14 개정 범위 밖으로 **변경하지 않는다**"고 명시하는데, 이는 v1.14 라운드가 P-73/AC-96 의 **요구사항 내용을 수정하지 않는다**는 의미이며 "구현을 이번 사이클에서 보류한다"는 의미가 아니다 — P-73/AC-96 은 plan.md v1.13 에서 이미 Planner "정식 반영" + Architect "설계 착수 가능" 판정을 받은 **확정·미변경 요구사항**이고, 그 설계(§17.12 `headerSummaryText` 재사용)도 이미 완결되어 있다. 미구현 상태로 남겨두면 (a) `headerSummaryText` 계산 프로퍼티가 toolbar 제거 후 완전한 dead code가 되고, (b) plan.md v1.13 에서 이미 확정된 AC-96 요건이 여전히 미충족 상태로 남아 새로운 미해결 gap이 된다. 두 문제 모두 별도 재작업 없이 **이번 Developer 라운드에서 함께 해소 가능**(설계가 이미 완결돼 있으므로 추가 설계 결정 불요)하므로, 다음과 같이 **동일 라운드 내 2단계 구현으로 명확화**한다(Option B — 범위 확장이 아니라 이미 확정된 P-73/AC-96 요구사항의 뒤늦은 실제 구현): **1단계(P-73/AC-96 최초 구현, v1.19 설계 그대로)** — `TodayView.swift` 70행 `Section("오늘일정") { ForEach(today) { ... } }` 을 `Section(headerSummaryText) { ForEach(today) { ... } }` 로 교체한다. **2단계(P-68 축소 개정, v1.14/v1.20 설계 그대로)** — 34~38행의 `.toolbar { ToolbarItem(placement: .topBarTrailing) { Text(headerSummaryText) } }` 블록을 완전히 삭제한다(`.navigationTitle("오늘일정")` 만 남김). 1단계를 먼저 적용해야 2단계 삭제 후에도 `headerSummaryText` 가 dead code 가 되지 않는다(1단계 없이 2단계만 적용하면 컴파일은 되지만 미사용 프로퍼티가 남고 AC-96 은 계속 미충족 상태가 된다 — 순서 준수 필수). **최종 코드 상태**(순서와 무관하게 두 변경이 모두 적용된 후): 화면 상단에는 `.navigationTitle("오늘일정")` 만 남고 우측 요약 없음(AC-91 폐기, 검증 대상 제외) + 리스트 `Section` 헤더에는 `headerSummaryText`("오늘일정 - {완료}/{전체}")가 표시(AC-96, 최초 검증). §17.1/§17.9/§17.10/§17.12 의 "v1.19 에서 이미 도입/신설"이라는 서술을 "v1.19 에서 설계 완료, **v1.21 에서 최초로 실제 구현 지시**"로 정정했다(아래 각 절 참고). **공유 페이로드 계약·전송 메커니즘·LWW·보류 큐·`ScheduleRow.swift`·DB 스키마(`database.md` v1.8)·보안 위협 모델은 전부 무변경** — 이번 정정은 "무엇을 설계했는가"가 아니라 "그 설계가 실제 코드에 반영되었는가"에 대한 사실관계 정정과, Developer 를 위한 구현 순서 명확화다. `nfr.md` 는 **v1.18 로 갱신**하여 §14.5 검증 문구를 "회귀 확인"(이미 존재하는 것의 재확인)에서 "**최초 구현 확인**"(P-73/AC-96 이번 라운드 최초 구현 + toolbar 삭제 동시 검증)으로 정정했다. `overview.md` v1.21 동반 개정(영향 범위 절 재작성, 미결정 사항에 N-19 신규 — Architect 공정 개선 필요사항 기록). 「API 설계」 섹션 미신설(신규/외부 API 없음) |
 | v1.20 | 2026-09-17 | **설계 델타 — plan.md v1.14: F-19 개정(축소) — 워치 TodayView 상단 헤더 요약(`.toolbar`) 삭제**(사용자 신규 요청: `ios/TodayWhatWatch/TodayView.swift` 34라인 근처 `.toolbar { ToolbarItem(placement: .topBarTrailing) { Text(headerSummaryText) } }` 제거. P-68 축소 개정 — "다음 예정 제거" 요건만 유지, 헤더 요약 요건 삭제. **AC-91 폐기** — 검증 대상 제외. AC-47/AC-54 재정정 — 상단 헤더 Then 절 제거. E-19-5/E-19-8 문구 갱신). 기획 재검증 **PASS** — 상세는 `overview.md` v1.20 "v1.20 재검증"(plan.md AC-96 의 2개 문장이 이번에 삭제된 상단 헤더 요약을 여전히 존재하는 것처럼 서술하는 잔존 불일치 1건 발견 — note, 비차단, 아래 §14/§15 참고). 주요 결정: **§17.12 갱신** — `TodayView.swift` 루트 뷰의 `.navigationTitle("오늘일정")`(v1.11 확정 문구, 유지)에 붙어 있던 `.toolbar { ToolbarItem(placement: .topBarTrailing) { Text(headerSummaryText) } }` 블록을 **완전히 제거**한다. 계산 프로퍼티 `headerSummaryText`(`let done = snapshot?.summary.done ?? 0`, `let total = done + (snapshot?.summary.notDone ?? 0)`, 산식 무변경)는 **삭제하지 않고 존치** — v1.19 에서 도입된 리스트 Section 헤더(`Section(headerSummaryText)`, P-73)가 유일한 소비처가 된다(상단 헤더 소비처만 제거, 재계산 로직·공유 페이로드는 전부 무변경). 다음일정 제거(P-68, v1.17)·오늘 목록 Section 라벨("오늘일정", v1.18)·체크박스 좌측 배치(P-69, v1.17)·리스트 Section 헤더 요약 접미사(P-73, v1.19)는 이번 개정과 무관하며 전부 그대로 유지(plan.md v1.14 가 "리스트 Section 헤더는 코드상 별개 컴포넌트이므로 범위 밖"이라고 명시한 판단과 동일). §17.9 갱신 — E-19-5(0건 케이스)는 "상단 헤더 요약 표시 자체가 사라져 0건 케이스에는 상단·리스트 Section 헤더 어디에도 요약이 표시되지 않는다"로 정정, E-19-8(오프라인 스냅샷 고정 표시)의 적용 대상을 "상단 헤더 요약"에서 "리스트 Section 헤더 요약(P-73)"으로 변경. §17.10 갱신 — AC-47/AC-54 는 상단 헤더 관련 Then 절을 "타이틀만 표시"로 정정하고 리스트 Section 헤더 요약(P-73/AC-96)이 계속 표시됨을 명시, **AC-91 은 폐기 표시(검증 대상 제외)**, AC-96 은 `headerSummaryText` 가 이제 리스트 Section 헤더만을 위한 프로퍼티임을 반영. §17.11.3 파일 레이아웃 표의 `TodayView.swift` 행 서술 정정(`.toolbar` 삭제 반영). §13.8 위협표에 1행 추가("해당 없음 — 노출면 축소": 노출 위치가 2곳→1곳으로 줄어듦). §14/§15 갱신. **공유 페이로드 계약·`WatchSnapshot`/`WatchScheduleItem`·전송 메커니즘·LWW·보류 큐·`ScheduleRow.swift` 는 전부 무변경.** **DB 스키마 변경 없음**(`database.md` v1.8 유지). **정량 NFR 목표 영향 없음**(계산·조회·전송 경로 무변경, 오히려 렌더 대상 1개 감소) — `nfr.md` 는 **v1.17로 갱신**해 §9 V-58 검증 문구(상단 헤더 요약 스크린샷 확인 → 삭제 확인 + 리스트 Section 헤더 요약 회귀 확인으로 정정)와 §14.5 를 실제 설계와 일치시켰다. **보안 위협 모델 영향 없음** — 이미 두 곳에 노출되던 값을 한 곳으로 줄이는 변경이라 노출면이 축소된다. `overview.md` v1.20 / `nfr.md` v1.17 동반 개정. 「API 설계」 섹션 미신설(신규/외부 API 없음). **발견 사항(비차단, Planner 후속 정리 권장)**: plan.md AC-96(1779행·1781행)의 Then/And 절 2곳이 이번 v1.14 개정으로 삭제된 상단 헤더 요약이 "계속 존재"하는 것처럼 서술(예: "상단 네비게이션 타이틀 옆 헤더 요약... 동일한 수치로 함께 표시된다", "0건이면... 요약은 상단 헤더의 '오늘일정 - 0/0' 하나뿐이다")하고 있어, 같은 문서 내 F-19/P-68/E-19-5/E-19-8/AC-47/AC-54/AC-91/§7.10(모두 v1.14 갱신 지점, 8곳에서 일관되게 "상단 헤더 요약 삭제"로 서술)과 상충한다. 본 설계는 반복 확인된 다수 지점의 v1.14 확정 서술을 따라 상단 헤더 요약을 제거하는 방향으로 설계했다. plan.md AC-96 잔존 서술 자체의 수정은 Architect 권한 밖(Planner 소관)이므로 이번 설계는 plan.md 를 변경하지 않고 `overview.md` 미결정 사항(N-18)에 기록만 한다 |
@@ -53,6 +54,7 @@
 | `AuthGateway` | OAuth 2.0 + PKCE | `authorize()`, `refresh(refreshToken)`, `revoke(token)` |
 | `TokenStore` | OS 보안 저장소 | `save(ref, tokens)`, `load(ref)`, `clear(ref)` |
 | `WatchSyncGateway` (신규 v1.9, F-19) | 폰↔워치 채널(iOS WatchConnectivity; Android no-op) | `isSupported(): boolean`, `activate(): Promise<void>`, `sendSnapshot(snapshot): Promise<void>` (updateApplicationContext + 도달 시 sendMessage), `onIncomingToggle(cb: (op: WatchToggleOp) => void): void`, `ack(opId, result): Promise<void>` |
+| `RemotePushGateway` (신규 v1.23, F-27) | 원격 푸시 수신 인프라(FCM/APNs, iOS 전용; Android no-op) | `isSupported(): boolean`(P-74), `register(): Promise<string \| null>`(APNs 토큰→FCM 토큰, 실패해도 throw 하지 않음 — E-27-2), `subscribeToTopic(topic: string): Promise<boolean>` / `unsubscribeFromTopic(topic: string): Promise<boolean>`(best-effort, 실패해도 throw 하지 않음), `onTokenRefresh(cb: (token: string) => void): void`(FCM 토큰 로테이션 이벤트), `onMessage(cb: (message: RemotePushMessage) => void): void`(포그라운드 수신, §19.2) |
 | `Logger` | 구조적 로그(마스킹 적용) | `info`, `warn`, `error`, `metric` |
 
 - 모든 서비스는 포트에만 의존하고 구체 어댑터는 조립 지점(app bootstrap)에서 주입한다.
@@ -66,7 +68,7 @@
 | `POLICY_*` | 정책 위반 | `POLICY_SYSTEM_CATEGORY_DELETE`(E-06-5 삭제), `POLICY_SYSTEM_CATEGORY_RENAME`(E-06-5 이름변경, P-34), `POLICY_NOT_RECURRING_OCCURRENCE`(v1.16, F-24 — `deleteRecurrenceFollowing`/`updateRecurrenceRule` 을 반복 회차가 아닌 일정에 호출) |
 | `NOT_FOUND_*` | 대상 없음 | `NOT_FOUND_SCHEDULE` |
 | `PERMISSION_*` | OS 권한 거부(기능 비활성, 도메인 영향 없음) | `PERMISSION_NOTIFICATION_DENIED`, `PERMISSION_CALENDAR_DENIED` |
-| `GATEWAY_*` | 외부 연동 실패(격리, 재시도 안내) | `GATEWAY_AUTH_FAILED`, `GATEWAY_CALENDAR_UNAVAILABLE`, `GATEWAY_WATCH_UNAVAILABLE`(F-19 — 워치 채널 비활성/미도달, 폰 기능 무영향) |
+| `GATEWAY_*` | 외부 연동 실패(격리, 재시도 안내) | `GATEWAY_AUTH_FAILED`, `GATEWAY_CALENDAR_UNAVAILABLE`, `GATEWAY_WATCH_UNAVAILABLE`(F-19 — 워치 채널 비활성/미도달, 폰 기능 무영향), `GATEWAY_PUSH_REGISTRATION_FAILED`(v1.23, F-27 — APNs/FCM 토큰 발급·토픽 구독 실패, 로컬 알림(F-08/F-09)·앱 흐름 무영향, 경고 로그 전용 — E-27-2/AC-99) |
 | `STORAGE_*` | 저장소 오류(트랜잭션 롤백, 안전 모드) | `STORAGE_TX_FAILED`, `STORAGE_MIGRATION_FAILED` |
 
 - 오류는 `{ code, message, field? }` 형태로 반환. UI는 `field`로 인라인 표시(AC-02/03).
@@ -342,6 +344,36 @@ sync():
   - on 복귀 후 그 일정을 수정하면 `ScheduleService.update` 의 `replaceForSchedule` 가 기존 행(취소 포함)을 지우고 새 PENDING 행을 만들어 `sync(id)` 가 정상 예약한다(AC-42 후반).
 - **SettingsScreen 호출 순서(§16.3.6)**: `SettingService.set('notif.enabled', v)` → `ReminderScheduler.applyGlobalNotificationsToggle(v)`. 저장 실패 시 이전 값 롤백(E-18-3), 토글 미적용.
 - **권한 거부 + on(E-18-1)**: 설정값은 `true` 로 저장되고, 실제 예약은 `syncOnce()` 의 기존 권한 분기(`PERMISSION_NOTIFICATION_DENIED` 경고)로 처리. 권한 허용 시 이후 저장·수정 건부터 동작.
+
+### 전역 알림 토글과 원격 푸시(F-27) 연동 — v1.23 신규
+
+plan.md E-27-6 은 "전역 알림 토글이 off 인 동안 원격 푸시도 로컬 알림과 동일하게 노출되지 않는 것으로 가정"하고 구체 메커니즘을 Architect 에 위임했다. 원격 푸시(F-27)는 로컬 알림과 완전히 별도 채널(P-75)이므로 이 절의 기존 로컬 취소 로직(`applyGlobalNotificationsToggle`)을 변경하지 않고, **동일 호출부에서 별도 격리된 메서드를 추가 호출**하는 방식으로 결합한다.
+
+```text
+SettingsScreen: SettingService.set('notif.enabled', v) 성공 후
+  → ReminderScheduler.applyGlobalNotificationsToggle(v)      # 기존, 로컬 REMINDER 일괄 취소/유지(§6)
+  → RemotePushService.applyGlobalNotificationsToggle(v)      # 신규(v1.23), 아래 절차 — 독립 try/catch
+
+RemotePushService.applyGlobalNotificationsToggle(enabled: boolean):
+  try:
+    if enabled == false:
+      RemotePushGateway.unsubscribeFromTopic(PUSH_TOPIC_ANNOUNCEMENTS)   # best-effort
+      SettingRepository.set('push.fcm.topicSubscribed', false)
+      Logger.metric('push.topic.unsubscribed')
+    else:
+      token = SettingRepository.get('push.fcm.token')
+      if token and NotificationGateway.getPermission() == 'granted':
+        RemotePushGateway.subscribeToTopic(PUSH_TOPIC_ANNOUNCEMENTS)     # best-effort
+        SettingRepository.set('push.fcm.topicSubscribed', true)
+        Logger.metric('push.topic.subscribed')
+      # 토큰 미발급 상태면 §19.3 등록 재시도 시점(다음 포그라운드)에서 자연히 구독됨
+  catch (e):
+    Logger.log('warn', 'push.toggle.sync.fail', { enabled })   # 예외를 삼킴 — 로컬 알림 토글은 이미 완료된 상태라 영향 없음(E-27-2 원칙 재사용)
+```
+
+- **격리 원칙**: `RemotePushService.applyGlobalNotificationsToggle`의 실패는 `ReminderScheduler.applyGlobalNotificationsToggle`(로컬, 이미 완료)의 결과를 되돌리지 않는다 — 두 호출은 순차적이지만 서로 독립적인 실패 도메인이다(§13.10/§19.5 재확인).
+- **포그라운드 수신 게이팅(방어 심층)**: 토픽 구독/해지가 즉시 반영되지 않는 전파 지연 구간을 대비해, 포그라운드 수신 핸들러(§19.4 `onMessage`)도 표시 직전에 `SettingService.notificationsEnabled()`를 재확인한다 — off 이면 `notifee.displayNotification()` 호출 자체를 생략한다. 백그라운드/종료 상태는 iOS 표준 알림 자동 표시(E-27-3)라 이 방어가 적용되지 않으며, 이는 잔여 위험으로 §13.10에 기록한다.
+- **`SettingsScreen` 호출 순서 갱신(§16.3.6)**: 위 코드 블록의 순서(로컬 → 원격)를 그대로 반영.
 
 ### 예외
 - 방해 금지/포커스 모드: OS 정책에 위임, 앱은 우회하지 않음(E-08-4).
@@ -992,6 +1024,10 @@ combineDateWithTimeOfDay(dateTs: number, timeOfDayTs: number, timeZone: string):
 | 워치 상단 타이틀 재변경 "오늘일정"→"오늘뭐해"(F-19, v1.22, plan.md v1.15) | Tampering / Injection / Info Disclosure | 하드코딩 정적 문자열 리터럴 1곳(`TodayView.swift` 36행 `.navigationTitle`) 교체뿐 — 산출 소스·전송 계약·빌드 타임 번들 포함 방식·신뢰 경계 전부 무변경, 사용자 입력 경로 없음. 리스트 Section 헤더 요약(`headerSummaryText`, P-73)의 "오늘일정" 리터럴은 이번 개정과 무관하게 그대로 유지 | 없음(해당 없음 — 신규 신뢰 경계·비밀정보 없음) |
 | 위조·재생된 워치 완료 토글 op (F-19) | Tampering / Elevation | op = `{opId, scheduleId(정수), done(bool), watchChangedAt, baseUpdatedAt}` 만; `scheduleId` 재조회 + `opId` dedup 원장 + LWW; `toggleDone` 외 경로 없음(P-43); WCSession 은 동일 team ID 페어드 확장으로 OS 제한 | 낮음(§13.9) |
 | 워치 op 폭주로 폰 처리 부하 (F-19) | DoS | 수신 처리 상한(배치·순차), dedup 원장 링버퍼(최근 50), `updateApplicationContext` 병합으로 스냅샷 재전송 코알레싱 | 낮음 |
+| 원격 푸시(F-27, v1.23) — Firebase 설정 파일(`GoogleService-Info.plist`) 유출 | Info Disclosure / Security Misconfiguration | `.gitignore` 패턴 추가(경로 무관 매칭)로 저장소 비커밋(P-79/AC-100), 실제 배치는 `ios/TodayWhat/`(Xcode 참조), 원문 내용 로그·문서 인용 금지 원칙 | 개발자가 `.gitignore` 적용 전 실수로 커밋할 가능성 — Tester 정적 점검(V-63)으로 사전 차단, 이미 커밋된 이력 발견 시 키 회전(Firebase 콘솔) 필요(잔여, 이번 릴리스는 최초 도입이라 기존 커밋 이력 없음) |
+| 원격 푸시(F-27, v1.23) — FCM 토큰 노출/오용 | Info Disclosure / Spoofing | 토큰은 자격증명이 아닌 단말-메시지 라우팅 식별자, 서버 전송 없음(P-78, D-33) — 유출되어도 토큰 단독으로는 사용자 데이터 접근 불가. `APP_SETTING`(SQLite, 선택적 SQLCipher 대상)에 저장, 로그에는 존재 여부만 기록(원문 미기록) | 토큰이 로그·크래시 리포트에 실수로 포함될 가능성 — `MaskingLogger` 마스킹 필드에 포함(§13.5 재사용) |
+| 원격 푸시(F-27, v1.23) — 등록/구독 실패로 인한 가용성 저하 | DoS(자기 자신 대상, 가용성) | `RemotePushGateway` 전 메서드가 예외를 삼키고 결과만 반환(WatchSyncGateway와 동일 원칙) — 로컬 알림(F-08/F-09)·부트스트랩·일정 CRUD 무관 경로(정적 grep 가능, E-27-2/AC-99) | 없음(설계상 격리) |
+| 원격 푸시(F-27, v1.23) — 위조된 푸시로 사용자 기만(피싱성 알림) | Spoofing / Tampering | 발송 주체는 Firebase 콘솔 소유자(운영자)로 한정(P-76) — 이번 릴리스는 서버 API·토큰 기반 임의 발송 경로가 없어 제3자가 앱을 통해 임의 푸시를 트리거할 수 없음. 알림 탭 시 딥링크 처리 없음(OI-37, 비범위)이라 위조 payload로 화면을 유도할 표면 자체가 없음 | Firebase 프로젝트 콘솔 계정 자체의 탈취(운영 계정 보안, 앱 설계 범위 밖) |
 
 ---
 
@@ -1015,6 +1051,46 @@ combineDateWithTimeOfDay(dateTs: number, timeOfDayTs: number, timeZone: string):
 | 위조/재생된 완료 토글 op 로 상태 오염 | Tampering | scheduleId 재조회 + opId dedup + LWW + toggleDone 한정 | 정상 페어드 워치에서의 오조작은 폰에서 되돌리기 가능(정상 기능) |
 | 워치 채널 장애로 폰 기능 저해 | DoS(가용성) | 베스트-에포트 격리 — `GATEWAY_WATCH_UNAVAILABLE` 로깅 후 폰 흐름 계속(NFR-12) | 없음(설계상 제거) |
 | LWW 근사로 워치 토글 유실 | Tampering/Integrity | §17.6 `baseUpdatedAt` 비교, 유실 시 다음 스냅샷에서 폰 상태로 수렴(사용자 재토글 가능) | 완료 무관 폰 편집이 워치 토글보다 뒤일 때 드롭 — N-12 residual |
+
+---
+
+## 13.10 원격 푸시 알림(FCM) 및 Firebase 설정 파일 보안 (F-27, P-74~P-79) — v1.23 신규
+
+### 신뢰 경계
+
+- **APNs/FCM ↔ 앱**: 원격 푸시 메시지는 Apple/Firebase 인프라를 경유해 도착하며, 발신 주체는 Firebase 콘솔 접근 권한을 가진 운영자로 한정된다(P-76 — 이번 릴리스는 서버 발송 API가 없어 제3자가 앱 경유로 임의 발송을 트리거할 경로가 없다). 그럼에도 **수신 payload(title/body)는 신뢰 경계 밖 입력**으로 취급 — 그대로 `<Text>`/OS 알림 API 에 전달할 뿐 코드 실행·SQL·딥링크로 해석하지 않는다(§13.3 원칙 재사용, 표시 전용).
+- **FCM 토큰**: 단말-메시지 라우팅 식별자이며 자격증명이 아니다. 서버로 전송하지 않으므로(P-78) 네트워크 경계를 넘는 신뢰 이슈가 없다.
+- **Firebase 설정 파일(`GoogleService-Info.plist`)**: 빌드 타임 네이티브 리소스이며 런타임에 사용자 입력으로 대체되지 않는다(§13.1 "에셋 경로 고정" 원칙과 동형).
+
+### `GoogleService-Info.plist` 취급 규정 (P-79, AC-100 — 필수)
+
+1. **배치 경로**: 실제 배치는 **`ios/TodayWhat/GoogleService-Info.plist`**(`ios/TodayWhat.xcodeproj`와 같은 레벨의 `ios/TodayWhat/` 디렉터리 — `AppDelegate.mm`·`Info.plist` 등 기존 앱 타깃 리소스와 동일 위치)이다. Xcode 프로젝트(타깃 "TodayWhat")의 **Build Phases → Copy Bundle Resources**에 이 파일이 포함되도록 프로젝트 설정(`project.pbxproj`)에 추가해야 한다 — 파일을 디렉터리에 두는 것만으로는 앱 번들에 포함되지 않는다.
+2. **저장소 비커밋 (`.gitignore`)**: 저장소 루트 `.gitignore`(이미 존재 — 아래 정정 참고)에 `GoogleService-Info.plist` 패턴을 **추가**한다. 슬래시 없는 파일명 패턴은 git이 저장소 내 모든 경로에서 매칭하므로, 이 한 줄로 임시 위치(`.claude/GoogleService-Info.plist`)와 최종 위치(`ios/TodayWhat/GoogleService-Info.plist`) 양쪽이 동시에 추적 제외된다. Android 대응 파일(`google-services.json`, 현재 미보유·비범위 P-74)도 향후 대비해 동일 원칙으로 패턴을 추가할 수 있다(방어적, 이번 릴리스에 파일 자체는 없음).
+   - **정정(Architect 조사 결과, 계획 문서 사실관계 보정)**: `plan.md`는 "저장소에 `.gitignore` 파일 자체가 존재하지 않는다"고 서술했으나, 실제로는 저장소 루트에 `.gitignore`가 **이미 존재**한다(Android/iOS 네이티브 빌드 산출물 등 기존 규칙 다수 포함). 따라서 Developer 작업은 "신규 파일 생성"이 아니라 **기존 `.gitignore`에 패턴을 추가**하는 것이다. P-79/AC-100 이 요구하는 결과("해당 파일이 git 추적에서 제외됨")는 이 방식으로 동일하게 충족되므로 이 사실 정정이 설계나 정책을 변경하지 않는다(비차단, `overview.md` 미결정 사항에 정보성으로 기록).
+3. **`.claude/GoogleService-Info.plist`(임시 전달 위치) 처리**: 위 2번 패턴에 의해 이미 git 추적에서 제외되므로 별도 조치 없이도 저장소에 커밋되지 않는다. 다만 Developer 가 파일 내용을 최종 위치(`ios/TodayWhat/`)로 이관한 뒤, `.claude/` 하위의 임시 사본을 **정리(삭제)할지 그대로 둘지는 Developer 재량**으로 남긴다 — `.claude/` 디렉터리는 이 저장소에서 에이전트/스킬 정의 등 별도로 관리되는 설정 자산을 담고 있어(`CLAUDE.md` 규칙 참고) 디렉터리 전체를 일괄 무시 대상으로 지정하는 것은 이번 설계 범위를 벗어난 단정이다. 최소 요건은 "두 위치 모두 git 추적에서 제외됨"(2번)이며, 이는 이미 충족된다.
+4. **원문 내용 비인용 원칙 재확인**: `GoogleService-Info.plist`의 실제 키 값(API 키, GCM Sender ID 등)은 로그(`Logger`), 커밋 메시지, 이슈/PR 설명, 이 저장소의 어떤 설계·테스트 문서에도 그대로 인용하지 않는다. 본 설계 문서 역시 파일의 존재와 용도(Firebase iOS 설정)만을 근거로 작성했다(plan.md P-79와 동일 원칙 승계).
+
+### FCM 토큰 저장 (P-78)
+
+- 저장 위치: `APP_SETTING`(`database.md` §15) — Keychain 이 아니다. 근거: FCM 토큰은 OAuth access/refresh 토큰(§13.4, 자격증명·Keychain 전용)과 성격이 다른 **단말-메시지 라우팅 식별자**이며, 토큰 단독으로 사용자 데이터·계정에 접근할 수 없다. 기존 `theme.mode`/`notif.enabled` 등과 동일한 보호 수준(SQLite, 선택적 SQLCipher 전체 암호화 대상 포함)이면 충분하다(과설계 방지).
+- 로그: 토큰 원문은 기록하지 않는다. 존재 여부(boolean)·길이·해시 프리픽스만 `MaskingLogger`(§13.5) 경유로 기록 가능.
+
+### 인증/권한
+
+- 별도 인증 계층 없음(앱 내부 권한 계층 없음, §13.2 원칙과 동일). 원격 알림 등록에 필요한 유일한 게이트는 OS 알림 권한(기존 로컬 알림과 공유, P-77) — 신규 권한 종류를 추가하지 않는다.
+
+### 입력 검증 / 출력 처리
+
+- 수신 payload(title/body)는 OS 알림 API(iOS 표준 알림) 또는 `notifee.displayNotification()`에 그대로 전달되는 표시 전용 문자열이다 — SQL·FTS·딥링크 해석 경로가 없다(비범위, OI-37). RN `<Text>`/OS 네이티브 알림 렌더이므로 HTML/JS 실행 표면이 없다(§13.3/§16.7 WebView 미사용 원칙과 동일).
+- `data` 필드(있는 경우)는 이번 릴리스에서 특정 일정과 연동하지 않으므로(P-76) 앱이 파싱·해석하지 않는다 — 신규 딥링크·재조회 표면이 없다(§13.3 알림 payload 검증 원칙은 로컬 알림(F-08/F-09) 대상이며 F-27 payload는 그 원칙이 적용될 대상 필드 자체가 없다).
+
+### 감사/로그 대상
+
+- 원격 등록 성공/실패(`push.token.registered`/`.register.fail`), 토픽 구독/해지(`push.topic.subscribed`/`.unsubscribed`) — 전부 `nfr.md` §5.2/§18.3 메트릭. 토큰 원문·수신 payload 본문은 미기록.
+
+### 위협 → 대응 → 잔여 위험
+
+위 §13.8 위협표 신규 4행 참고. 잔여 위험 요약: (1) `.gitignore` 적용 전 실수 커밋 가능성(V-63 정적 점검으로 완화), (2) 백그라운드/종료 상태에서는 전역 알림 토글 off 가 이미 전파된 토큰의 즉시 도착 메시지 표시를 앱 코드로 막을 수 없음(iOS가 자동 표시, E-27-3) — 토픽 구독/해지 전파 지연 구간의 잔여 위험으로 기록, 이번 릴리스는 단일 공지 토픽·낮은 발송 빈도(운영자 수동 발송)라 영향 범위가 작다.
 
 ---
 
@@ -1174,8 +1250,17 @@ combineDateWithTimeOfDay(dateTs: number, timeOfDayTs: number, timeZone: string):
 | (v1.22) NFR 영향 | 정량 목표 영향 없음(신규 계산·조회·네트워크 없음) — `nfr.md` v1.19 로 갱신해 §14.5 검증 체크리스트의 상단 타이틀 확인 리터럴만 "오늘뭐해"로 정정 |
 | (v1.22) 보안 위협 모델 영향 | 없음 — §13.8 신규 항목("해당 없음") |
 | (v1.22) 「API 설계」 섹션 | 미신설 — 순수 UI 문자열 리터럴 변경. 신규/외부 API 없음 |
+| (v1.23) F-27 신규 포트(`RemotePushGateway`)가 §0.1/§16.5/§19 간 일관 | OK — §0.1 개념표·§16.5 네이티브 어댑터 매핑·§19.2 포트 계약 서술이 동일 메서드 시그니처(`isSupported`/`register`/`subscribeToTopic`/`unsubscribeFromTopic`/`onTokenRefresh`/`onMessage`)를 사용 |
+| (v1.23) F-27 이 기존 F-08/F-09/P-41(로컬 예약 알림) 로직과 충돌하지 않음 | OK — `ReminderScheduler.sync()`(§6)는 `RemotePushGateway`를 참조하지 않고(정적 grep 가능), §19 신규 흐름도 `NotificationGateway`/`ReminderRepository` 를 호출하지 않는다 — 두 채널은 코드 의존성이 없는 완전 별도 경로(P-75) |
+| (v1.23) F-27 FCM 토큰 저장이 database.md 와 일관 | OK — `database.md` §15 가 정의한 `APP_SETTING` 키 3개(`push.fcm.token`/`.topicSubscribed`/`.registeredAt`)와 logic §19.3/§13.10 이 참조하는 키가 동일 |
+| (v1.23) 전역 알림 토글(F-18)과 원격 푸시 연동(E-27-6)이 §6/§16.3.6 간 일관 | OK — §6 신규 소단락의 호출 순서(로컬 → 원격, 독립 try/catch)와 §16.3.6 갱신 문구가 동일 순서를 서술 |
+| (v1.23) 등록 실패 격리(AC-99)가 로직·NFR 간 일관 | OK — logic §19.5(try/catch 격리)와 `nfr.md` §18.1(등록 실패가 로컬 알림·부트스트랩에 영향 없음)이 동일 설계를 서술, `nfr.md` §9 V-61 이 이를 검증 항목화 |
+| (v1.23) 보안 설계(§13.10)와 plan.md P-79/AC-100 일관 | OK — `.gitignore` 패턴 추가·`ios/TodayWhat/` 배치·원문 비인용 3개 요건이 P-79 문구와 1:1 대응. plan.md의 ".gitignore 파일 부재" 서술은 Architect 조사로 부정확함이 확인됐으나(실제로는 기존 파일 존재), P-79/AC-100 이 요구하는 결과(비커밋)는 "패턴 추가" 방식으로 동일 충족되어 설계·정책 충돌 없음(비차단 사실 정정, `overview.md` 미결정 사항에 기록) |
+| (v1.23) DB 스키마 영향 | 없음(스키마 무변경) — `database.md` v1.9 §15, `APP_SETTING` 신규 키 3개만(DDL·마이그레이션 없음) |
+| (v1.23) NFR 영향 | 신규 §18(nfr.md v1.20) — 등록 실패 격리(가용성)·재시도 정책·관측성·보안 NFR. 신규 정량 SLO·인덱스·의존성 없음(FCM SDK 자체는 overview 기술 스택에서 버전 고정) |
+| (v1.23) 「API 설계」 섹션 | §19.6 에 작성 — 자체 서버 API 없음(P-76), FCM SDK 콜백 계약(토큰 갱신 이벤트·포그라운드 메시지 핸들러)만 문서화. 외부 REST API 호출 없음 |
 
-발견된 불일치: 위 §5 잔존 서술(v1.16) + v1.21 설계-구현 괴리 1건(v1.19/v1.20 전제 오류) — **이번 재검증에서 발견·수정 완료**. 그 외 문서 전체 재스캔(`RecurrenceExpander`/"가상 회차"/"가상 전개"/"예외 인스턴스"/"규칙 1행" 등 폐기 용어 grep) 결과 추가 잔존 서술 없음. (위 v1.4 §14 행 1건은 "정정" — 반려가 아니라 이후 확정 요구사항(F-24, v1.9 plan)에 따라 원 설계 전제가 폐기·대체된 정상적 설계 델타). (DASH-01 은 v1.11 에서 문서 정정 완료. DASH-02/DASH-03 은 이번 델타 범위 밖 캐리오버로 §15 에 명시. v1.13 은 F-23 시각화 프레젠테이션 한정 델타. v1.14 는 F-19 watchOS 앱 타깃 구현 착수 — 공유 계약·집계·DB·보안 위협 모델·폰 코드 무변경, `ios/` 네이티브 타깃 + Swift 소스만 추가. v1.15 는 F-06/F-07/F-08/F-10 색상·표시 개정 — DB·포트·보안 위협 모델 무변경, `src/core/domain` 순수 모듈 2개 + 서비스 메서드 1개 + 셸 UI만 추가. v1.16 은 F-24/F-10 개정/F-06 개정/F-25/F-26 — 반복은 가상 전개→경계 내 실체화로 설계 대체, DB 신규 컬럼 1개 + 마이그레이션 2건, 나머지 4항목은 표시 계층·`APP_SETTING` 키·순수 함수 추가로 DB 무영향. v1.17 은 F-19 개정(워치 헤더 요약·다음일정 제거·체크박스 좌측)/F-06·F-07·F-08·F-24 개정(선택형 필드 셀렉트박스화)/F-16 개정(캘린더 아이콘) — 전부 표시 계층·페이로드 계산 한정, 공유 타입·DB·서비스 계약·포트 무변경, 신규 위젯 컴포넌트 2개(`SelectField`/`MultiSelectField`)만 추가. v1.18 은 plan.md v1.11(워치 타이틀·헤더 요약 "오늘"→"오늘일정", 직전 라운드 중단으로 미반영 상태였던 것을 발견·수정)과 plan.md v1.12(A)(RN 대시보드 탭 라벨 "오늘"→"오늘일정" 신규 반영, OI-32 CLOSED)를 반영 — 전부 리터럴 문자열 교체 한정, 공유 계약·DB·서비스·포트·보안 위협 모델 무변경. plan.md v1.12(B) 워치 레이아웃 검증(변경 불요)은 §17.11.3/§17.12 기존 서술과 일치함을 확인만 하고 별도 설계 변경 없음(회귀 참고자료는 `nfr.md` §14.5). v1.19 는 plan.md v1.13(워치 리스트 Section 헤더 요약 접미사 신규, P-73/AC-96) 반영 — 상단 헤더가 이미 계산해 둔 `headerSummaryText` 재사용, 공유 계약·DB·보안 위협 모델 무변경. v1.20 은 plan.md v1.14(워치 상단 헤더 요약 `.toolbar` 삭제, P-68 축소·AC-91 폐기) 반영 — `headerSummaryText` 산식·리스트 Section 헤더(P-73)는 그대로 유지한 채 상단 헤더 소비처만 제거, 공유 계약·DB·서비스·포트·보안 위협 모델 무변경. plan.md AC-96 잔존 서술 1건은 §15 N-18 에 note 로 기록. **v1.21** 은 plan.md 델타 없이(여전히 v1.14 기준) Developer `BLOCKED(DESIGN_CONFLICT)` 보고에 대응해 v1.19/v1.20 의 "이미 구현됨" 전제 오류를 코드·git·로그 대조로 확인·정정 — §17.1/§17.9/§17.10/§17.11.3/§17.12 서술을 "설계 완료, v1.21 최초 구현"으로 명확화하고 §17.12 를 "구현 순서(1단계 P-73/AC-96 최초 구현 → 2단계 P-68 toolbar 삭제)" 절로 재작성했다. 요구사항·설계 결정 내용 자체는 무변경, 공유 계약·DB·서비스·포트·보안 위협 모델 무변경. **v1.22** 는 plan.md v1.15(워치 상단 네비게이션 타이틀 재변경 "오늘일정"→"오늘뭐해", 사용자 명시적 재지시)를 반영 — `TodayView.swift` 36행 리터럴 1곳만 교체, 리스트 Section 헤더(P-73/AC-96, `headerSummaryText`)는 무변경, 공유 계약·DB·서비스·포트·보안 위협 모델 무변경.)
+발견된 불일치: 위 §5 잔존 서술(v1.16) + v1.21 설계-구현 괴리 1건(v1.19/v1.20 전제 오류) — **이번 재검증에서 발견·수정 완료**. 그 외 문서 전체 재스캔(`RecurrenceExpander`/"가상 회차"/"가상 전개"/"예외 인스턴스"/"규칙 1행" 등 폐기 용어 grep) 결과 추가 잔존 서술 없음. (위 v1.4 §14 행 1건은 "정정" — 반려가 아니라 이후 확정 요구사항(F-24, v1.9 plan)에 따라 원 설계 전제가 폐기·대체된 정상적 설계 델타). (DASH-01 은 v1.11 에서 문서 정정 완료. DASH-02/DASH-03 은 이번 델타 범위 밖 캐리오버로 §15 에 명시. v1.13 은 F-23 시각화 프레젠테이션 한정 델타. v1.14 는 F-19 watchOS 앱 타깃 구현 착수 — 공유 계약·집계·DB·보안 위협 모델·폰 코드 무변경, `ios/` 네이티브 타깃 + Swift 소스만 추가. v1.15 는 F-06/F-07/F-08/F-10 색상·표시 개정 — DB·포트·보안 위협 모델 무변경, `src/core/domain` 순수 모듈 2개 + 서비스 메서드 1개 + 셸 UI만 추가. v1.16 은 F-24/F-10 개정/F-06 개정/F-25/F-26 — 반복은 가상 전개→경계 내 실체화로 설계 대체, DB 신규 컬럼 1개 + 마이그레이션 2건, 나머지 4항목은 표시 계층·`APP_SETTING` 키·순수 함수 추가로 DB 무영향. v1.17 은 F-19 개정(워치 헤더 요약·다음일정 제거·체크박스 좌측)/F-06·F-07·F-08·F-24 개정(선택형 필드 셀렉트박스화)/F-16 개정(캘린더 아이콘) — 전부 표시 계층·페이로드 계산 한정, 공유 타입·DB·서비스 계약·포트 무변경, 신규 위젯 컴포넌트 2개(`SelectField`/`MultiSelectField`)만 추가. v1.18 은 plan.md v1.11(워치 타이틀·헤더 요약 "오늘"→"오늘일정", 직전 라운드 중단으로 미반영 상태였던 것을 발견·수정)과 plan.md v1.12(A)(RN 대시보드 탭 라벨 "오늘"→"오늘일정" 신규 반영, OI-32 CLOSED)를 반영 — 전부 리터럴 문자열 교체 한정, 공유 계약·DB·서비스·포트·보안 위협 모델 무변경. plan.md v1.12(B) 워치 레이아웃 검증(변경 불요)은 §17.11.3/§17.12 기존 서술과 일치함을 확인만 하고 별도 설계 변경 없음(회귀 참고자료는 `nfr.md` §14.5). v1.19 는 plan.md v1.13(워치 리스트 Section 헤더 요약 접미사 신규, P-73/AC-96) 반영 — 상단 헤더가 이미 계산해 둔 `headerSummaryText` 재사용, 공유 계약·DB·보안 위협 모델 무변경. v1.20 은 plan.md v1.14(워치 상단 헤더 요약 `.toolbar` 삭제, P-68 축소·AC-91 폐기) 반영 — `headerSummaryText` 산식·리스트 Section 헤더(P-73)는 그대로 유지한 채 상단 헤더 소비처만 제거, 공유 계약·DB·서비스·포트·보안 위협 모델 무변경. plan.md AC-96 잔존 서술 1건은 §15 N-18 에 note 로 기록. **v1.21** 은 plan.md 델타 없이(여전히 v1.14 기준) Developer `BLOCKED(DESIGN_CONFLICT)` 보고에 대응해 v1.19/v1.20 의 "이미 구현됨" 전제 오류를 코드·git·로그 대조로 확인·정정 — §17.1/§17.9/§17.10/§17.11.3/§17.12 서술을 "설계 완료, v1.21 최초 구현"으로 명확화하고 §17.12 를 "구현 순서(1단계 P-73/AC-96 최초 구현 → 2단계 P-68 toolbar 삭제)" 절로 재작성했다. 요구사항·설계 결정 내용 자체는 무변경, 공유 계약·DB·서비스·포트·보안 위협 모델 무변경. **v1.22** 는 plan.md v1.15(워치 상단 네비게이션 타이틀 재변경 "오늘일정"→"오늘뭐해", 사용자 명시적 재지시)를 반영 — `TodayView.swift` 36행 리터럴 1곳만 교체, 리스트 Section 헤더(P-73/AC-96, `headerSummaryText`)는 무변경, 공유 계약·DB·서비스·포트·보안 위협 모델 무변경. **v1.23** 은 plan.md v1.16(F-27 원격 푸시 알림, FCM, iOS 한정, 신규)을 반영 — 신규 포트(`RemotePushGateway`)·신규 §19·§13.10 보안·§6 토글 연동 소단락을 추가했고, 기존 F-08/F-09/P-41 로컬 예약 알림 경로·워치 동기화(§17)·반복 일정(§18) 등 다른 모든 절은 무변경이다. DB 스키마 변경 없음(`APP_SETTING` 신규 키만), 「API 설계」는 FCM SDK 콜백 계약만 §19.6 에 작성(자체 서버 API 없음, P-76).)
 
 ---
 
@@ -1226,6 +1311,10 @@ combineDateWithTimeOfDay(dateTs: number, timeOfDayTs: number, timeZone: string):
 | D-30 | 워치 "다음 예정 1건" 페이로드 전송 지속 여부 (F-19, plan v1.10) — **(a) 화면 표시 제거와 함께 전송도 중단** 채택(가정값). `WatchSyncService.pushSnapshot()` 이 다음 예정 조회를 하지 않고 `nextUpcoming=null` 고정 전달(§17.3). `WatchSnapshot.nextUpcoming` 타입은 유지(Swift 무변경) — `toPlistSafe()` null 키 제거로 전송 바이트에서도 배제. (b) "전송 유지" 확정 시 조회 라인만 복원(국소 변경). 게이트 형식상 OPEN, 비차단 |
 | D-31 | 사전 알림(F-08) 다중 선택 셀렉트박스의 구체 컴포넌트 형태 (F-08, plan v1.10) — **바텀시트형 다중 선택 목록(`MultiSelectField`)** 채택(§16.3.1). 드롭다운 내 체크 표시 형태도 동일 컴포넌트가 흡수 가능. 다중 선택(0개 이상) 기능 요건(P-62)·자유 입력 제외(D-24) 그대로. 순수 UI 구현 세부로 완전히 Architect 재량, 비차단 |
 | OI-33 | RN `DashboardScreen.tsx` 내부의 다른 "오늘" 표현(날짜 네비게이션 "오늘로"/`오늘 · {date}`, 빈 상태 문구 등)까지 "오늘일정"으로 확장할지 (F-10, plan v1.12 신규, Architect/Developer 위임) — **이번 v1.18 라운드는 제외(설계 결정)**: 해당 표현들은 탭·화면 정체성 명칭이 아니라 "당일"을 가리키는 날짜 지시어로 "오늘"을 사용하며, plan.md 의 관련 서술·AC(E-10-1/AC-15 등)도 이번 개정에서 문구를 바꾸지 않았다(§16.2 §"탭 라벨 설계" 소단락 근거). 워치 `TodayView.swift` 의 빈 상태 문구("오늘 일정이 없습니다", E-19-5)도 동일 원칙으로 유지, `Section("오늘")` 라벨만 순수 레이아웃 텍스트라 함께 "오늘일정"으로 정정(§17.12). 비차단, 사용자가 확장을 원하면 별도 라운드에서 재검토 |
+| D-32 | 원격 푸시(F-27)의 실제 발송 주체·트리거 방식 (plan v1.16) | **(a) 이번 릴리스는 Firebase 콘솔 수동/토픽 발송만 지원** 채택(plan 확정). 서버 기반 개인화 자동 발송은 후속(백엔드 인프라 도입 필요, OI-34) — 이번 설계는 클라이언트 수신 인프라(§19)까지만 다룬다. 이해관계자 추인 권장(비차단, 후속 투자 여부와 직결) |
+| D-33 | FCM 토큰의 서버 전송·관리 여부 (F-27, plan v1.16) | **(a) 로컬 저장까지만, 서버 전송 없음** 채택(plan 확정). `APP_SETTING`(`database.md` §15)에만 저장(§19.3/§13.10). 후속 서버 구축 시 전송 경로 추가는 별도 설계. 비차단 |
+| D-34 | FCM 토픽 구독 전략 (F-27, plan v1.16) | **단일 공지 토픽** 채택(plan 이 가정, 세부는 Architect 위임) — 상수 `PUSH_TOPIC_ANNOUNCEMENTS`(§19.2, 정확한 문자열 값은 Firebase 콘솔 설정과 일치해야 하므로 Developer가 실제 배포 시 운영자와 확정). 다중 토픽(카테고리별 등) 확장은 후속 — 현재 설계는 구독/해지 메서드가 `topic: string` 파라미터를 받으므로 국소 확장 가능(포트 시그니처 변경 없음). 비차단 |
+| D-35 | Android(FCM) 지원 여부 및 시점 (F-27, plan v1.16) | **(a) 이번 릴리스 범위 밖** 채택(plan 확정, `google-services.json` 부재). `RemotePushGateway.isSupported()`가 Android 에서 `false` 반환 — `WatchSyncGateway` 와 동일한 플랫폼 분기 패턴(§0.1). 후속 OI-36. 비차단 |
 
 ---
 
@@ -1535,6 +1624,7 @@ RootStack
   - 저장 실패 → 스위치 이전 값 롤백, 토글 미적용(E-18-3).
   - "알림에 일정 제목 표시"(`notif.showTitle`)는 `notif.enabled` off 시 UI 비활성(무효 — P-10-1 적용 대상 없음). 값 자체는 보존.
   - 권한 거부 + on(E-18-1): 설정값 `true` 저장, 실제 예약은 권한 허용 후 이후 건부터. 안내·설정 이동 유도(AC-07 준용).
+  - **(v1.23, F-27)** 위 on/off 전환 직후 `RemotePushService.applyGlobalNotificationsToggle(v)`(§6 신규 소단락)도 호출 — 원격 푸시 공지 토픽 구독/해지. 이 호출은 독립 `try/catch` 로 격리되어 실패해도 위 로컬 알림 토글 결과(이미 저장·적용 완료)를 되돌리지 않는다.
 - **새 일정 기본 중요도**(`schedule.defaultPriority`) / **새 일정 기본 유형**(`schedule.defaultCategoryId`):
   - 세그먼트/칩 선택 → `set(key, value)`. 미지정(`null`) 선택지 제공.
   - `ScheduleEditorScreen` **신규 모드만** 마운트 시 `SettingService.newScheduleDefaults()` 로 `priority`·`categoryId` 초기 선택값 프리필(P-33). 수정 모드는 적용 안 함(기존 저장값 표시, §16.3.1). 저장 검증·저장 규칙 불변(E-07-1/E-06-1) — 기본값이 채워져 있어 "미선택" 상황이 실질 없음(AC-43).
@@ -1811,9 +1901,15 @@ App.tsx mount:
     7) app.auth.ensureFreshToken()     # 연동 상태면. 실패해도 로컬 진행 (E-12-2)
     8) getInitialNotification() 처리 → 있으면 ScheduleDetail (16.2)
 
+  렌더 후, (선택) 원격 알림 등록 (v1.23, F-27, 비차단·격리):     # §19.3
+    if app.notifications.getPermission() == 'granted':
+      app.remotePush.register()  # 실패해도 throw 없음, 위 1~8단계에 영향 없음(E-27-2, AC-99)
+        → 성공 시 app.remotePush.subscribeToTopic(PUSH_TOPIC_ANNOUNCEMENTS)
+
 AppState 'background'→'active':
   app.scheduler.sync()  (throttle: 마지막 sync 후 최소 30s)
   DashboardScreen 포커스면 getSummary 재호출 (자정 경과 반영, AC-16)
+  (v1.23) 로컬에 FCM 토큰이 없으면 원격 알림 등록 재시도(§18.2 nfr, E-27-2) — 격리·비차단 동일
 
 Android BOOT_COMPLETED broadcast:
   Notifee headless JS → 최소 조립(db open + migrate + scheduler) → scheduler.sync() → 종료
@@ -1838,18 +1934,22 @@ Android BOOT_COMPLETED broadcast:
 | `Clock` | `src/core/domain/clock.ts`의 `SystemClock` 재사용(`Date.now`, `Intl….timeZone`) | — | 추가 구현 없음 |
 | `Logger` | `MaskingLogger`: `log(level,event,fields)` 전에 `title`/`memo`/`token`/`email`/`query` 키를 길이·해시프리픽스로 치환(nfr 5.1) | — | 릴리스 기본 레벨 `warn`. 링 버퍼(용량 제한) |
 | 부팅 재예약 | Android: `notifee` + `BOOT_COMPLETED` receiver → headless; iOS: 앱 기동 시 `bootstrapSequence` 6)단계가 담당 | — | headless 경로는 UI 없이 `scheduler.sync()`만, 완료 후 즉시 종료 |
+| `RemotePushGateway` (신규 v1.23, F-27) | `FirebaseRemotePushGateway.native.ts`(iOS) / `NoopRemotePushGateway.ts`(Android, `isSupported()=false`) | `@react-native-firebase/app` + `@react-native-firebase/messaging` (overview 기술 스택 표) | `register`→`messaging().registerDeviceForRemoteMessages()`(iOS 명시적 APNs 등록, 필요시)+`messaging().getToken()`; `onTokenRefresh`→`messaging().onTokenRefresh(cb)`; `subscribeToTopic`/`unsubscribeFromTopic`→`messaging().subscribeToTopic(topic)`/`unsubscribeFromTopic(topic)`; `onMessage`→`messaging().onMessage(cb)`(포그라운드만, 백그라운드/종료는 iOS 자동 표시라 핸들러 미등록, §19.4) | 전 메서드가 내부 `try/catch`로 실패를 삼키고 `null`/`false`/무시 반환 — 예외 전파 금지(E-27-2). Android 어댑터는 `WatchConnectivityGateway` 와 동일하게 모든 메서드 no-op(P-74). 포그라운드 표시는 `notifee.displayNotification()` 재사용(신규 알림 채널 불필요, 기존 `schedule-reminders` 채널과 별도로 `remote-push` 채널 1개만 추가) |
 
 ### 16.6 권한 흐름 (UI 상태)
 
 ```text
 알림 권한:
   undetermined → 온보딩/최초 저장 시 requestPermission()
-  granted      → 정상 예약
+  granted      → 정상 예약 + (v1.23, F-27) 동시에 RemotePushGateway.register() 시도(비차단·격리, P-77)
   denied       → 일정·reminder 행은 저장, 배너 "알림이 꺼져 있어요 · 설정 열기"(AC-07, E-08-1)
                  ReminderScheduler.sync() 는 warning 반환만, 도메인 영향 없음
+                 (v1.23) 원격 등록도 수행하지 않음 — 원격 푸시 미노출(E-27-1, AC-98)
 캘린더 권한:
   denied       → 캘린더 연동 토글 비활성 + 안내, 앱 자체 일정은 정상(E-14-1)
 ```
+
+- **(v1.23) 원격 푸시 권한은 신규 프롬프트가 아니다**: 위 "알림 권한"과 완전히 동일한 OS 권한을 재사용한다(P-77) — `PermissionsScreen`(§16.3 화면 표)의 "알림 허용 요청" 버튼이 로컬 알림과 원격 등록 양쪽을 동시에 트리거한다. 별도 화면·별도 시점 없음.
 
 ### 16.7 셸 보안 노트 (13장 보완)
 
@@ -1861,6 +1961,7 @@ Android BOOT_COMPLETED broadcast:
 - **전송**: `usesCleartextTraffic=false`(Android), ATS 예외 없음(iOS) — 스캐폴드 설정에 반영.
 - **일정 편집 입력(v1.6 — DateTimePicker)**: DateTimePicker는 OS 네이티브 UI에 완전 위임하므로 사용자가 임의 문자열을 입력하는 표면이 없다. `onChange` 콜백으로 전달된 `Date` 객체에서 `.getTime()`을 추출하고, `Number.isInteger` 방어 검증 후 서비스 호출(심층 방어 — 코어 `assertValidScheduleInput` 도 `Number.isInteger(startAt)` 재검증, §13.3). 이전 버전의 텍스트 파싱 경로(`localWallToEpoch` 저장 경로 사용)가 제거되어 파싱 실패·NaN 공격 표면이 축소된다. 제목/메모는 코어 길이·제어문자 규칙(§13.3)에 위임하고 `<Text>` 렌더라 XSS 표면 없음. 신규 신뢰 경계·위협 없음.
 - **에셋 경로 고정 (v1.5, P-21)**: 탭 아이콘·로고·태그라인 에셋 경로는 `src/assets/icons/`·`src/assets/images/`에 고정되며, 빌드 타임에 JS 번들에 포함된다. 런타임에 외부에서 경로를 변경하거나 주입하는 표면이 없으므로 에셋 경유 코드 실행 위협은 없다. 에셋 로드 실패는 UI 폴백으로 처리하며 예외가 크래시로 전파되지 않는다(E-16-1, AC-28).
+- **원격 푸시/Firebase 설정 파일 (v1.23, F-27)**: `GoogleService-Info.plist` 취급 규정·FCM 토큰 저장 위치·등록 실패 격리 원칙은 §13.10 참조(요약: 저장소 비커밋, `APP_SETTING` 저장, 예외 격리). 수신 메시지 payload는 표시 전용 문자열이며 딥링크·코드 실행 표면을 만들지 않는다(비범위, OI-37).
 - **브랜드 로딩 인디케이터 SVG (v1.7, F-17)**: `react-native-svg` 로 렌더하는 도형은 **앱이 코드로 작성한 정적 path/상수**(`duck/duckGeometry.ts`)뿐이다. 사용자·네트워크·외부 캘린더에서 온 SVG 문자열을 렌더하지 않으며 `SvgUri`/`SvgFromXml` 에 동적 입력을 넘기지 않는다 → SVG/XXE 파싱 표면 없음. WebView 미사용(§16.7 상단 원칙 유지). `BrandLoadingIndicator` 는 boolean/enum/문자열 상수/콜백만 props 로 받는 순수 프레젠테이션 컴포넌트로, DB·토큰·알림·캘린더·인증 어느 것도 접근하지 않아 §13 위협 모델에 새 신뢰 경계를 추가하지 않는다. 정적 폴백은 빌드 번들 `logo.png` 재사용(P-21). SVG 렌더 예외는 `SvgErrorBoundary` 로 포획해 크래시로 전파되지 않는다(E-17-2, AC-34). 의존성 위험은 §13.6 정책(major 고정 + 주기 `npm audit`)을 `react-native-svg` 15.x 에 동일 적용.
 
 ### 16.8 셸 관점 미검증(환경 외 후속) 범위
@@ -2722,3 +2823,145 @@ create(input):
 ### 18.9 보안 · 신규 신뢰 경계 없음
 
 반복 회차 실체화는 사용자가 이미 입력한 값(제목/메모/유형/우선순위/오프셋)을 서비스 계층에서 복제·재사용할 뿐이며, 신규 외부 입력 지점·저장 표면·전송 채널이 없다. `expandOccurrences`/`RecurrenceScheduler` 는 horizon(60일)과 절대 상한(366)으로 자기 자신에 대한 무한 증식을 방지한다(자원 고갈 방지, §13.3/§13.8 갱신 참고). 상세는 §13.3/§13.8.
+
+---
+
+## 19. 원격 푸시 알림 등록·수신 (F-27, P-74~P-79, E-27-1~6, D-32~D-34, AC-97~AC-100) — v1.23 신규
+
+### 19.1 배경 및 범위 경계
+
+- **목적**: iOS 한정으로 FCM(Firebase Cloud Messaging) 기반 원격 푸시 알림의 **수신 인프라**(토큰 발급·토픽 구독·수신 표시)를 구축한다. 이 프로젝트는 백엔드 서버를 두지 않으므로(P-76) 발송은 Firebase 콘솔의 수동/토픽 발송으로 한정하고, 특정 일정 이벤트와 연동된 서버 자동 발송은 이번 범위 밖이다(후속 D-32/OI-34).
+- **F-08/F-09/P-41 과의 관계**: 원격 푸시는 그 위에 얹는 **완전히 독립된 채널**이다(P-75). `ReminderScheduler`(§6)·`REMINDER` 테이블·로컬 알림 예약 로직은 이 절의 어떤 흐름에서도 참조·수정되지 않는다. 이번 릴리스는 원격 푸시를 특정 일정과 연동하지 않으므로 두 채널의 중복 알림 방지 로직은 필요하지 않다(E-27-4, 후속 연동 시 OI-35 재검토).
+- **플랫폼 경계**: iOS 전용(P-74). Android 는 `RemotePushGateway.isSupported() === false`이며 이후 모든 메서드가 no-op(§16.5, `WatchSyncGateway` 와 동일 패턴).
+
+### 19.2 `RemotePushGateway` 포트 계약
+
+§0.1 에 정의된 포트를 이 절에서 상세화한다.
+
+```ts
+type RemotePushMessage = { title?: string; body?: string; data?: Record<string, string> };
+
+interface RemotePushGateway {
+  isSupported(): boolean;                                        // iOS만 true (P-74)
+  register(): Promise<string | null>;                             // APNs 토큰 → FCM 토큰. 실패해도 throw 없음(E-27-2)
+  subscribeToTopic(topic: string): Promise<boolean>;              // best-effort, throw 없음
+  unsubscribeFromTopic(topic: string): Promise<boolean>;          // best-effort, throw 없음
+  onTokenRefresh(cb: (token: string) => void): void;              // FCM 토큰 로테이션 이벤트 구독
+  onMessage(cb: (message: RemotePushMessage) => void): void;      // 포그라운드 수신 이벤트 구독
+}
+
+const PUSH_TOPIC_ANNOUNCEMENTS = 'todaywhat_announcements'; // D-34(a) 단일 공지 토픽 — 실제 배포 시 Firebase 콘솔 설정과 반드시 일치
+```
+
+- **`register()`가 `null`을 반환하는 경우**: 권한 미허용(iOS 설정에서 APNs 등록 자체가 거부됨), 네트워크 오류, Firebase 초기화 실패(`GoogleService-Info.plist` 미배치 등) — 모두 동일하게 `null`로 수렴하며 호출부는 오류 종류를 구분하지 않는다(단순화, 재시도로 자연 해소 기대).
+- **`onTokenRefresh`/`onMessage`는 부트스트랩 1회만 등록**(§19.3) — 화면 마운트/언마운트와 무관한 앱 전역 리스너.
+
+### 19.3 등록 흐름 (권한 허용 → 토큰 발급 → 토픽 구독)
+
+```text
+목적: OS 알림 권한 허용 시(F-08 E-08-1과 동일 권한, P-77) 원격 알림 등록을 수행한다.
+사전 조건: NotificationGateway.getPermission() == 'granted'
+입력: 없음 (내부적으로 RemotePushGateway.isSupported() 확인)
+
+registerRemotePush():
+  if not RemotePushGateway.isSupported(): return               # Android, P-74 — 조용히 종료
+  if NotificationGateway.getPermission() != 'granted': return  # E-27-1 — 등록 자체를 시도하지 않음
+  try:
+    token = await RemotePushGateway.register()
+    if token == null:
+      Logger.metric('push.token.register.fail')
+      return                                                    # E-27-2 — 예외 아님, 다음 재시도 기회로 위임
+    SettingRepository.set('push.fcm.token', token)
+    SettingRepository.set('push.fcm.registeredAt', Clock.now())
+    Logger.metric('push.token.registered')
+    ok = await RemotePushGateway.subscribeToTopic(PUSH_TOPIC_ANNOUNCEMENTS)
+    if ok:
+      SettingRepository.set('push.fcm.topicSubscribed', true)
+      Logger.metric('push.topic.subscribed')
+  catch (e):
+    Logger.log('warn', 'push.register.unexpected', {})          # 방어적 catch — register()/subscribeToTopic() 계약상 throw 하지 않아야 하지만 이중 격리
+```
+
+- **호출 지점**: (1) 온보딩에서 사용자가 알림 권한을 허용한 직후(§7.1, F-08 E-08-1과 동일 이벤트) — `PermissionsScreen` 의 권한 허용 콜백에서 `registerRemotePush()` 를 fire-and-forget 으로 호출(대기하지 않음, 온보딩 다음 단계 진행을 막지 않음). (2) 부트스트랩 렌더 후 단계(§16.4) — 이미 권한이 허용된 기존 사용자가 앱을 재실행할 때 토큰이 없거나 만료됐을 가능성에 대비한 재시도. (3) `AppState 'active'` 전이 시 — 토큰 미존재 시에만 재시도(존재하면 스킵, 불필요한 SDK 호출 방지).
+- **`onTokenRefresh` 등록**: 부트스트랩 시 `RemotePushGateway.onTokenRefresh(newToken => { SettingRepository.set('push.fcm.token', newToken); RemotePushGateway.subscribeToTopic(PUSH_TOPIC_ANNOUNCEMENTS); })` 로 1회 등록 — FCM SDK가 토큰을 자체적으로 로테이션할 때 로컬 저장값을 갱신하고 새 토큰으로 토픽을 재구독한다(구 토큰의 토픽 구독은 FCM 서버 측에서 자동 무효화됨, 앱이 별도 해지할 필요 없음).
+
+### 19.4 수신 처리 (포그라운드 / 백그라운드 / 종료)
+
+```text
+부트스트랩 시 1회 등록: RemotePushGateway.onMessage(handleForegroundPush)
+
+handleForegroundPush(message: RemotePushMessage):
+  if not SettingService.notificationsEnabled(): return   # E-27-6 — 전역 알림 토글 off 시 억제(§6 신규 소단락과 동시 방어)
+  notifee.displayNotification({
+    title: message.title ?? '오늘뭐해',
+    body: message.body ?? '',
+    android: { channelId: 'remote-push' },   # Android 는 isSupported()=false 라 이 경로 자체가 호출되지 않음(방어적 표기)
+    ios: { sound: 'default' },
+  })
+```
+
+- **포그라운드**: iOS는 `willPresent` 델리게이트가 없으면 포그라운드에서 알림 배너를 자동 표시하지 않는다 — 이 특성을 활용해 앱이 `onMessage` 콜백에서 명시적으로 `notifee.displayNotification()` 을 호출할 때만 표시되도록 하여, 전역 알림 토글(F-18)을 세밀하게 반영한다(E-27-6).
+- **백그라운드/종료**: iOS 표준 알림 센터가 자동으로 표시하며 앱 코드가 개입하지 않는다(E-27-3, "위임"). 이번 릴리스는 데이터 전용(silent) 페이로드나 커스텀 백그라운드 핸들러를 두지 않는다(P-76 범위 밖 — 특정 일정과 연동되지 않으므로 백그라운드에서 앱이 수행할 도메인 동작이 없음). 이 경로에서는 전역 알림 토글 off 상태여도 이미 발송된 메시지의 표시 자체를 앱이 막을 수 없다 — 토글 off 시 토픽을 해지(§6)해 애초에 수신되지 않도록 하는 것이 유일한 통제 지점이며, 전파 지연 구간은 잔여 위험으로 기록한다(§13.10).
+- **알림 탭 처리**: 이번 릴리스는 특정 일정과 연동하지 않으므로(P-76) 탭 시 별도 화면 이동(딥링크)을 구현하지 않는다(OI-37, 비범위) — iOS 기본 동작(앱 열기)에 위임.
+- **워치(F-19) 노출**: 워치 자체의 신규 개발 없이 iOS 표준 알림 미러링 동작에 위임한다(E-27-5, 가정) — `WatchSyncGateway`/`WatchSyncService` 와 무관한 별개 경로.
+
+### 19.5 실패 격리 (E-27-2, AC-99)
+
+- **원칙**: `RemotePushGateway` 의 모든 메서드는 어댑터 내부에서 예외를 포획하고 실패를 나타내는 값(`null`/`false`)만 반환한다 — 호출부(§19.3/§19.4/§6)에서 다시 한 번 `try/catch` 로 방어하지만, 정상 계약을 지키는 어댑터라면 이 방어가 발동할 일이 없다(이중 격리, `WatchSyncGateway.sendSnapshot` "실패해도 throw 하지 않음" 원칙과 동일).
+- **로컬 알림과의 코드 분리**: `ReminderScheduler.sync()`(§6)·`ScheduleService.create/update`·부트스트랩의 마이그레이션·설정 로딩·첫 화면 렌더 단계는 `RemotePushGateway`/`RemotePushService` 를 import 하거나 호출하지 않는다(정적 grep으로 검증 가능, V-61) — 원격 등록은 항상 부트스트랩의 "렌더 후" 비동기 단계에서만 트리거된다(§16.4).
+- **AC-99 매핑**: "네트워크 오류 등으로 FCM 토큰 발급이 실패한 상태에서 사용자가 일정을 작성하고 사전 알림을 설정해 저장하면, 로컬 사전 알림·정시 알림은 원격 등록 실패와 무관하게 정상적으로 예약·발송된다" — 위 코드 분리로 자동 충족(두 경로가 애초에 교차하지 않음).
+
+### 19.6 API 설계 (FCM SDK 콜백 계약 — 자체 서버 API 없음, P-76)
+
+> 이 프로젝트는 백엔드 서버를 두지 않으므로(P-76) "제공 API"·"서버 호출 API"가 없다. 아래는 **네이티브 SDK가 노출하는 콜백/이벤트 계약**이며, REST/GraphQL 등 네트워크 API 설계가 아니다.
+
+#### 19.6.1 토큰 등록 (SDK 호출)
+
+| 항목 | 값 |
+| --- | --- |
+| 목적 | APNs 디바이스 토큰 → FCM 토큰 변환 및 발급 |
+| 호출 방식 | `@react-native-firebase/messaging`의 `messaging().getToken()`(필요 시 `registerDeviceForRemoteMessages()` 선행) |
+| 응답 | FCM 토큰 문자열 |
+| 실패 처리 | 예외 포획 → `null` 반환, 호출부는 경고 로그만 남기고 계속 진행(E-27-2). Timeout/Retry는 SDK 기본값에 위임(별도 앱 레벨 타임아웃 설정 없음 — 과설계 방지) |
+| 장애 영향 | 없음 — 로컬 알림·앱 전체 기능은 이 호출 결과와 무관 |
+
+#### 19.6.2 토큰 갱신 이벤트 (SDK 콜백)
+
+| 항목 | 값 |
+| --- | --- |
+| 목적 | FCM이 토큰을 자체 로테이션할 때 앱에 통지 |
+| 계약 | `messaging().onTokenRefresh((token: string) => void)` — 부트스트랩 1회 등록, 앱 생명주기 동안 유지 |
+| 처리 | 새 토큰을 `APP_SETTING`에 갱신 저장 + 토픽 재구독(§19.3) |
+
+#### 19.6.3 포그라운드 메시지 수신 (SDK 콜백)
+
+| 항목 | 값 |
+| --- | --- |
+| 목적 | 앱이 포그라운드일 때 도착한 원격 메시지 처리 |
+| 계약 | `messaging().onMessage((message: RemotePushMessage) => void)` |
+| 처리 규칙 | 전역 알림 토글(F-18) 확인 후 `notifee.displayNotification()` 으로 표시(§19.4) — 토글 off면 표시하지 않음(E-27-6) |
+| 인증/권한 | 없음(OS 알림 권한만 선행 확인, 별도 API 인증 없음) |
+
+### 19.7 예외 매핑 (E-27-1 ~ E-27-6)
+
+| 예외 | 처리 |
+| --- | --- |
+| E-27-1 알림 권한 거부 | `registerRemotePush()` 를 호출하지 않음(§19.3 사전 조건) — 원격 푸시가 사용자에게 노출되지 않음. F-08 E-08-1과 동일한 안내·설정 이동 유도 재사용(신규 UI 없음) |
+| E-27-2 원격 등록 네트워크 오류 등 실패 | `register()` → `null`, 경고 로그만, 로컬 알림 무영향(§19.5). 다음 앱 실행·포그라운드 진입 시 재시도(§19.3) |
+| E-27-3 앱 완전 종료 상태에서 푸시 수신 | iOS 표준 알림 센터 표시에 위임, 앱 코드 처리 없음(§19.4) |
+| E-27-4 로컬 예약 알림과 원격 푸시 동시 도착 | 이번 릴리스는 특정 일정과 연동되지 않아 설계상 발생하지 않음 — 중복 억제 로직 없음(후속 OI-35) |
+| E-27-5 워치에서의 원격 푸시 노출 | 워치 신규 개발 없음, iOS 표준 알림 미러링 위임(§19.4) |
+| E-27-6 전역 알림 토글 off 중 원격 푸시 도착 | 토픽 해지(§6 신규 소단락)로 발신 자체를 억제 + 포그라운드 수신 시 이중 방어(§19.4 `handleForegroundPush`). 백그라운드/종료 상태의 전파 지연 구간은 잔여 위험(§13.10) |
+
+### 19.8 AC 매핑 (AC-97 ~ AC-100)
+
+| AC | 매핑 |
+| --- | --- |
+| AC-97 (권한 허용 시 FCM 토큰 발급) | §19.3 `registerRemotePush()` — 권한 허용 콜백에서 fire-and-forget 호출, 성공 시 `APP_SETTING` 저장 |
+| AC-98 (권한 거부 시 원격 푸시 미노출) | §19.3 사전 조건(등록 자체 미시도) + §19.7 E-27-1 |
+| AC-99 (원격 등록 실패가 로컬 알림에 영향 없음) | §19.5 코드 분리 + §0.1/§0.2 `GATEWAY_PUSH_REGISTRATION_FAILED` 격리 |
+| AC-100 (Firebase 설정 파일 비커밋 확인) | §13.10 `.gitignore` 패턴 규정 (보안 설계 참조, 이 절은 런타임 로직 범위 밖) |
+
+### 19.9 클라이언트 셸 통합 참고
+
+부트스트랩 배선(§16.4)·네이티브 어댑터 매핑(§16.5)·권한 흐름(§16.6)·보안 노트(§16.7)에 이미 반영했다. 이 절은 등록·수신·격리의 **처리 흐름 계약**만 다루며, 셸 배선의 세부는 위 §16.x 를 참조한다(중복 서술 방지).

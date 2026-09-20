@@ -33,6 +33,11 @@ export const ErrorCodes = {
   GATEWAY_CALENDAR_UNAVAILABLE: 'GATEWAY_CALENDAR_UNAVAILABLE',
   /** F-19 — 워치 채널 비활성/미도달. 폰 기능에는 영향 없음(베스트-에포트, NFR-12). logic §0.2 / §17.2. */
   GATEWAY_WATCH_UNAVAILABLE: 'GATEWAY_WATCH_UNAVAILABLE',
+  /**
+   * F-27(v1.23 신규) — APNs/FCM 토큰 발급·토픽 구독 실패. 로컬 알림(F-08/F-09)·앱 흐름에는 영향 없음
+   * (경고 로그 전용, E-27-2/AC-99). logic §0.2 / §19.5.
+   */
+  GATEWAY_PUSH_REGISTRATION_FAILED: 'GATEWAY_PUSH_REGISTRATION_FAILED',
 
   STORAGE_TX_FAILED: 'STORAGE_TX_FAILED',
   STORAGE_STALE_WRITE: 'STORAGE_STALE_WRITE',

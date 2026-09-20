@@ -95,6 +95,39 @@ export interface WatchSyncGateway {
   ack(opId: string, result: WatchToggleAck): Promise<void>;
 }
 
+/**
+ * 원격 푸시(FCM) 수신 메시지. 표시 전용 문자열 — 코드 실행/딥링크로 해석하지 않는다(§13.10).
+ * 설계 근거: document/architect/logic.md §19.2.
+ */
+export interface RemotePushMessage {
+  title?: string;
+  body?: string;
+  data?: Record<string, string>;
+}
+
+/**
+ * 원격 푸시 수신 인프라 포트 (F-27, 신규 v1.23). iOS = FCM/APNs(`@react-native-firebase/messaging`);
+ * Android = no-op(P-74). 설계 근거: document/architect/logic.md 0.1, §19.2, §16.5, §13.10.
+ *
+ * 전 메서드가 어댑터 내부에서 예외를 포획하고 실패를 나타내는 값(`null`/`false`)만 반환한다 —
+ * 절대 throw 하지 않는다(E-27-2, AC-99). `WatchSyncGateway.sendSnapshot` 과 동일한 실패 격리 원칙.
+ * `GATEWAY_PUSH_REGISTRATION_FAILED`(logic §0.2).
+ */
+export interface RemotePushGateway {
+  /** iOS 만 true(P-74). false 면 모든 메서드는 조용히 no-op. */
+  isSupported(): boolean;
+  /** APNs 디바이스 토큰 → FCM 토큰 발급. 실패해도 throw 하지 않고 `null` 반환(E-27-2). */
+  register(): Promise<string | null>;
+  /** 토픽 구독. best-effort — 실패해도 throw 하지 않고 `false` 반환. */
+  subscribeToTopic(topic: string): Promise<boolean>;
+  /** 토픽 해지. best-effort — 실패해도 throw 하지 않고 `false` 반환. */
+  unsubscribeFromTopic(topic: string): Promise<boolean>;
+  /** FCM 토큰 로테이션 이벤트 구독(부트스트랩 1회 등록). */
+  onTokenRefresh(cb: (token: string) => void): void;
+  /** 포그라운드 수신 이벤트 구독(부트스트랩 1회 등록). 백그라운드/종료는 iOS 표준 알림에 위임(E-27-3). */
+  onMessage(cb: (message: RemotePushMessage) => void): void;
+}
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 /** 구조적 로거. 구현체는 민감정보 마스킹 책임을 진다(nfr.md 5.1). */

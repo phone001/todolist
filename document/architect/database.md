@@ -3,15 +3,16 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 데이터베이스 설계 (Database) |
-| 버전 | v1.8 |
-| 상태 | 작성 완료 (스키마 변경 — 마이그레이션 002/003 신규) |
-| 근거 | `document/planner/plan.md` v1.9, `document/architect/overview.md` v1.16 |
+| 버전 | v1.9 |
+| 상태 | 작성 완료 (스키마 무변경 — 기존 `APP_SETTING` 키 재사용) |
+| 근거 | `document/planner/plan.md` v1.16, `document/architect/overview.md` v1.23 |
 | DB 엔진 | SQLite 3 (op-sqlite, 선택적 SQLCipher) |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
+| v1.9 | 2026-09-20 | plan v1.16 — F-27 원격 푸시 알림(FCM, iOS 한정) 스키마 영향 검토 — **DDL·인덱스·트리거 무변경**. §15 "F-27 원격 푸시 알림 스키마 영향 검토(스키마 무변경)" 신설. FCM 토큰·토픽 구독 상태(P-78)는 기존 `APP_SETTING` EAV 테이블(§3.4)에 신규 **키**(`push.fcm.token`/`push.fcm.topicSubscribed`/`push.fcm.registeredAt`)만 추가한다 — F-25(v1.8, `dashboard.hideCompleted`)와 동일 패턴으로 마이그레이션 불요. `GoogleService-Info.plist`(Firebase 설정 파일)는 DB 대상이 아니므로 스키마와 무관(보안 취급은 `logic.md` §13.10) |
 | v1.8 | 2026-09-12 | plan v1.9 — F-24 반복 일정 / F-06 기본 유형 4종 시딩 스키마 영향 검토. **최초로 실제 스키마 변경 발생**(v1.1~v1.7 은 전부 무변경 검토였음). (1) **마이그레이션 002(DML)** — `category` 테이블에 "공부"/"취미"/"업무" 3종을 `WHERE NOT EXISTS`(대소문자·앞뒤공백 무시 비교)로 idempotent 시딩, 색상은 `CATEGORY_COLOR_PALETTE[0..2]`(`#00897B`/`#00ACC1`/`#039BE5`) 고정 배정 — `IS_SYSTEM=0`(D-27(a), 보호 대상 아님). 신규 설치자·기존 사용자 모두 버전 기반 마이그레이션 러너로 동일 적용(E-06-8). (2) **마이그레이션 003(DDL)** — `schedule` 테이블에 `recurrence_reminder_offsets TEXT NULL` 컬럼 추가(`ALTER TABLE … ADD COLUMN`). F-24 반복 마스터 행이 사전 알림 오프셋 템플릿(JSON 배열)을 보관해, 향후 회차 실체화 시 각 회차의 `REMINDER` 행을 재구성하는 데 쓰인다. 마스터 행 자체는 `REMINDER` 행을 갖지 않는다(알림 노출면 확대 방지 — logic §13.9 유사 원칙 재사용). (3) **반복 회차 표시 필터** — `RECURRENCE_RULE`/`RECURRENCE_END_AT`/`RECURRENCE_COUNT`/`RECURRENCE_PARENT_ID` 컬럼은 v1.0(마이그레이션 001)부터 이미 존재했으나 조회 경로에 결선되지 않았던 것을 이번에 결선: `ScheduleRepository.findInRange`/`findForDashboard`/`search` 가 `recurrence_rule IS NULL` 조건을 추가해 마스터 행(반복 규칙 보유, `recurrence_rule` NOT NULL)을 표시 결과에서 제외한다(§14). 신규 인덱스는 불필요(§14 근거). §3.2 SCHEDULE 표에 `RECURRENCE_REMINDER_OFFSETS` 행 추가. §4/§8 갱신. §14 "F-24/F-06 v1.9 스키마 변경 및 마이그레이션" 신설. **F-10(완료 시 하단 이동)·F-25(완료된 일정 숨기기)·F-26(캘린더 프리필)은 스키마 무영향**(F-25 는 기존 `app_setting` EAV 테이블에 신규 키만 추가 — 마이그레이션 불요) |
 | v1.7 | 2026-09-11 | plan v1.8 — F-06 유형 색상 자동 배정 / F-07 우선순위 색상 매핑 / F-10 대시보드 리스트 우선순위·유형 표시 / F-08 사전 알림 프리셋 선택 스키마 영향 검토 — **DDL·인덱스·트리거·시드 무변경**. §13 "F-06/F-07/F-08/F-10 v1.8 색상·표시 개정 스키마 영향 검토" 추가. 사유: (1) 유형 색상 자동 배정(P-59)은 이미 존재하는 `CATEGORY.COLOR TEXT NOT NULL DEFAULT '#8E8E93'`(3.1) 컬럼에 다양한 값을 저장할 뿐 — 컬럼·제약·인덱스 변경 없음, 배정 로직은 애플리케이션 계층 순수 함수(`logic.md` §5.1), (2) 기존에 고정 회색으로 이미 저장된 카테고리 행에 대한 **소급 UPDATE(백필)는 수행하지 않는다**(설계 결정, `logic.md` §5.1 — 마이그레이션 번호 부여 대상 아님), (3) 우선순위 색상 매핑(P-60)은 `SCHEDULE.PRIORITY`(기존 CHECK 제약 `HIGH/NORMAL/LOW`, 3.2)를 코드 상수로 매핑할 뿐 스키마 변경 없음, (4) 대시보드 리스트 우선순위·유형 표시(P-61)는 이미 조회되는 `SCHEDULE.PRIORITY`/`SCHEDULE.CATEGORY_ID`(+ `CATEGORY.COLOR`/`NAME` 조인 없는 별도 `CategoryService.list()` 조회)를 화면에서 렌더할 뿐 신규 쿼리·인덱스 없음, 삭제된 유형 참조(E-10-7)는 F-06 E-06-2 가 이미 트랜잭션 내에서 재지정한 `CATEGORY_ID` 를 그대로 사용, (5) 사전 알림 프리셋 선택(P-62)은 `REMINDER.OFFSET_MINUTES INTEGER`(기존 컬럼, 3.3)에 프리셋 5값(5/10/30/60/1440) 중 사용자가 고른 값을 그대로 저장 — 컬럼·제약(오프셋 개수 상한은 앱 계층 `VALIDATION_REMINDER_LIMIT`, 기존)·인덱스 변경 없음. 결론: 마이그레이션 번호 부여 없음 |
 | v1.6 | 2026-09-10 | 설계 델타(overview v1.14 / logic v1.14 / nfr v1.12 — F-19 watchOS 네이티브 앱 타깃 `TodayWhatWatch` 구현 착수: Xcode 타깃·SwiftUI UI·`WCSessionDelegate`·워치 로컬 영속). **공유 SQLite 스키마 영향 없음 — DDL·인덱스·트리거·시드 무변경, `database.md` v1.5 내용 전부 유효.** §10 말미에 "v1.6 구현 착수 확인" 문단 추가. 사유: 이번 델타는 (1) `ios/` Xcode 프로젝트에 watchOS 앱 타깃 추가, (2) `ios/TodayWhatWatch/**` Swift 소스(UI·WCSession·LWW 재구현), (3) 워치 앱 컨테이너의 JSON 파일 2개(마지막 스냅샷·보류 큐) — 전부 **공유 SQLite 밖**. 폰 측은 이미 구현된 `src/core/watchSync/**` + `WatchSyncService` + `WatchConnectivityGateway` 를 그대로 사용(§10 검토 시점과 동일). LWW 는 여전히 `SCHEDULE.UPDATED_AT` 근사(N-12), dedup 원장은 `APP_SETTING` `watch.appliedOps` k/v. 새 테이블·컬럼·인덱스·`APP_SETTING` 키·마이그레이션 번호 없음 |
@@ -515,3 +516,27 @@ WHERE NOT EXISTS (SELECT 1 FROM category WHERE lower(trim(name)) = lower('업무
 | F-26 캘린더 날짜 프리필(P-67) | 순수 네비게이션 파라미터·시각 결합 계산(앱 계층) — DB 조회·저장 자체가 없음 |
 
 **결론**: 이번 버전(v1.8)의 실제 스키마 변경은 (1) 마이그레이션 002(DML, F-06 시딩) + (2) 마이그레이션 003(DDL, `SCHEDULE.RECURRENCE_REMINDER_OFFSETS` 컬럼 추가, F-24) 2건으로 한정된다. 신규 테이블·인덱스·트리거는 없다.
+
+## 15. F-27 원격 푸시 알림(FCM) 스키마 영향 검토 (스키마 무변경) — v1.9
+
+`plan.md` v1.16 이 확정한 F-27(원격 푸시 알림, FCM, iOS 한정)에 대해 검토한 결과, **DDL·인덱스·트리거·마이그레이션 신규 없음** — 기존 `APP_SETTING`(§3.4) EAV 테이블에 신규 **키**만 추가한다.
+
+### 15.1 저장 대상과 근거
+
+P-78(FCM 토큰은 단말 로컬에만 저장, 서버 전송 없음)에 따라 저장이 필요한 값은 다음 3가지뿐이다. 전부 `APP_SETTING.VALUE`(JSON 직렬화 TEXT)에 담기며, F-25(v1.8, `dashboard.hideCompleted`)·F-19(`watch.appliedOps`)가 이미 확립한 "자유 키/값 EAV 테이블에 신규 키만 추가"와 동일 패턴이다.
+
+| KEY | VALUE(JSON) 예시 | 설명 |
+| --- | --- | --- |
+| `push.fcm.token` | `"fN3x...(FCM 토큰 문자열)"` | 최근 발급된 FCM 토큰. 토큰 로테이션(`onTokenRefresh`, `logic.md` §19) 시 덮어쓴다. 값 없음(NULL/미존재)은 "미등록" |
+| `push.fcm.topicSubscribed` | `true` / `false` | 공지용 토픽(D-34, 단일 토픽 상수) 구독 여부. F-18 전역 알림 토글 off 시 `false`로 갱신(`logic.md` §6/§19.4) |
+| `push.fcm.registeredAt` | `1737350400000` (epoch ms) | 최근 등록 성공 시각. 관측성 목적(재시도 판단·디버깅), 도메인 로직이 조건절로 사용하지 않음 |
+
+- **DB 암호화와의 관계**: FCM 토큰은 OAuth access/refresh 토큰(§13.4, Keychain 전용)과 달리 **자격증명이 아니라 단말-메시지 라우팅 식별자**이며 단독으로 사용자 데이터에 접근할 수 없다 — 기존 `theme.mode`/`notif.enabled` 등과 동일하게 `APP_SETTING`(SQLite, 선택적 SQLCipher 전체 암호화 대상에 자동 포함)에 저장한다. Keychain 이관은 이번 릴리스에서 불필요(과설계 방지).
+- **NULL/부재 규칙**: 앱 최초 실행 시 세 키 모두 미존재 — "미등록" 상태와 동치. 서비스는 `SettingRepository.get(key) ?? 기본값`으로 읽는다(기존 `APP_SETTING` 접근 관례, §3.4).
+- **인덱스 불필요**: `APP_SETTING`은 `KEY` PK 조회만 발생하며(§4 기존 인덱스로 충분), 신규 조회 패턴이 없다.
+
+### 15.2 `GoogleService-Info.plist`는 DB 대상이 아님
+
+Firebase iOS 설정 파일(`GoogleService-Info.plist`)은 Xcode 네이티브 빌드 리소스(`ios/TodayWhat/`)이며 SQLite 스키마·앱 데이터베이스와 무관하다. 이 파일의 커밋 제외(`.gitignore`)·배치 경로 등 보안 취급은 `logic.md` §13.10에서 다룬다(본 문서는 DB 설계 범위만 다룸).
+
+**결론**: F-27로 인한 실제 스키마 변경은 **없음**. `APP_SETTING`에 신규 키 3개(§15.1)만 추가되며 DDL·마이그레이션 번호 부여 대상이 아니다.

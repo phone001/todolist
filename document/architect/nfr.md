@@ -3,14 +3,15 @@
 | 항목 | 값 |
 | --- | --- |
 | 문서 종류 | 비기능 요구사항 설계 (NFR) |
-| 버전 | v1.19 |
+| 버전 | v1.20 |
 | 상태 | 작성 완료 |
-| 근거 | `document/planner/plan.md` v1.15 6절/NFR-01~12, `document/architect/overview.md` v1.22, `document/architect/database.md` v1.8, `document/architect/logic.md` v1.22 |
+| 근거 | `document/planner/plan.md` v1.16 6절/NFR-01~12, `document/architect/overview.md` v1.23, `document/architect/database.md` v1.9, `document/architect/logic.md` v1.23 |
 
 ## 변경 이력
 
 | 버전 | 일자 | 변경 내용 |
 | --- | --- | --- |
+| v1.20 | 2026-09-20 | 설계 델타(overview v1.23 / logic v1.23 / database v1.9 — plan v1.16: F-27 원격 푸시 알림(FCM, iOS 한정) 신규, P-74~P-79). **신규 §18 "원격 푸시 알림 등록·수신 (F-27 / NFR-03·NFR-06·NFR-07)"** — 등록 실패 격리(AC-99, 로컬 알림 무영향)·재시도 정책(다음 실행/포그라운드, 폴링·지수백오프 없음)·비차단 등록(부트스트랩 렌더 경로 차단 안 함)·관측성(신규 메트릭)·Firebase 설정 파일 보안 NFR. **§4 가용성 표에 "원격 푸시 등록 실패" 행 추가** — 콜드 스타트·`AppState active` 시 재시도, 로컬 알림(F-08/F-09)·부트스트랩 완전 격리. **§5.2 메트릭**에 `push.token.registered`/`.register.fail`/`push.topic.subscribed`/`.unsubscribed` 추가. **§6 보안·프라이버시**에 F-27 항목(`GoogleService-Info.plist` 비커밋·APP_SETTING 토큰 저장) 1줄 추가. **§9 검증표에 V-61(등록 실패 격리)·V-62(권한 거부 시 원격 푸시 미노출)·V-63(Firebase 설정 파일 비커밋 정적 점검)** 추가. **§12 미결정**에 D-32~D-35(전부 plan 채택, 비차단) 추가. 성능·용량 정량 목표(1~2장) 무변경 — 신규 인덱스·DB 쿼리 없음(APP_SETTING 키 조회만) |
 | v1.19 | 2026-09-17 | 설계 델타(overview v1.22 / logic v1.22 — plan v1.15: F-19 재개정 — 워치 TodayView 상단 네비게이션 타이틀 문구 재변경 "오늘일정"→"오늘뭐해", 사용자 명시적 재지시). **§9 V-58 갱신** — 검증 대상 중 상단 타이틀 확인 리터럴을 "오늘일정"→**"오늘뭐해"**로 정정(리스트 Section 헤더 확인 리터럴 "오늘일정 - M/N"은 무변경, AC-47/54/92/96 참조 갱신). **§14.5 검증 관점에 v1.19 문단 추가** — 워치 스크린샷 검증(§11.1)의 상단 타이틀 확인 리터럴만 정정, 나머지 확인 항목(리스트 Section 헤더 요약)은 무변경. 그 외 성능·용량·가용성·보안 목표(1~17장) 무변경 — 신규 정량 SLO·인덱스·의존성 없음(순수 문자열 리터럴 1곳 교체) |
 | v1.18 | 2026-09-17 | 설계 전제 오류 정정(overview v1.21 / logic v1.21 — Developer `BLOCKED(DESIGN_CONFLICT)` 대응, plan.md 델타 없음, 여전히 v1.14 기준). v1.17 항의 §14.5 서술이 "리스트 Section 헤더 요약(P-73/AC-96)이 v1.19에서 이미 구현되어 **회귀 확인**만 하면 된다"고 전제했으나, 실제로는 v1.19 시점에 **설계만 되었을 뿐 한 번도 구현된 적이 없음**이 Developer 조사로 확인됐다. **§14.5 문구 정정** — "리스트 Section 헤더에 '오늘일정 - M/N' 텍스트가 계속 표시됨(P-73/AC-96, 무변경 회귀 확인)"을 "리스트 Section 헤더에 '오늘일정 - M/N' 텍스트가 표시됨(P-73/AC-96, **이번 릴리스 최초 구현 확인** — `Section("오늘일정")`→`Section(headerSummaryText)` 전환이 v1.21에서 처음 코드에 반영됨, `logic.md` §17.12 "구현 순서" 참고)"으로 정정. 검증 대상·범위(상단 요약 부재 확인 + 리스트 Section 헤더 요약 확인) 자체는 무변경, "이미 있던 것의 회귀 확인"이 아니라 "이번에 처음 만들어지는 것의 최초 구현 확인"이라는 성격만 정정. 그 외 성능·용량·가용성·보안 목표(1~17장) 무변경 — 신규 정량 SLO·인덱스·의존성 없음 |
 | v1.17 | 2026-09-17 | 설계 델타(overview v1.20 / logic v1.20 — plan v1.14: F-19 개정(축소) — 워치 TodayView 상단 헤더 요약 `.toolbar` 삭제, P-68 축소·AC-91 폐기). **§9 V-58 갱신** — 검증 대상에서 "워치 스크린샷에서 '오늘일정' 타이틀 우측 '오늘일정 - M/N' 텍스트" 확인 항목을 **제거**하고, 대신 "타이틀 우측에 어떤 요약 텍스트도 표시되지 않음(상단 헤더 요약 삭제 확인)" + "리스트 Section 헤더에 '오늘일정 - M/N' 텍스트가 표시됨(P-73, 무변경 회귀 확인)"으로 정정(AC-91 참조를 삭제하고 AC-96 참조를 추가). **§14.5 검증 관점에 v1.17 문단 추가** — 워치 스크린샷 검증(§11.1)에서 상단 헤더 요약 부재 + 리스트 Section 헤더 요약 존재를 함께 확인하도록 명시. 그 외 성능·용량·가용성·보안 목표(1~17장) 무변경 — 신규 정량 SLO·인덱스·의존성 없음(오히려 렌더 대상 1개 감소) |
@@ -98,6 +99,7 @@
 | 외부 API 장애 | OAuth/캘린더 Timeout(logic 9장) + 사용자 재시도. 앱 흐름 차단 없음 |
 | 데이터 백업 | 사용자 주도 내보내기/가져오기(JSON) [제안] — 이번 범위 포함 여부 미결정(OI 후속). OS 자동 백업은 보안상 DB 제외(logic 13.4) |
 | 크래시 복구 | 상태를 매 상호작용마다 영속화하므로 재시작 시 최신 상태 복원 |
+| **원격 푸시 등록 실패 (F-27, v1.20)** | APNs/FCM 토큰 발급·토픽 구독 실패는 `RemotePushGateway`(logic §19) 가 예외를 삼키고 `null`/실패 결과만 반환 — 부트스트랩·로컬 알림(F-08/F-09) 흐름을 차단하지 않는다(E-27-2, AC-99). 재시도는 별도 백오프 타이머 없이 **다음 앱 콜드 스타트 또는 `AppState 'active'` 전이 시점**에 자연 재시도(§18.3) |
 
 - SLA/SLO 수치: 서버가 없어 대외 가용성 약정 대상 아님. 앱 크래시프리율 목표 [제안] 99.5% 세션.
 
@@ -129,6 +131,8 @@
 | `watch.session.activated` / `.unreachable` | F-19 채널 상태 (NFR-12 격리 관찰) |
 | `statistics.load.fail` (선택) | F-23 통계 집계 로드 실패 건수 (E-23-4 관찰, logic §7.2.5) |
 | `recurrence.occurrence.materialized` (건수, 마스터별) / `recurrence.occurrence.materialize.fail` | F-24 회차 실체화 관찰 — 시리즈당 실체화 속도·부분 실패 여부 (logic §18.3) |
+| `push.token.registered` / `push.token.register.fail` | F-27 원격 알림 등록(APNs→FCM 토큰 발급) 성공/실패 관찰 — 실패해도 로컬 알림 무영향(AC-99, logic §19.3) |
+| `push.topic.subscribed` / `push.topic.unsubscribed` | F-27 공지용 토픽 구독/해지 관찰 — 전역 알림 토글(F-18) 연동 포함(logic §19.4) |
 | `safeMode.enter` | 저장소 장애 |
 
 ### 5.3 알림(개발/QA 기준)
@@ -146,6 +150,7 @@
   - 모든 외부 통신 HTTPS, cleartext 트래픽 0.
   - 로그 마스킹 규칙 위반 0건(Tester 정적 점검 대상).
   - **워치(F-19, v1.12)**: 워치 로컬 스냅샷/보류 큐 JSON 파일은 `FileProtectionType.complete`(워치 잠금 시 복호화 불가), App Group·공유 컨테이너 밖. 워치 타깃 시뮬레이터 빌드는 코드사이닝 생략(`CODE_SIGNING_ALLOWED=NO`) — 자격증명·프로파일 저장소 미포함. 워치 타깃 서드파티 의존성 0. 페이로드 최소화(P-40)·수신 op 재검증(§13.9)은 폰 측 불변.
+  - **원격 푸시/Firebase 설정 파일 (F-27, v1.20)**: `GoogleService-Info.plist`(Firebase 자격증명 포함)는 저장소에 **커밋되지 않음** — `.gitignore` 패턴(`GoogleService-Info.plist`, 경로 무관 매칭) 존재 여부를 정적 점검으로 확인 가능(AC-100, P-79). FCM 토큰은 `APP_SETTING`(SQLite, 선택적 SQLCipher 전체 암호화 대상에 포함)에만 저장 — Keychain 이관 불필요(자격증명 아님, `database.md` §15.1). 상세 `logic.md` §13.10.
 
 ---
 
@@ -235,6 +240,9 @@
 | V-58 | 워치 다음일정 미표시·체크박스 좌측·상단 헤더 요약 삭제·리스트 Section 헤더 요약·상단 타이틀(F-19, v1.15/v1.16 문구 정정/v1.17 갱신 — 상단 헤더 요약 삭제/**v1.19 갱신 — 상단 타이틀 재변경**): `pushSnapshot()` 이 다음 예정 조회 없이 `buildWatchSnapshot(today, null, categories, clock)` 호출(단위 테스트로 `nextUpcoming===null` 항상 확인); 워치 스크린샷에서 **"오늘뭐해" 타이틀**(**v1.19 정정** — plan.md v1.15 사용자 명시적 재지시로 "오늘일정"에서 재변경) 우측에는 **어떤 요약 텍스트도 표시되지 않음**(상단 헤더 요약 삭제, AC-91 폐기로 이번 항목은 미검증), "다음 예정" 영역 부재, 체크박스 좌측 배치 확인; 할일 카드 목록 바로 위 **리스트 Section 헤더**에는 **"오늘일정 - M/N" 텍스트**가 표시됨(P-73, AC-96 — **리터럴 "오늘일정"은 상단 타이틀과 무관하게 무변경, 회귀 확인**) | `WatchSyncService.pushSnapshot` 단위 테스트(스파이로 `findInRange` 다음예정 조회 미호출 확인) + §11.1 워치 시뮬레이터 스크린샷 육안 확인 | AC-47/54/92/96, P-68/P-69/P-73, E-19-5/E-19-8, D-30, logic §17.3/§17.12 |
 | V-59 | 선택형 필드 셀렉트박스화(F-06/F-07/F-08/F-24, v1.15): `SelectField`/`MultiSelectField` 가 중요도·유형·반복·사전 알림 4개 필드에 적용되고, 트리거 탭 시 옵션 모달이 열리며 선택 시 기존 상태 핸들러(`setPriority`/`setCategoryId`/`setRecurrenceRule`/`setReminderOffsets`)가 그대로 호출됨; 수정 화면 진입 시 저장된 값이 초기 선택으로 프리필 | 화면 로직 단위 테스트(서비스 목, 컴포넌트 `onChange` 콜백 호출 검증) + 정적 리뷰(옵션 배열·검증 코드 무변경 확인) | AC-93, P-70, D-31, logic §16.3.1 |
 | V-60 | 캘린더 탭 아이콘 교체(F-16, v1.15): `RootNavigator.tsx` `TAB_ICONS[TAB_ROUTES.Calendar]` 가 `calendar.png` 를 require, 나머지 3개 탭 require 경로 문자열 불변 | 정적 grep/코드 리뷰(`goal.png` 잔존 참조 없음 확인) | AC-94, P-71, logic §16.2 |
+| V-61 | 원격 푸시 등록 실패 격리(F-27): `RemotePushGateway.register()`가 예외를 던지지 않고 실패 시 `null` 반환(스파이로 내부 throw 주입); 등록 실패 상태에서 `ScheduleService.create`(사전 알림 포함) → `ReminderScheduler.sync` 가 정상 예약(로컬 알림 흐름 완전 독립 확인); 부트스트랩 렌더가 등록 완료를 기다리지 않음(비동기 fire-and-forget 정적 리뷰) | `RemotePushGateway` 스파이(throw 주입) 단위 테스트 + `ReminderScheduler`/`bootstrapSequence` 통합 단위 테스트 + 정적 리뷰(await 순서) | AC-99, E-27-2, logic §19.3/§19.5 |
+| V-62 | 원격 푸시 노출이 권한·전역 토글을 따름(F-27): 알림 권한 `denied` → `RemotePushService`가 등록을 시도하지 않거나 시도해도 화면에 노출 경로 없음(E-27-1, AC-98); 전역 알림 토글(F-18) off → `push.fcm.topicSubscribed=false`로 토픽 해지 + 포그라운드 수신 핸들러가 표시를 억제(E-27-6) | `RemotePushService` 단위 테스트(권한/토글 상태별 분기, `NotificationGateway`/`SettingService` 목) | AC-97/98, E-27-1/6, P-77, logic §19.4 |
+| V-63 | Firebase 설정 파일 비커밋(F-27, 보안): 저장소 루트 `.gitignore`에 `GoogleService-Info.plist` 패턴 존재, `git status`/`git check-ignore`로 해당 파일이 추적 대상에서 제외됨을 확인; 저장소 커밋 이력에 파일 원문이 존재하지 않음 | 정적 점검(`git check-ignore`, `git log --all --full-history -- '**/GoogleService-Info.plist'`) | AC-100, P-79, logic §13.10 |
 
 - 측정값(V-1~V-24) 중 기능 정확성 항목은 PASS 필수. 성능 [제안] 수치(1장)와 온디바이스 항목(§11)은 관찰/후속.
 - V-27~V-30 중 순수 로직(FSM·활동 목록·강등 판정)은 `node:test` 로 PASS 필수. SVG/`Animated` 실제 렌더·프레임 측정은 온디바이스 후속(§11.2).
@@ -246,6 +254,7 @@
 - V-50~V-52(v1.13, F-06/F-07/F-08/F-10, plan v1.8): 전부 순수 함수(`categoryColor.ts`)·서비스(`CategoryService.create`·`ScheduleService.getReminderOffsets`)·화면 로직 단위 테스트로 이 파이프라인 PASS 필수. 신규 코어 포트·DB·인덱스·의존성 없음 → 성능 관찰 항목 없음. V-51 의 대비값(§7 표)은 상대휘도 근사 계산 리뷰이며 실제 렌더 색상의 온디바이스 정밀 측정(색공간 보정 등)은 §11 셸 후속과 동일 취급 — 계산 근사가 PASS 기준이며 실측 미달을 Critical/High 로 올리지 않는다(위 [제안] 취급 원칙과 동일).
 - V-53~V-57(v1.14, F-24/F-10/F-25/F-06/F-26, plan v1.9): 전부 순수 함수(`recurrence.ts`·`dashboardViewModel.ts`·`time.ts`)·서비스(`ScheduleService`·`RecurrenceScheduler`)·화면 로직 단위 테스트로 이 파이프라인 PASS 필수. **V-53**(회차 실체화)·**V-54**(종료조건·삭제 스코프)는 신규 코어 로직이므로 회귀 가드가 특히 중요(비반복 경로 §1 무영향 확인 포함). V-55~V-57 은 신규 코어 포트·DB·인덱스·의존성 없음 → 성능 관찰 항목 없음(§17). 반복 회차의 온디바이스 대량 생성·알림 실제 발송은 §11 셸 후속(iOS 시뮬레이터 실행)과 동일 취급.
 - V-58~V-60(v1.15, F-19 개정/F-06·F-07·F-08·F-24 개정/F-16 개정, plan v1.10): 전부 표시 계층·페이로드 계산 단위 테스트 + 정적 리뷰로 이 파이프라인 PASS 필수. 신규 코어 포트·DB·인덱스·의존성 없음 → 성능 관찰 항목 없음. **V-58** 의 워치 스크린샷 육안 확인은 §11.1 watchOS 시뮬레이터 검증(이미 이번 릴리스 정식 검증 대상)에 편입한다 — 별도 환경 요구 없음.
+- V-61~V-63(v1.20, F-27, plan v1.16): V-61(등록 실패 격리)·V-62(권한·토글 연동)는 서비스/게이트웨이 스파이 단위 테스트로 이 파이프라인 PASS 필수(FCM/APNs 실제 네트워크 호출은 온디바이스 후속, §11.2). V-63(설정 파일 비커밋)은 정적 점검(`git check-ignore` 등)이며 실행 가능 환경이면 이 파이프라인에서 즉시 확인 가능 — 실행 불가 환경이면 `.gitignore` 패턴 존재 여부의 코드 리뷰로 대체. 신규 인덱스·DB 쿼리 없음(`APP_SETTING` 키 조회만, §18).
 
 ---
 
@@ -307,6 +316,7 @@ overview.md "빌드 환경 제약과 파이프라인 검증 전략" 참조. RN �
 | D-25~D-29 | F-24 반복 "매주" 미포함 / F-10 완료 그룹 정렬 / F-06 기본 유형 삭제·이름변경·마이그레이션 시딩 / F-25 대시보드·설정 공유·집계 미반영 / F-26 프리필 시각=현재 시각 (v1.9 신규) — 전부 plan v1.9 가 가정값을 명시한 **비차단** 게이트. 상세: overview.md 미결정 표 / logic §5.3·§7.4~§7.6·§15·§18. NFR 영향: 신규 정량 SLO·인덱스 없음(§17). D-25 만 UI 옵션 수(4종 vs 5종)에 직접 영향 — 착수 초기 확인 권장. 게이트 형식상 OPEN(이해관계자 추인 대기), 비차단 |
 | N-16 | 반복 규칙 사후 변경(E-24-1) UI 세부 — logic §18.5 `updateRecurrenceRule` 로 기능 수준만 지원, 세부 UX(마법사 등)는 후속. 비차단 |
 | D-30~D-31 | 워치 "다음 예정 1건" 페이로드 전송 중단 여부 / 사전 알림 다중 선택 컴포넌트 형태 (F-19/F-08, plan v1.10) — 전부 plan §8 이 가정값을 명시한 **비차단** 게이트. **D-30**(a) 전송도 중단 — `pushSnapshot()` 쿼리 1개 감소(§14.3 갱신, 페이로드 소폭 축소, 성능 저하 없음). **D-31** 바텀시트형 다중 선택(`MultiSelectField`) — 순수 UI 구현 세부, 신규 성능·용량 영향 없음. 상세: overview.md 미결정 표 / logic §15·§17.3·§17.12. 게이트 형식상 OPEN(이해관계자 추인 대기), 비차단 |
+| D-32~D-35 | 원격 푸시(F-27) 서버 자동 발송 여부 / FCM 토큰 서버 전송 여부 / 토픽 구독 전략 / Android 지원 여부 (plan v1.16) — 전부 plan 이 이번 릴리스 채택값을 명시한 **비차단** 게이트. **D-32**(a) 서버 기반 자동 발송 없음(Firebase 콘솔 수동/토픽 발송만, 후속 OI-34). **D-33**(a) 토큰 서버 전송 없음(로컬 `APP_SETTING`만, `database.md` §15). **D-34**(a) 단일 공지 토픽(`PUSH_TOPIC_ANNOUNCEMENTS`, logic §19.2) — 신규 정량 성능 영향 없음(구독/해지는 1회성 SDK 호출). **D-35**(a) Android 미지원(`google-services.json` 부재, 후속 OI-36). 신규 정량 SLO·인덱스·의존성 없음(§18). 게이트 형식상 OPEN(이해관계자 추인 대기, D-32 제외 — D-32 는 후속 백엔드 투자 여부라 이해관계자 확인 권장), 비차단 |
 
 ---
 
@@ -524,3 +534,41 @@ plan v1.7 통계 화면(logic §7.2 / §16.3.8)의 비기능 관점. **신규 �
 - V-53~V-57(§9). 순수 함수(`recurrence.ts`/`dashboardViewModel.ts`/`time.ts`) + 서비스(`ScheduleService`/`RecurrenceScheduler`) + 화면 로직 단위 테스트로 이 파이프라인 PASS 필수.
 - 반복 회차의 실제 대량 생성(예: DAILY × 60일 반복적 온디바이스 실행)·OS 알림 실제 발송량은 §11 셸 후속(iOS 시뮬레이터 실행/온디바이스 정확도)과 동일 취급 — 정적/단위 테스트로는 로직의 상한·gap 탐지 정확성만 검증한다.
 - 신규 정량 SLO·인덱스·의존성 없음.
+
+---
+
+## 18. 원격 푸시 알림 등록·수신 (F-27 / NFR-03·NFR-06·NFR-07) — v1.20 신설
+
+`plan.md` v1.16 이 확정한 F-27(FCM 기반 원격 푸시 알림, iOS 한정)에 대한 비기능 구체화. 서버가 없는 이번 릴리스는 "수신 인프라 구축"만 범위이므로(P-76) 신규 정량 성능 SLO·확장성 목표는 없다 — 핵심은 **가용성(등록 실패 격리)**과 **보안(설정 파일 관리)**이다.
+
+### 18.1 가용성 — 등록 실패 격리 (NFR-03, NFR-06, AC-99)
+
+- **원칙**: 원격 알림 등록(APNs 디바이스 토큰 → FCM 토큰 발급, 토픽 구독)의 성공 여부는 로컬 알림(F-08/F-09)·앱 부트스트랩·일정 CRUD 어느 것에도 영향을 주지 않는다(P-75 "별도 채널").
+- **격리 지점**: `RemotePushGateway.register()`/`subscribeToTopic()`/`unsubscribeFromTopic()`(logic §19.2)은 내부적으로 실패를 포획하고 예외를 전파하지 않는다 — 호출부(부트스트랩·온보딩·설정 화면)는 반환값(성공/실패)만 보고 흐름을 계속한다. `ReminderScheduler.sync()`(§6, 로컬 예약)는 `RemotePushGateway` 상태를 참조하지 않는다(코드 의존성 없음, 정적 리뷰로 확인 가능 — V-40 워치 격리와 동일 패턴).
+- **비차단(non-blocking) 등록**: 부트스트랩(logic §16.4) 렌더 단계는 원격 등록 완료를 기다리지 않는다 — 렌더 후 비동기(fire-and-forget)로 수행해 콜드 스타트 목표(§1.1 < 1.5s)에 영향을 주지 않는다.
+
+### 18.2 재시도 정책 (E-27-2)
+
+- 별도의 지수 백오프·재시도 큐를 도입하지 않는다(과설계 방지, 서버가 없어 재시도 실패의 대외 영향이 없음). 대신 **자연 재시도 지점**을 재사용한다: 앱 콜드 스타트(부트스트랩), `AppState` `background`→`active` 전이(§16.4, 기존 `scheduler.sync()` throttle 지점과 동일 타이밍). 등록 완료(로컬에 토큰 존재) 시 재시도를 스킵해 불필요한 SDK 호출을 반복하지 않는다.
+- 네트워크 완전 단절 등 영구 실패 상태에서도 무한 재시도로 인한 배터리·네트워크 소모가 없다 — 재시도는 항상 "이미 실행 중이던 라이프사이클 이벤트"에 편승할 뿐 별도 타이머·백그라운드 작업을 신설하지 않는다.
+
+### 18.3 관측성 (NFR-07)
+
+- 메트릭(§5.2 갱신): `push.token.registered`/`push.token.register.fail`/`push.topic.subscribed`/`push.topic.unsubscribed`.
+- 로그(§5.1 마스킹 정책 적용): FCM 토큰 원문은 로그에 기록하지 않는다 — 토큰은 존재 여부(boolean)·길이·해시 프리픽스만 기록(§13.10 연계).
+
+### 18.4 성능 · 용량
+
+- 신규 DB 쿼리는 `APP_SETTING` 키 3개(`push.fcm.token`/`.topicSubscribed`/`.registeredAt`, `database.md` §15)에 대한 단건 get/set뿐 — 기존 `SettingRepository.get/set`(§3.4) 인덱스(PK)로 O(1), 신규 인덱스 불필요.
+- FCM SDK 등록·구독 호출은 이벤트 기반(권한 허용 시 1회 + 재시도 시점마다 최대 1회) — 폴링 없음, 주기적 백그라운드 작업 없음.
+
+### 18.5 보안 (NFR-07) — 요약, 상세는 `logic.md` §13.10
+
+- `GoogleService-Info.plist`는 저장소에 비커밋(`.gitignore`, AC-100). FCM 토큰은 자격증명이 아니므로 `APP_SETTING`(SQLite)에 저장 — Keychain 승격 불필요.
+- 원격 푸시 노출은 기존 알림 권한(§7.1 온보딩)과 전역 알림 토글(F-18)을 따른다(E-27-1/6) — 신규 권한 UX 없음.
+
+### 18.6 검증 관점
+
+- V-61~V-63(§9). `RemotePushGateway`/`RemotePushService` 스파이·목 기반 단위 테스트 + 정적 점검(`.gitignore` 확인)으로 이 파이프라인 PASS 필수.
+- 실제 APNs/FCM 네트워크 라운드트립(Firebase 콘솔에서 실제 발송 → 기기 수신 확인)은 §11 셸 후속(iOS 시뮬레이터/실기기)과 동일 취급 — 이번 파이프라인은 등록·구독·격리·표시 게이팅의 **로직**만 검증한다.
+- 신규 정량 SLO·인덱스·의존성 없음(FCM SDK 자체는 overview 기술 스택 표에서 버전 고정, 신규 서버 컴포넌트 없음).
