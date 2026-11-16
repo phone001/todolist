@@ -44,6 +44,7 @@ import type { RootStackParamList } from '../navigation/routes.ts';
 import { REMINDER_OFFSET_PRESETS } from '../../core/domain/reminders.ts';
 import { SelectField } from '../components/SelectField.tsx';
 import { MultiSelectField } from '../components/MultiSelectField.tsx';
+import { resolveEditorErrors } from './scheduleEditorViewModel.ts';
 
 const PRIORITY_OPTIONS: Array<{ value: Priority; label: string }> = [
   { value: 'LOW', label: '낮음' },
@@ -120,6 +121,7 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
   const presetStartAt = route.params?.presetStartAt;
 
   // ── 폼 상태 ────────────────────────────────────────────────────────────────
+  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState<Priority>('NORMAL');
   const [categoryId, setCategoryId] = useState<number | undefined>(undefined);
@@ -170,6 +172,11 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
   // ── 오류 상태 ─────────────────────────────────────────────────────────────
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [globalError, setGlobalError] = useState<string | null>(null);
+
+  // 상세 표시 상태는 새 편집 대상마다 초기화하되 폼 값과 독립적으로 유지한다.
+  useEffect(() => {
+    setDetailsExpanded(false);
+  }, [editingId, presetStartAt]);
 
   // ── 유형 목록 + 설정(전역 알림·신규 기본값) 로드 ───────────────────────────
   useEffect(() => {
@@ -226,26 +233,18 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
     setGlobalError(null);
   }
 
-  function applyValidationError(err: ValidationError | AppError) {
-    if (err instanceof ValidationError && err.errors.length > 0) {
-      const map: Record<string, string> = {};
-      let hasGlobal = false;
-      for (const e of err.errors) {
-        if (e.field) {
-          map[e.field] = e.message;
-        } else if (!hasGlobal) {
-          setGlobalError(e.message);
-          hasGlobal = true;
-        }
-      }
-      setFieldErrors(map);
-    } else {
-      if (err.field) {
-        setFieldErrors({ [err.field]: err.message });
-      } else {
-        setGlobalError(err.message);
-      }
+  function applyFieldErrors(errors: ReadonlyArray<{ field?: string; message: string }>) {
+    const result = resolveEditorErrors(errors);
+    setFieldErrors(result.fieldErrors);
+    setGlobalError(result.globalError);
+    if (result.expandDetails) setDetailsExpanded(true);
+    if (result.expandRecurrence && existingRecurrenceParentId !== null) {
+      setShowRecurrenceRuleEditor(true);
     }
+  }
+
+  function applyValidationError(err: ValidationError | AppError) {
+    applyFieldErrors(err instanceof ValidationError && err.errors.length > 0 ? err.errors : [err]);
   }
 
   // ── 피커 열기 ─────────────────────────────────────────────────────────────
@@ -378,7 +377,7 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
     const endAtVal = endAtEnabled ? endAt : undefined;
 
     if (endAtEnabled && !Number.isInteger(endAt)) {
-      setFieldErrors({ endAt: '유효한 종료 일시를 선택하세요.' });
+      applyFieldErrors([{ field: 'endAt', message: '유효한 종료 일시를 선택하세요.' }]);
       return;
     }
 
@@ -506,216 +505,248 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
         <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.startAt}</Text>
       ) : null}
 
-      {/* 종료 일시 */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginTop: 8,
-        }}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={detailsExpanded ? '접기' : '자세히 등록'}
+        accessibilityState={{ expanded: detailsExpanded }}
+        onPress={() => setDetailsExpanded((expanded) => !expanded)}
+        style={{ paddingVertical: 12, alignSelf: 'flex-start' }}
       >
-        <Text style={{ fontWeight: 'bold' }}>종료 일시</Text>
-        <Switch value={endAtEnabled} onValueChange={setEndAtEnabled} />
-      </View>
-      {endAtEnabled ? (
-        <>
-          <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-            <Pressable
-              onPress={() => openPicker('end', 'date')}
-              style={{
-                flex: 1,
-                borderWidth: 1,
-                borderColor: '#888',
-                borderRadius: 4,
-                padding: 8,
-              }}
-            >
-              <Text>{formatEpochLabel(endAt).split(' ')[0]}</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => openPicker('end', 'time')}
-              style={{
-                flex: 1,
-                borderWidth: 1,
-                borderColor: '#888',
-                borderRadius: 4,
-                padding: 8,
-              }}
-            >
-              <Text>{formatEpochLabel(endAt).split(' ')[1]}</Text>
-            </Pressable>
-          </View>
-          {fieldErrors.endAt ? (
-            <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.endAt}</Text>
-          ) : null}
-        </>
-      ) : null}
+        <Text style={{ color: '#007AFF', fontWeight: '600' }}>
+          {detailsExpanded ? '접기' : '자세히 등록'}
+        </Text>
+      </Pressable>
 
-      {/* 내용/메모 */}
-      <Text style={{ fontWeight: 'bold', marginTop: 8 }}>내용 (선택)</Text>
-      <TextInput
-        placeholder="내용을 입력하세요"
-        value={memo}
-        onChangeText={setMemo}
-        multiline
-        numberOfLines={4}
-        style={{
-          borderWidth: 1,
-          borderColor: '#ccc',
-          borderRadius: 4,
-          padding: 8,
-          minHeight: 80,
-          textAlignVertical: 'top',
-        }}
-      />
-      {fieldErrors.memo ? (
-        <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.memo}</Text>
-      ) : null}
-
-      {/* 중요도 (v1.17: 셀렉트박스, §16.3.1) */}
-      <Text style={{ fontWeight: 'bold', marginTop: 8 }}>중요도</Text>
-      <SelectField<Priority>
-        label="중요도"
-        value={priority}
-        options={PRIORITY_OPTIONS}
-        onChange={setPriority}
-      />
-
-      {/* 유형 (v1.17: 셀렉트박스, §16.3.1) */}
-      <Text style={{ fontWeight: 'bold', marginTop: 8 }}>유형</Text>
-      <SelectField<number | undefined>
-        label="유형"
-        value={categoryId}
-        options={cats.map((c) => ({ value: c.id, label: c.name }))}
-        onChange={setCategoryId}
-      />
-
-      {/* 반복(F-24, v1.9, §16.3.1/§18.6 — v1.17: 셀렉트박스) */}
-      <Text style={{ fontWeight: 'bold', marginTop: 8 }}>반복</Text>
-      {editingId === undefined ? (
-        // 신규 생성 경로만 — 규칙 셀렉트박스 + 종료조건
-        <>
-          <SelectField<RecurrenceRule | null>
-            label="반복"
-            value={recurrenceRule}
-            options={RECURRENCE_RULE_OPTIONS}
-            onChange={setRecurrenceRule}
-          />
-          {recurrenceRule !== null ? (
-            <View style={{ marginTop: 8, gap: 8 }}>
-              <View
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
-              >
-                <Text style={{ fontSize: 13, color: '#555' }}>종료 없음(무기한)</Text>
-                <Switch value={recurrenceEndless} onValueChange={setRecurrenceEndless} />
-              </View>
-              {!recurrenceEndless ? (
-                <Pressable
-                  onPress={() => openPicker('recurrenceEnd', 'date')}
-                  style={{ borderWidth: 1, borderColor: '#888', borderRadius: 4, padding: 8 }}
-                >
-                  <Text>종료일: {formatDateOnlyLabel(recurrenceEndAt)}</Text>
-                </Pressable>
-              ) : null}
-              <Text style={{ fontSize: 12, color: '#999' }}>
-                생성 즉시 표시되는 회차#1 외의 회차는 이후 최대 60일 내로 순차 생성됩니다.
-              </Text>
-            </View>
-          ) : null}
-          {fieldErrors.recurrence ? (
-            <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.recurrence}</Text>
-          ) : null}
-        </>
-      ) : existingRecurrenceParentId !== null ? (
-        // 수정 대상이 반복 회차 — 읽기 전용 표시 + "반복 설정 변경" 보조 액션(§18.5)
-        <View style={{ marginTop: 4, gap: 8 }}>
-          <Text style={{ fontSize: 13, color: '#555' }}>
-            이 일정은 반복 일정의 한 회차입니다(연결된 반복 일정). 제목·시각 등은 이 회차에만
-            적용되며, 반복 주기 자체를 바꾸려면 아래에서 변경하세요.
-          </Text>
-          <Pressable
-            onPress={() => setShowRecurrenceRuleEditor((v) => !v)}
+      {detailsExpanded ? (
+        <View style={{ gap: 12 }}>
+          {/* 종료 일시 */}
+          <View
             style={{
-              paddingVertical: 8,
-              paddingHorizontal: 12,
-              borderRadius: 8,
-              borderWidth: 1,
-              borderColor: '#007AFF',
-              alignSelf: 'flex-start',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: 8,
             }}
           >
-            <Text style={{ color: '#007AFF', fontWeight: '600' }}>반복 설정 변경</Text>
-          </Pressable>
-          {showRecurrenceRuleEditor ? (
-            <View style={{ gap: 8, borderWidth: 1, borderColor: '#eee', borderRadius: 8, padding: 12 }}>
+            <Text style={{ fontWeight: 'bold' }}>종료 일시</Text>
+            <Switch value={endAtEnabled} onValueChange={setEndAtEnabled} />
+          </View>
+          {endAtEnabled ? (
+            <>
+              <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+                <Pressable
+                  onPress={() => openPicker('end', 'date')}
+                  style={{
+                    flex: 1,
+                    borderWidth: 1,
+                    borderColor: '#888',
+                    borderRadius: 4,
+                    padding: 8,
+                  }}
+                >
+                  <Text>{formatEpochLabel(endAt).split(' ')[0]}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => openPicker('end', 'time')}
+                  style={{
+                    flex: 1,
+                    borderWidth: 1,
+                    borderColor: '#888',
+                    borderRadius: 4,
+                    padding: 8,
+                  }}
+                >
+                  <Text>{formatEpochLabel(endAt).split(' ')[1]}</Text>
+                </Pressable>
+              </View>
+              {fieldErrors.endAt ? (
+                <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.endAt}</Text>
+              ) : null}
+            </>
+          ) : null}
+
+          {/* 내용/메모 */}
+          <Text style={{ fontWeight: 'bold', marginTop: 8 }}>내용 (선택)</Text>
+          <TextInput
+            placeholder="내용을 입력하세요"
+            value={memo}
+            onChangeText={setMemo}
+            multiline
+            numberOfLines={4}
+            style={{
+              borderWidth: 1,
+              borderColor: '#ccc',
+              borderRadius: 4,
+              padding: 8,
+              minHeight: 80,
+              textAlignVertical: 'top',
+            }}
+          />
+          {fieldErrors.memo ? (
+            <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.memo}</Text>
+          ) : null}
+
+          {/* 중요도 (v1.17: 셀렉트박스, §16.3.1) */}
+          <Text style={{ fontWeight: 'bold', marginTop: 8 }}>중요도</Text>
+          <SelectField<Priority>
+            label="중요도"
+            value={priority}
+            options={PRIORITY_OPTIONS}
+            onChange={setPriority}
+          />
+
+          {fieldErrors.priority ? (
+            <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.priority}</Text>
+          ) : null}
+
+          {/* 유형 (v1.17: 셀렉트박스, §16.3.1) */}
+          <Text style={{ fontWeight: 'bold', marginTop: 8 }}>유형</Text>
+          <SelectField<number | undefined>
+            label="유형"
+            value={categoryId}
+            options={cats.map((c) => ({ value: c.id, label: c.name }))}
+            onChange={setCategoryId}
+          />
+
+          {fieldErrors.categoryId ? (
+            <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.categoryId}</Text>
+          ) : null}
+
+          {/* 반복(F-24, v1.9, §16.3.1/§18.6 — v1.17: 셀렉트박스) */}
+          <Text style={{ fontWeight: 'bold', marginTop: 8 }}>반복</Text>
+          {editingId === undefined ? (
+            // 신규 생성 경로만 — 규칙 셀렉트박스 + 종료조건
+            <>
               <SelectField<RecurrenceRule | null>
                 label="반복"
                 value={recurrenceRule}
-                options={RECURRENCE_RULE_OPTIONS.filter((o) => o.value !== null)}
+                options={RECURRENCE_RULE_OPTIONS}
                 onChange={setRecurrenceRule}
               />
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text style={{ fontSize: 13, color: '#555' }}>종료 없음(무기한)</Text>
-                <Switch value={recurrenceEndless} onValueChange={setRecurrenceEndless} />
-              </View>
-              {!recurrenceEndless ? (
-                <Pressable
-                  onPress={() => openPicker('recurrenceEnd', 'date')}
-                  style={{ borderWidth: 1, borderColor: '#888', borderRadius: 4, padding: 8 }}
-                >
-                  <Text>종료일: {formatDateOnlyLabel(recurrenceEndAt)}</Text>
-                </Pressable>
+              {recurrenceRule !== null ? (
+                <View style={{ marginTop: 8, gap: 8 }}>
+                  <View
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}
+                  >
+                    <Text style={{ fontSize: 13, color: '#555' }}>종료 없음(무기한)</Text>
+                    <Switch value={recurrenceEndless} onValueChange={setRecurrenceEndless} />
+                  </View>
+                  {!recurrenceEndless ? (
+                    <Pressable
+                      onPress={() => openPicker('recurrenceEnd', 'date')}
+                      style={{ borderWidth: 1, borderColor: '#888', borderRadius: 4, padding: 8 }}
+                    >
+                      <Text>종료일: {formatDateOnlyLabel(recurrenceEndAt)}</Text>
+                    </Pressable>
+                  ) : null}
+                  <Text style={{ fontSize: 12, color: '#999' }}>
+                    생성 즉시 표시되는 회차#1 외의 회차는 이후 최대 60일 내로 순차 생성됩니다.
+                  </Text>
+                </View>
               ) : null}
               {fieldErrors.recurrence ? (
                 <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.recurrence}</Text>
               ) : null}
-              <Button
-                title="반복 설정 저장"
-                disabled={recurrenceRule === null}
-                onPress={() => void saveRecurrenceRuleChange()}
-              />
+            </>
+          ) : existingRecurrenceParentId !== null ? (
+            // 수정 대상이 반복 회차 — 읽기 전용 표시 + "반복 설정 변경" 보조 액션(§18.5)
+            <View style={{ marginTop: 4, gap: 8 }}>
+              <Text style={{ fontSize: 13, color: '#555' }}>
+                이 일정은 반복 일정의 한 회차입니다(연결된 반복 일정). 제목·시각 등은 이 회차에만
+                적용되며, 반복 주기 자체를 바꾸려면 아래에서 변경하세요.
+              </Text>
+              <Pressable
+                onPress={() => setShowRecurrenceRuleEditor((v) => !v)}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 12,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: '#007AFF',
+                  alignSelf: 'flex-start',
+                }}
+              >
+                <Text style={{ color: '#007AFF', fontWeight: '600' }}>반복 설정 변경</Text>
+              </Pressable>
+              {showRecurrenceRuleEditor ? (
+                <View style={{ gap: 8, borderWidth: 1, borderColor: '#eee', borderRadius: 8, padding: 12 }}>
+                  <SelectField<RecurrenceRule | null>
+                    label="반복"
+                    value={recurrenceRule}
+                    options={RECURRENCE_RULE_OPTIONS.filter((o) => o.value !== null)}
+                    onChange={setRecurrenceRule}
+                  />
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 13, color: '#555' }}>종료 없음(무기한)</Text>
+                    <Switch value={recurrenceEndless} onValueChange={setRecurrenceEndless} />
+                  </View>
+                  {!recurrenceEndless ? (
+                    <Pressable
+                      onPress={() => openPicker('recurrenceEnd', 'date')}
+                      style={{ borderWidth: 1, borderColor: '#888', borderRadius: 4, padding: 8 }}
+                    >
+                      <Text>종료일: {formatDateOnlyLabel(recurrenceEndAt)}</Text>
+                    </Pressable>
+                  ) : null}
+                  {fieldErrors.recurrence ? (
+                    <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.recurrence}</Text>
+                  ) : null}
+                  <Button
+                    title="반복 설정 저장"
+                    disabled={recurrenceRule === null}
+                    onPress={() => void saveRecurrenceRuleChange()}
+                  />
+                </View>
+              ) : null}
             </View>
+          ) : (
+            <Text style={{ fontSize: 13, color: '#999', marginTop: 4 }}>없음</Text>
+          )}
+
+          {/* 알림 여부 */}
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginTop: 8,
+            }}
+          >
+            <Text style={{ fontWeight: 'bold', color: notifGloballyOn ? '#111' : '#aaa' }}>시작 시 알림</Text>
+            <Switch
+              value={notifGloballyOn && notifyAtStart}
+              disabled={!notifGloballyOn}
+              onValueChange={setNotifyAtStart}
+            />
+          </View>
+          {!notifGloballyOn ? (
+            <Text style={{ fontSize: 12, color: '#999' }}>
+              설정에서 "알림 사용"이 꺼져 있어 이 일정에는 알림이 걸리지 않습니다.
+            </Text>
+          ) : null}
+
+          {fieldErrors.notifyAtStart ? (
+            <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.notifyAtStart}</Text>
+          ) : null}
+
+          {/* 사전 알림 프리셋(F-08 §6.1, D-24 — 자유 입력 없음 / v1.17: 셀렉트박스, D-31(a)).
+              전역 알림 off 면 비활성 표시 */}
+          <Text style={{ fontWeight: 'bold', marginTop: 8, color: notifGloballyOn ? '#111' : '#aaa' }}>
+            사전 알림
+          </Text>
+          <MultiSelectField
+            label="사전 알림"
+            values={reminderOffsets}
+            options={REMINDER_OFFSET_PRESETS.map((p) => ({ value: p.minutes, label: p.label }))}
+            onChange={setReminderOffsets}
+            disabled={!notifGloballyOn}
+          />
+
+          {fieldErrors.reminderOffsets ? (
+            <Text style={{ color: 'red', fontSize: 12 }}>{fieldErrors.reminderOffsets}</Text>
           ) : null}
         </View>
-      ) : (
-        <Text style={{ fontSize: 13, color: '#999', marginTop: 4 }}>없음</Text>
-      )}
-
-      {/* 알림 여부 */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginTop: 8,
-        }}
-      >
-        <Text style={{ fontWeight: 'bold', color: notifGloballyOn ? '#111' : '#aaa' }}>시작 시 알림</Text>
-        <Switch
-          value={notifGloballyOn && notifyAtStart}
-          disabled={!notifGloballyOn}
-          onValueChange={setNotifyAtStart}
-        />
-      </View>
-      {!notifGloballyOn ? (
-        <Text style={{ fontSize: 12, color: '#999' }}>
-          설정에서 "알림 사용"이 꺼져 있어 이 일정에는 알림이 걸리지 않습니다.
-        </Text>
       ) : null}
-
-      {/* 사전 알림 프리셋(F-08 §6.1, D-24 — 자유 입력 없음 / v1.17: 셀렉트박스, D-31(a)).
-          전역 알림 off 면 비활성 표시 */}
-      <Text style={{ fontWeight: 'bold', marginTop: 8, color: notifGloballyOn ? '#111' : '#aaa' }}>
-        사전 알림
-      </Text>
-      <MultiSelectField
-        label="사전 알림"
-        values={reminderOffsets}
-        options={REMINDER_OFFSET_PRESETS.map((p) => ({ value: p.minutes, label: p.label }))}
-        onChange={setReminderOffsets}
-        disabled={!notifGloballyOn}
-      />
 
       {/* 저장 버튼 */}
       <View style={{ marginTop: 16 }}>
