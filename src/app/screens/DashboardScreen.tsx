@@ -29,12 +29,12 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useServices } from '../bootstrap/AppContext.tsx';
 import { useShellStore } from '../state/stores.native.ts';
 import { SETTING_KEYS } from '../state/bindings.ts';
-import { STACK_ROUTES, type RootStackParamList } from '../navigation/routes.ts';
+import { STACK_ROUTES, type RootStackParamList, type TabParamList } from '../navigation/routes.ts';
 import type { Category, Schedule } from '../../core/domain/types.ts';
 import { PRIORITY_COLORS } from '../../core/domain/types.ts';
 import type { DashboardSummary } from '../../core/services/dashboardService.ts';
@@ -56,6 +56,8 @@ import {
   resolveTodayStart,
   stepReferenceDate,
 } from './dashboardViewModel.ts';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { parseSavedSchedule, savedDashboardView } from '../navigation/savedSchedule.ts';
 import { SwipeableRow } from './SwipeableRow.tsx';
 import { ProgressLine } from '../components/ProgressLine.tsx';
 import { BrandLoadingIndicator } from '../components/BrandLoadingIndicator.tsx';
@@ -107,6 +109,9 @@ export function DashboardScreen() {
   const clearStale = useShellStore((s) => s.clearStale);
   const navigation = useNavigation<DashboardNavProp>();
 
+  const route = useRoute<RouteProp<TabParamList, 'DashboardTab'>>();
+  const tabNavigation = useNavigation<BottomTabNavigationProp<TabParamList, 'DashboardTab'>>();
+  const consumedSavedRef = useRef<unknown>();
   const tz = clock.timeZone();
 
   const [items, setItems] = useState<Schedule[]>([]);
@@ -167,14 +172,14 @@ export function DashboardScreen() {
     }, [loadHideCompleted]),
   );
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (date = referenceDate) => {
     const seq = ++loadSeqRef.current;
-    const dayStart = referenceDate;
-    const dayEnd = referenceDate + DAY_MS;
+    const dayStart = date;
+    const dayEnd = date + DAY_MS;
     try {
       const [summaryResult, page, categoryList] = await Promise.all([
         // 요약 상세 + 진행률 한 줄(F-21) — 동일 호출 1건 공유, 별도 집계 없음(P-47).
-        dashboard.getSummary(referenceDate),
+        dashboard.getSummary(date),
         schedules.findInRange(dayStart, dayEnd, undefined, 'startAt', DASHBOARD_LIST_LIMIT, null),
         // F-10 §7.3: 리스트 유형 배지 소스. 요약/목록과 병렬 조회(logic §7.3).
         categories.list(),
@@ -264,6 +269,31 @@ export function DashboardScreen() {
   // 다른 화면(추가/수정·완료 토글·삭제)이 무효화하면 포커스 복귀 시 재조회 (logic §16.3).
   useFocusEffect(
     useCallback(() => {
+      const rawSaved = route.params?.savedSchedule;
+      if (rawSaved !== undefined && rawSaved !== consumedSavedRef.current) {
+        consumedSavedRef.current = rawSaved;
+        tabNavigation.setParams({ savedSchedule: undefined });
+        const saved = parseSavedSchedule(rawSaved);
+        if (saved) {
+          const next = savedDashboardView(saved, tz);
+          ++loadSeqRef.current; // invalidate outstanding responses before changing the day
+          setReferenceDate(next.referenceDate);
+          setInlineQuery(next.inlineQuery);
+          setDebouncedQuery(next.debouncedQuery);
+          setSearchExpanded(next.searchExpanded);
+          prevTodayStartRef.current = resolveTodayStart(clock.now(), tz);
+          clearStale('list');
+          clearStale('dashboard');
+          setInitialLoading(true);
+          void load(next.referenceDate);
+          if (saved.done) {
+            void settings.get(SETTING_KEYS.hideCompletedSchedules).then((raw) => {
+              if (parseHideCompleted(raw)) Alert.alert('저장되었습니다', '완료된 일정 숨기기가 켜져 있습니다.');
+            }).catch(() => undefined);
+          }
+          return;
+        }
+      }
       if (runRollover()) return; // 자정 경과로 오늘이 이동 → load 는 useEffect 가 처리
       const st = useShellStore.getState().stale;
       if (st.list || st.dashboard) {
@@ -271,7 +301,7 @@ export function DashboardScreen() {
         clearStale('dashboard');
         void load();
       }
-    }, [load, clearStale, runRollover]),
+    }, [load, clearStale, runRollover, route.params?.savedSchedule, tabNavigation, clock, tz, settings]),
   );
 
   // RECUR-01 후속(logic §18.3/§16.4): 콜드 스타트 부트스트랩 완료(reminderScheduler.sync +

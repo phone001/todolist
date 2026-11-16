@@ -33,7 +33,7 @@ export type StackRouteName = (typeof STACK_ROUTES)[keyof typeof STACK_ROUTES];
 
 /** 스택 라우트별 파라미터. scheduleId 는 항상 정수. */
 export interface RootStackParamList {
-  Tabs: undefined;
+  Tabs: { screen: 'DashboardTab' | 'CalendarTab'; params: { savedSchedule: SavedScheduleResult } } | undefined;
   ScheduleDetail: { scheduleId: number };
   /**
    * scheduleId 없으면 신규 작성.
@@ -51,9 +51,15 @@ export interface RootStackParamList {
   Permissions: { from?: 'onboarding' | 'settings' } | undefined;
 }
 
+export interface SavedScheduleResult {
+  scheduleId: number;
+  startAt: number;
+  done: boolean;
+}
+
 export interface TabParamList {
-  DashboardTab: undefined;
-  CalendarTab: undefined;
+  DashboardTab: { savedSchedule?: SavedScheduleResult } | undefined;
+  CalendarTab: { savedSchedule?: SavedScheduleResult } | undefined;
   StatisticsTab: undefined;
   SettingsTab: undefined;
 }

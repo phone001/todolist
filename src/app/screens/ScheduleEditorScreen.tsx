@@ -22,6 +22,7 @@
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import {
+  Alert,
   Button,
   Modal,
   Platform,
@@ -40,7 +41,9 @@ import { useShellStore } from '../state/stores.native.ts';
 import { SETTING_KEYS } from '../state/bindings.ts';
 import { ValidationError, AppError } from '../../core/domain/errors.ts';
 import type { Category, Priority, RecurrenceRule } from '../../core/domain/types.ts';
-import type { RootStackParamList } from '../navigation/routes.ts';
+import type { RootStackParamList, SavedScheduleResult } from '../navigation/routes.ts';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { savedScheduleDestination } from '../navigation/savedSchedule.ts';
 import { REMINDER_OFFSET_PRESETS } from '../../core/domain/reminders.ts';
 import { SelectField } from '../components/SelectField.tsx';
 import { MultiSelectField } from '../components/MultiSelectField.tsx';
@@ -71,7 +74,7 @@ function parseJson<T>(raw: string | null, fallback: T): T {
 
 type Props = {
   route: { params?: RootStackParamList['ScheduleEditor'] };
-  navigation: { goBack: () => void };
+  navigation: NativeStackNavigationProp<RootStackParamList>;
 };
 
 // ── 헬퍼 ──────────────────────────────────────────────────────────────────────
@@ -392,9 +395,10 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
         ? { rule: recurrenceRule, endAt: recurrenceEndless ? null : recurrenceEndAt }
         : undefined;
 
+    let saved: SavedScheduleResult;
     try {
       if (editingId === undefined) {
-        await schedules.create({
+        const created = await schedules.create({
           title,
           startAt,
           endAt: endAtVal,
@@ -405,8 +409,9 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
           reminderOffsets: effOffsets,
           recurrence: recurrenceInput,
         });
+        saved = { scheduleId: created.id, startAt, done: false };
       } else {
-        await schedules.update(editingId, {
+        const updated = await schedules.update(editingId, {
           title,
           startAt,
           endAt: endAtEnabled ? endAt : null,
@@ -416,15 +421,26 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
           notifyAtStart: effNotify,
           reminderOffsets: effOffsets,
         });
+        saved = { scheduleId: updated.id, startAt: updated.startAt, done: updated.isDone };
       }
-      invalidate('list', 'dashboard', 'search', 'categories');
-      navigation.goBack();
     } catch (err) {
       if (err instanceof ValidationError || err instanceof AppError) {
         applyValidationError(err);
       } else {
         setGlobalError('저장에 실패했습니다.');
       }
+      return;
+    }
+    // Persistence succeeded. A navigation failure must never invite another INSERT.
+    try {
+      invalidate('list', 'dashboard', 'search', 'categories');
+      useShellStore.getState().setSearch('', [], false);
+      navigation.navigate('Tabs', {
+        screen: savedScheduleDestination(navigation.getState()),
+        params: { savedSchedule: saved },
+      });
+    } catch {
+      Alert.alert('저장되었습니다', '목록을 다시 열어 저장한 날짜를 확인해 주세요.');
     }
   }
 

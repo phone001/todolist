@@ -9,13 +9,15 @@
  * 바인딩: ScheduleService.findInRange / toggleDone → list·dashboard 무효화.
  * 환경 제약: react / react-native 의존 → 파이프라인 미실행(정적 리뷰).
  */
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useServices } from '../bootstrap/AppContext.tsx';
 import { useShellStore } from '../state/stores.native.ts';
-import { STACK_ROUTES, type RootStackParamList } from '../navigation/routes.ts';
+import { STACK_ROUTES, type RootStackParamList, type TabParamList } from '../navigation/routes.ts';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { parseSavedSchedule, savedCalendarView } from '../navigation/savedSchedule.ts';
 import type { Schedule } from '../../core/domain/types.ts';
 import { combineDateWithTimeOfDay } from '../../core/domain/time.ts';
 import { BrandLoadingIndicator } from '../components/BrandLoadingIndicator.tsx';
@@ -38,6 +40,10 @@ export function CalendarScreen() {
   const invalidate = useShellStore((s) => s.invalidate);
   const clearStale = useShellStore((s) => s.clearStale);
   const navigation = useNavigation<CalendarNavProp>();
+  const route = useRoute<RouteProp<TabParamList, 'CalendarTab'>>();
+  const tabNavigation = useNavigation<BottomTabNavigationProp<TabParamList, 'CalendarTab'>>();
+  const consumedSavedRef = useRef<unknown>();
+  const loadSeqRef = useRef(0);
 
   const today = useMemo(() => {
     const d = new Date();
@@ -98,19 +104,21 @@ export function CalendarScreen() {
     });
   }, [navigation, goAddSchedule]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (month = view) => {
+    const seq = ++loadSeqRef.current;
     setLoadingMonth(true);
     setMonthError(false);
     try {
-      const start = new Date(view.y, view.m, 1).getTime();
-      const end = new Date(view.y, view.m + 1, 1).getTime();
+      const start = new Date(month.y, month.m, 1).getTime();
+      const end = new Date(month.y, month.m + 1, 1).getTime();
       const page = await schedules.findInRange(start, end, undefined, 'startAt', 500, null);
+      if (seq !== loadSeqRef.current) return;
       setMonthItems(page.items);
     } catch {
       // 로드 실패 → 마지막 캐시 유지 + 에러/재시도 (E-02-2, E-17-7)
-      setMonthError(true);
+      if (seq === loadSeqRef.current) setMonthError(true);
     } finally {
-      setLoadingMonth(false);
+      if (seq === loadSeqRef.current) setLoadingMonth(false);
     }
   }, [schedules, view.y, view.m]);
 
@@ -121,11 +129,27 @@ export function CalendarScreen() {
   // 다른 화면(일정 추가/수정·삭제)이 list 를 무효화하면 포커스 복귀 시 재조회 (logic §16.3).
   useFocusEffect(
     useCallback(() => {
+      const rawSaved = route.params?.savedSchedule;
+      if (rawSaved !== undefined && rawSaved !== consumedSavedRef.current) {
+        consumedSavedRef.current = rawSaved;
+        tabNavigation.setParams({ savedSchedule: undefined });
+        const saved = parseSavedSchedule(rawSaved);
+        if (saved) {
+          const next = savedCalendarView(saved);
+          ++loadSeqRef.current;
+          setView(next.view);
+          setSelKey(next.selKey);
+          setSelLabel(next.selLabel);
+          clearStale('list');
+          void load(next.view);
+          return;
+        }
+      }
       if (useShellStore.getState().stale.list) {
         clearStale('list');
         void load();
       }
-    }, [load, clearStale]),
+    }, [load, clearStale, route.params?.savedSchedule, tabNavigation]),
   );
 
   const daysWithItems = useMemo(() => {
