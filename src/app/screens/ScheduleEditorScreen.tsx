@@ -790,7 +790,7 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
                 <Pressable onPress={onIOSCancel}>
                   <Text style={{ color: '#888', fontSize: 16 }}>취소</Text>
                 </Pressable>
-                <Text style={{ fontWeight: 'bold', fontSize: 16 }}>
+                <Text style={{ color: '#111', fontWeight: 'bold', fontSize: 16 }}>
                   {pickerMode === 'date' ? '날짜 선택' : '시각 선택'}
                 </Text>
                 <Pressable onPress={onIOSConfirm}>
@@ -801,6 +801,8 @@ export function ScheduleEditorScreen({ route, navigation }: Props) {
                 value={tempDate}
                 mode={pickerMode}
                 display="spinner"
+                themeVariant="light"
+                textColor="#111"
                 onChange={onPickerChange}
                 style={{ height: 200 }}
               />
