@@ -21,7 +21,7 @@ require 'xcodeproj'
 IOS_DIR = File.expand_path('..', __dir__)
 PROJECT_PATH = File.join(IOS_DIR, 'TodayWhat.xcodeproj')
 WATCH_TARGET_NAME = 'TodayWhatWatch'
-WATCH_BUNDLE_ID = 'kr.purpledog.todaywhat.watchkitapp'
+WATCH_BUNDLE_ID = 'com.my.todaywhatwork.watchkitapp'
 WATCH_DEPLOYMENT_TARGET = '10.0'
 WATCH_SOURCE_DIR_NAME = 'TodayWhatWatch'
 IOS_APP_TARGET_NAME = 'TodayWhat'
@@ -119,8 +119,8 @@ common_settings = {
   'WATCHOS_DEPLOYMENT_TARGET' => WATCH_DEPLOYMENT_TARGET,
   'SWIFT_VERSION' => '5.0',
   'CODE_SIGN_STYLE' => 'Automatic',
-  'CODE_SIGNING_ALLOWED' => 'NO',
-  'DEVELOPMENT_TEAM' => '',
+  'CODE_SIGNING_ALLOWED[sdk=watchsimulator*]' => 'NO',
+  'DEVELOPMENT_TEAM' => ios_target.build_configurations.first.build_settings.fetch('DEVELOPMENT_TEAM'),
   'CURRENT_PROJECT_VERSION' => '1',
   'MARKETING_VERSION' => '1.0',
   'GENERATE_INFOPLIST_FILE' => 'NO',

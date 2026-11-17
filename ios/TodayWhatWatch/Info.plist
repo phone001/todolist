@@ -23,7 +23,7 @@
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>kr.purpledog.todaywhat</string>
+	<string>com.my.todaywhatwork</string>
 	<key>WKRunsIndependentlyOfCompanionApp</key>
 	<false/>
 	<key>UISupportedInterfaceOrientations</key>
