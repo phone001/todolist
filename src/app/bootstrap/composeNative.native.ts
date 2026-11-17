@@ -26,6 +26,7 @@ import { WatchConnectivityGateway } from '../adapters/watch/WatchConnectivityGat
 import { FirebaseRemotePushGateway } from '../adapters/push/FirebaseRemotePushGateway.native.ts';
 import { NoopRemotePushGateway } from '../adapters/push/NoopRemotePushGateway.ts';
 import { RemotePushService } from '../services/remotePushService.ts';
+import { NotificationPermissionService } from '../services/notificationPermissionService.ts';
 
 export interface NativeConfig {
   dbName?: string;
@@ -48,6 +49,7 @@ export const REMOTE_PUSH_CHANNEL_ID = 'remote-push';
  */
 let remotePushBinding: { gateway: RemotePushGateway; service: RemotePushService } | null = null;
 let remotePushChannelReady = false;
+let notificationPermissionBinding: NotificationPermissionService | null = null;
 
 export function createBootstrapSteps(cfg: NativeConfig): BootstrapSteps {
   let db: OpSqliteDb | null = null;
@@ -60,6 +62,12 @@ export function createBootstrapSteps(cfg: NativeConfig): BootstrapSteps {
       const clock = new SystemClock();
       const logger = new MaskingLogger(cfg.logSink ?? (() => {}), { minLevel: cfg.minLogLevel ?? 'warn' });
       const notifications = new NotifeeNotificationGateway();
+      // 기존 OS 권한만 조회한다. 이 단계에서는 권한 팝업을 요청하지 않는다.
+      try {
+        await notifications.refreshPermission();
+      } catch {
+        logger.log('warn', 'notification.permission.read.fail');
+      }
 
       // F-27(v1.23): iOS 는 FCM 어댑터, Android 는 no-op(P-74) — WatchConnectivityGateway 와 동일 패턴.
       const remotePushGateway: RemotePushGateway =
@@ -95,6 +103,11 @@ export function createBootstrapSteps(cfg: NativeConfig): BootstrapSteps {
 
     assemble(ports: CorePorts): CoreServices {
       const services = assembleServices(ports);
+      notificationPermissionBinding = new NotificationPermissionService(
+        ports.notifications as NotifeeNotificationGateway,
+        () => services.scheduler.sync(),
+        () => getRemotePushService().registerRemotePushIfNeeded(),
+      );
       // F-19(WATCH-10): 워치의 "스냅샷 주세요"(requestSnapshot, 수동 새로고침) 수신 시 최신 스냅샷을
       // 다시 빌드·전송하도록 어댑터에 배선한다. 포트 계약 무변경 — 구체 어댑터의 배선 지점.
       if (ports.watchSync instanceof WatchConnectivityGateway) {
@@ -139,6 +152,11 @@ export function getRemotePushService(): RemotePushService {
     throw new Error('getRemotePushService() called before bootstrap openDatabase() completed');
   }
   return remotePushBinding.service;
+}
+
+export function getNotificationPermissionService(): NotificationPermissionService {
+  if (!notificationPermissionBinding) throw new Error('Notification permission service is not assembled');
+  return notificationPermissionBinding;
 }
 
 async function ensureRemotePushChannel(): Promise<void> {

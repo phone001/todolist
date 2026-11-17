@@ -30,11 +30,20 @@ export class NotifeeNotificationGateway implements NotificationGateway {
 
   async requestPermission(): Promise<PermissionStatus> {
     const settings = await notifee.requestPermission();
+    return this.updatePermission(settings.authorizationStatus);
+  }
+
+  async refreshPermission(): Promise<PermissionStatus> {
+    const settings = await notifee.getNotificationSettings();
+    return this.updatePermission(settings.authorizationStatus);
+  }
+
+  private updatePermission(status: AuthorizationStatus): PermissionStatus {
     this.permission =
-      settings.authorizationStatus === AuthorizationStatus.AUTHORIZED ||
-      settings.authorizationStatus === AuthorizationStatus.PROVISIONAL
+      status === AuthorizationStatus.AUTHORIZED ||
+      status === AuthorizationStatus.PROVISIONAL
         ? 'granted'
-        : settings.authorizationStatus === AuthorizationStatus.DENIED
+        : status === AuthorizationStatus.DENIED
           ? 'denied'
           : 'undetermined';
     return this.permission;

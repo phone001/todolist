@@ -30,6 +30,7 @@ import {
   createBootstrapSteps,
   createPostRenderSteps,
   getRemotePushService,
+  getNotificationPermissionService,
   wireRemotePushListeners,
   type NativeConfig,
 } from './src/app/bootstrap/composeNative.native.ts';
@@ -108,15 +109,24 @@ export default function App() {
       if (st !== 'active') return;
       // F-19: 포그라운드 복귀 시 워치 스냅샷 갱신(§17.2).
       scheduleWatchPush(result.services);
-      const now = Date.now();
-      if (lastSyncRef.current !== null && now - lastSyncRef.current < 30_000) return;
-      lastSyncRef.current = now;
-      void result.services.scheduler.sync();
-      // F-24(RECUR-01 수정, logic §18.3 / nfr §17.1·§17.3): ReminderScheduler.sync() 와 동일 지점에서
-      // RecurrenceScheduler.sync() 도 병행 호출 — 콜드 스타트/생성 직후 누락분을 보완한다.
-      void result.services.recurrenceScheduler.sync();
-      // F-27(v1.23): 동일 타이밍에 원격 등록 재시도(토큰 미존재 시에만, §16.4/§18.2 nfr).
-      void getRemotePushService().registerRemotePushIfNeeded();
+      void (async () => {
+        const permission = getNotificationPermissionService();
+        const previous = permission.getPermission();
+        // OS 설정에서 돌아온 경우 30초 제한보다 먼저 권한 캐시를 갱신한다.
+        try {
+          await permission.refresh();
+        } catch {
+          // 권한 조회 실패가 기존 일정·반복 동기화까지 막지 않게 격리한다.
+        }
+        const now = Date.now();
+        if (previous === permission.getPermission() && lastSyncRef.current !== null && now - lastSyncRef.current < 30_000) return;
+        lastSyncRef.current = now;
+        void result.services.scheduler.sync();
+        // F-24: 반복 회차도 같은 시점에 실체화한다.
+        void result.services.recurrenceScheduler.sync();
+        // F-27: 권한 갱신 후 원격 등록을 재시도한다.
+        void getRemotePushService().registerRemotePushIfNeeded();
+      })();
     });
     return () => sub.remove();
   }, [result]);
@@ -145,7 +155,7 @@ export default function App() {
   if (!result.ok) return <SafeModeScreen migration={result.migration} />;
 
   return (
-    <ServicesProvider services={{ ...result.services, remotePush: getRemotePushService() }}>
+    <ServicesProvider services={{ ...result.services, remotePush: getRemotePushService(), notificationPermission: getNotificationPermissionService() }}>
       <RootNavigator />
     </ServicesProvider>
   );

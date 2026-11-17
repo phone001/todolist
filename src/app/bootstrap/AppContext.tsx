@@ -10,10 +10,12 @@
 import React, { createContext, useContext } from 'react';
 import type { CoreServices } from '../../core/app.ts';
 import type { RemotePushService } from '../services/remotePushService.ts';
+import type { NotificationPermissionService } from '../services/notificationPermissionService.ts';
 
 export interface AppServices extends CoreServices {
   /** F-27(v1.23) — 원격 푸시 등록·토픽 구독/해지·전역 토글 연동. */
   remotePush: RemotePushService;
+  notificationPermission: NotificationPermissionService;
 }
 
 const ServicesContext = createContext<AppServices | null>(null);

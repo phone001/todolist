@@ -135,6 +135,10 @@ export function RootNavigator() {
       onReady={() => {
         // 콜드 스타트 딥링크는 parseDeepLink 로 재검증 (여기서는 예시)
         void parseDeepLink(null);
+        // 최초 미결정 상태에만 권한 안내를 제공한다. 거부/허용 상태는 반복 표시하지 않는다.
+        void services.notificationPermission.refresh().then((status) => {
+          if (status === 'undetermined') navRef.current?.navigate(STACK_ROUTES.Permissions);
+        }).catch(() => {});
       }}
     >
       <Stack.Navigator>

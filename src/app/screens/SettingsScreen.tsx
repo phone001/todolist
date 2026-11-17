@@ -161,6 +161,7 @@ export function SettingsScreen() {
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, gap: 24 }}>
       <Section title="알림">
+        <Button title="알림 권한 설정" onPress={() => navigation.navigate(STACK_ROUTES.Permissions)} />
         <SwitchRow
           label="알림 사용"
           value={notifEnabled}
